@@ -46,6 +46,10 @@ do  for path in "$UPDATE_CWD" \
             binary=`ls -d "$path"/*/"$product_bin" 2>/dev/null | head -n 1`
         fi 
         if [ -f "$binary" ]; then
+            # Is the awk/ls magic portable?
+            if [ -L "$binary" ]; then
+                binary=`ls -l "$binary" | awk '{print $11}'`
+            fi
             product_path=`dirname $binary`
             if [ -w "$product_path" ]; then
                 set -- `"$md5" "$binary"`
