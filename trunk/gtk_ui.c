@@ -910,7 +910,7 @@ void save_mirror_slot( GtkWidget* w, gpointer data )
     if ( update_patchset ) {
         for ( patchset=product_patchset; patchset; patchset=patchset->next ) {
             set_preferred_url(patchset->mirrors,
-                              patchset->mirrors->current->url);
+                              update_patchset->mirrors->current->url);
         }
         save_preferred_url(update_patchset->mirrors);
         fill_mirrors_list(update_patchset->mirrors);
