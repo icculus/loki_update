@@ -1,3 +1,6 @@
+1.0.9:
+ * Perform updates fully automated when doing auto-updates
+
 1.0.8
 Sam Lantinga - Mon Feb 19 19:58:46 PST 2001
  * Fixed memory corruption with certain password protected URLs

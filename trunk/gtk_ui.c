@@ -2008,11 +2008,7 @@ static int gtkui_update_product(const char *product)
     update_status = 0;
     select_product(product);
     one_product = 1;
-#if 0 /* Don't go fully automatic when performing a UI update */
     interactive = FULLY_AUTOMATIC;
-#else
-    interactive = SEMI_AUTOMATIC;
-#endif
     choose_update_slot(NULL, NULL);
     return update_status;
 }

@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := 1.0.8
+VERSION := 1.0.9
 IMAGE   := /loki/patch-tools/setup-image
 UPDATES := /loki/updates/loki_update
 
