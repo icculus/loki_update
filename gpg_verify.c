@@ -177,7 +177,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
                               update_callback update, void *udata)
 {
     int argc;
-    const char *args[9];
+    const char *args[16];
     pid_t child;
     int cancelled;
     int pipefd[2];
@@ -216,6 +216,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
             args[argc++] = "1";
             args[argc++] = "--status-fd";
             args[argc++] = "2";
+            args[argc++] = "--honor-http-proxy";
             args[argc++] = "--keyserver";
             args[argc++] = keyserver;
             args[argc++] = "--recv-key";
