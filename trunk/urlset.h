@@ -53,14 +53,15 @@ extern void add_url(urlset *urlset, const char *url);
 /* Randomize the order of the mirrors */
 extern void randomize_urls(urlset *urlset);
 
+/* Set and save the preferred URL */
+extern void set_preferred_url(urlset *urlset, const char *url);
+extern void save_preferred_url(urlset *urlset);
+
 /* Get the next URL to be tried for an update */
 extern const char *get_next_url(urlset *urlset, const char *file);
 
 /* Set the status of the current URL */
 extern void set_url_status(urlset *urlset, enum url_status status);
-
-/* Use the current URL as the preferred URL */
-extern void current_url_preferred(urlset *urlset);
 
 /* Reset the status of a set or URLs */
 extern void reset_urlset(urlset *urlset);

@@ -219,32 +219,31 @@ void set_url_status(urlset *urlset, enum url_status status)
     urlset->current->status = status;
 }
 
-/* Use the current URL as the preferred URL */
-void current_url_preferred(urlset *urlset)
+/* Set and save the preferred URL */
+void set_preferred_url(urlset *urlset, const char *url)
 {
-    FILE *fp;
-    char mirror[PATH_MAX];
-
-    /* Sanity check */
-    if ( ! urlset->current ) {
-        return;
-    }
+    char mirror_host[PATH_MAX];
 
     /* Save the new preferred mirror site */
-    if ( get_url_host(urlset->full_url, mirror, sizeof(mirror)) ) {
-        /* Copy it to the internal data */
+    if ( get_url_host(urlset->full_url, mirror_host, sizeof(mirror_host)) ) {
         free(urlset->preferred_site);
-        urlset->preferred_site = safe_strdup(mirror);
+        urlset->preferred_site = safe_strdup(mirror_host);
+    }
+}
+void save_preferred_url(urlset *urlset)
+{
+    FILE *fp;
+    char mirror_file[PATH_MAX];
 
-        /* Write it out to disk */
-        preferences_path("preferred_mirror.txt", mirror, sizeof(mirror));
-        fp = fopen(mirror, "w");
-        if ( fp ) {
-            fprintf(fp, "%s\n", urlset->preferred_site);
-            fclose(fp);
-        } else {
-            log(LOG_WARNING, _("Unable to write to %s\n"), mirror);
-        }
+    /* Write it out to disk */
+    preferences_path("preferred_mirror.txt", mirror_file, sizeof(mirror_file));
+    fp = fopen(mirror_file, "w");
+    if ( fp ) {
+        fprintf(fp, "%s\n", urlset->preferred_site ?
+                            urlset->preferred_site : "");
+        fclose(fp);
+    } else {
+        log(LOG_WARNING, _("Unable to write to %s\n"), mirror_file);
     }
 }
 
