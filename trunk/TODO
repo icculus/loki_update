@@ -1,3 +1,4 @@
 
 Add a console UI
 Handle window closing gracefully
+Component updates before components cause a crash
