@@ -1,3 +1,7 @@
+1.0.11:
+Sam Lantinga - Wed Apr 11 15:22:15 PDT 2001
+ * Separated user interface into loadable modules
+
 1.0.10:
 Sam Lantinga - Wed Apr  4 09:53:35 PDT 2001
  * You can pass an install directory as well as product on the command line

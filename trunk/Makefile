@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := 1.0.10
+VERSION := 1.0.11
 IMAGE   := /loki/patch-tools/setup-image
 UPDATES := /loki/updates/loki_update
 
@@ -14,27 +14,34 @@ CFLAGS = -g -O2 -Wall
 ifeq ($(arch),alpha)
 CFLAGS += -mcpu=ev4 -Wa,-mall
 endif
-CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=\"$(VERSION)\"
+CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=\"$(VERSION)\" -DDYNAMIC_UI
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
-LFLAGS += -L$(SETUPDB)/$(arch) -lsetupdb
+LFLAGS = -rdynamic
 LFLAGS += -Wl,-Bstatic
-LFLAGS += -L$(shell libglade-config --prefix)
-LFLAGS +=  -lglade
-LFLAGS += -L$(shell gtk-config --prefix)
-LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
-LFLAGS += -L$(shell xml-config --prefix)
-LFLAGS += -lxml -lz
-LFLAGS += -Wl,-Bdynamic
-LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -ldl
 # Used for non-blocking gethostbyname
 # You can find Ares at: ftp://athena-dist.mit.edu/pub/ATHENA/ares
 LFLAGS += -lares
+LFLAGS += -L$(SETUPDB)/$(arch) -lsetupdb
+LFLAGS += -L$(shell xml-config --prefix)
+LFLAGS += -lxml -lz
+LFLAGS += -Wl,-Bdynamic
+LFLAGS += -lm -ldl
 
-CORE_OBJS = loki_update.o gtk_ui.o tty_ui.o prefpath.o url_paths.o \
-            meta_url.o load_products.o load_patchset.o patchset.o urlset.o \
+TTY_LFLAGS =
+
+GTK_LFLAGS = -Wl,-Bstatic
+GTK_LFLAGS += -L$(shell libglade-config --prefix)
+GTK_LFLAGS +=  -lglade
+GTK_LFLAGS += -L$(shell gtk-config --prefix)
+GTK_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+GTK_LFLAGS += -Wl,-Bdynamic
+GTK_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
+
+CORE_OBJS = loki_update.o prefpath.o url_paths.o meta_url.o \
+            load_products.o load_patchset.o patchset.o urlset.o \
             update.o gpg_verify.o get_url.o \
-			mkdirhier.o text_parse.o log_output.o safe_malloc.o
+            mkdirhier.o text_parse.o log_output.o safe_malloc.o
 
 SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \
              $(SNARF)/file.o $(SNARF)/ftp.o $(SNARF)/gopher.o $(SNARF)/http.o
@@ -43,7 +50,13 @@ OBJS = $(CORE_OBJS) $(SNARF_OBJS)
 
 CORE_SRCS = $(CORE_OBJS:.o=.c)
 
-all: $(TARGET)
+all: $(TARGET) tty_ui.so gtk_ui.so
+
+gtk_ui.so: gtk_ui.o
+	$(CC) -o $@ -shared $^ $(GTK_LFLAGS)
+
+tty_ui.so: tty_ui.o
+	$(CC) -o $@ -shared $^ $(TTY_LFLAGS)
 
 $(TARGET): $(SNARF)/snarf $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LFLAGS)
@@ -52,7 +65,7 @@ $(SNARF)/snarf:
 	(cd $(SNARF); test -f Makefile || ./configure; make)
 
 distclean: clean
-	rm -f $(TARGET)
+	rm -f $(TARGET) *.so
 	-$(MAKE) -C $(SNARF) $@
 
 clean:

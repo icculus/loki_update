@@ -26,6 +26,9 @@
 #include <limits.h>
 #include <time.h>
 #include <locale.h>
+#ifdef DYNAMIC_UI
+#include <dlfcn.h>
+#endif
 
 #include "update_ui.h"
 #include "log_output.h"
@@ -135,7 +138,12 @@ static void goto_installpath(char *argv0)
 
 int main(int argc, char *argv[])
 {
+#ifdef DYNAMIC_UI
+    static char *ui_list[] = { "./gtk_ui.so", "./tty_ui.so", NULL };
+    void *handle;
+#else
     static update_UI *ui_list[] = { &gtk_ui, &tty_ui, NULL };
+#endif
     int self_check;
     int auto_update;
     const char *product;
@@ -261,9 +269,23 @@ int main(int argc, char *argv[])
     /* Initialize the UI */
     ui = NULL;
     for ( i=0; ui_list[i] && !ui; ++i ) {
+#ifdef DYNAMIC_UI
+        update_UI *(*create_ui)(void);
+        handle = dlopen(ui_list[i], RTLD_NOW|RTLD_GLOBAL);
+        if ( handle ) {
+            create_ui = dlsym(handle, "create_ui");
+            if ( create_ui ) {
+                ui = create_ui();
+            }
+            if ( !ui ) {
+                dlclose(handle);
+            }
+        }
+#else
         if ( ui_list[i]->detect() ) {
             ui = ui_list[i];
         }
+#endif
     }
     if ( ui ) {
         if ( ui->init(argc, argv) < 0 ) {

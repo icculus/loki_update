@@ -439,3 +439,16 @@ update_UI tty_ui = {
     ttyui_perform_updates,
     ttyui_cleanup
 };
+
+#ifdef DYNAMIC_UI
+update_UI *create_ui(void)
+{
+	update_UI *ui;
+
+	ui = NULL;
+	if ( tty_ui.detect() ) {
+		ui = &tty_ui;
+	}
+	return ui;
+}
+#endif /* DYNAMIC_UI */
