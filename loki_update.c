@@ -51,21 +51,9 @@ _("Loki Update Tool %s\n"
 
 static void init_locale(void)
 {
-    char locale[PATH_MAX];
-    const char *current_locale;
-
 	setlocale (LC_ALL, "");
-    strcpy(locale, "locale");
-	bindtextdomain (PACKAGE, locale);
+	bindtextdomain (PACKAGE, "locale");
 	textdomain (PACKAGE);
-	current_locale = getenv("LC_ALL");
-
-	if(!current_locale) {
-		current_locale = getenv("LC_MESSAGES");
-		if(!current_locale) {
-			current_locale = getenv("LANG");
-		}
-	}
 }
 
 static void goto_installpath(char *argv0)
