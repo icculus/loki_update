@@ -61,6 +61,7 @@ typedef struct patch_path {
     version_node *src;
     version_node *dst;
     struct patch *patch;
+    int size;
     struct patch_path *next;
 } patch_path;
 

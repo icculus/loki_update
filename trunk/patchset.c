@@ -556,6 +556,7 @@ int add_patch(const char *product,
             node->shortest_path->src = patchset->root;
             node->shortest_path->dst = node;
             node->shortest_path->patch = patch;
+            node->shortest_path->size = patch->size;
             node->shortest_path->next = NULL;
         }
     } else {
@@ -693,6 +694,10 @@ static patch_path *find_shortest_path(version_node *root,
             newpath->dst = node;
             newpath->patch = find_linking_patch(patchset,
                                                 newpath->src, newpath->dst);
+            newpath->size = newpath->patch->size;
+            if ( path ) {
+                newpath->size += path->size;
+            }
             newpath->next = path;
             path = newpath;
             node = newpath->src;
@@ -703,6 +708,10 @@ static patch_path *find_shortest_path(version_node *root,
             newpath->src = root->shortest_path->src;
             newpath->dst = root;
             newpath->patch = root->shortest_path->patch;
+            newpath->size = newpath->patch->size;
+            if ( path ) {
+                newpath->size += path->size;
+            }
             newpath->next = path;
             path = newpath;
         }
@@ -930,16 +939,11 @@ int selected_size(patchset *patchset)
 {
     int size;
     version_node *root;
-    patch_path *path;
 
     size = 0;
     for ( root = patchset->root; root; root = root->sibling ) {
         if ( root->selected ) {
-            path = root->selected->shortest_path;
-            while ( path ) {
-                size += path->patch->size;
-                path = path->next;
-            }
+            size += root->selected->shortest_path->size;
         }
     }
     return(size);

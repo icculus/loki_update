@@ -51,6 +51,7 @@ static GladeXML *mirrors_glade = NULL;
 static GladeXML *gpg_glade = NULL;
 static GladeXML *details_glade = NULL;
 static GladeXML *save_glade = NULL;
+static GtkTooltips *tooltips = NULL;
 static patchset *update_patchset;
 static version_node *update_root;
 static patch_path *update_path;
@@ -1850,6 +1851,9 @@ void choose_update_slot( GtkWidget* w, gpointer data )
                     gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
                     gtk_signal_connect(GTK_OBJECT(button), "toggled",
                         GTK_SIGNAL_FUNC(update_toggle_option), (gpointer)node);
+                    sprintf(text, "%d MB",
+                            (node->shortest_path->size+1023)/1024);
+                    gtk_tooltips_set_tip( tooltips, button, text, 0);
                     gtk_widget_show(button);
                     node->udata = button;
                 }
@@ -1956,6 +1960,9 @@ static int gtkui_init(int argc, char *argv[])
     glade_xml_signal_autoconnect(mirrors_glade);
     glade_xml_signal_autoconnect(gpg_glade);
     glade_xml_signal_autoconnect(details_glade);
+
+    /* Create the tooltips group */
+    tooltips = gtk_tooltips_new();
 
     /* Fill in the list of products */
     widget = glade_xml_get_widget(update_glade, "product_vbox");
