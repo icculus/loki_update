@@ -156,6 +156,7 @@ get_proxy(const char *firstchoice)
 int
 dump_data(UrlResource *rsrc, int sock, FILE *out)
 {
+	int done		= 0;
 	int okay		= 1;
         int out_fd 		= fileno(out);
         Progress *p		= NULL;
@@ -183,17 +184,38 @@ dump_data(UrlResource *rsrc, int sock, FILE *out)
         }
 
 
+	done = 0;
 	okay = 1;
-        while( okay && (bytes_read = read(sock, buf, BUFSIZE)) ) {
+        while ( okay && ! done ) {
+		fd_set fdset;
+		struct timeval tv;
+		FD_ZERO(&fdset);
+		FD_SET(sock, &fdset);
+		tv.tv_sec = 0;
+		tv.tv_usec = 100000;
+		if ( select(sock+1, &fdset, NULL, NULL, &tv) ) {
+			bytes_read = read(sock, buf, BUFSIZE);
+			if ( bytes_read == 0 ) {
+				done = 1;
+			}
+			if ( bytes_read < 0 ) {
+                        	report(rsrc, ERR, "read failed: %s", strerror(errno));
+				okay = 0;
+			}
+		} else {
+			bytes_read = 0;
+		}
+		if ( bytes_read > 0 ) {
+                	written = write(out_fd, buf, bytes_read);
+                	if ( written == -1 ) {
+                        	report(rsrc, ERR, "write failed: %s", strerror(errno));
+                        	okay = 0;
+			}
+                }
                 if ( progress_update(p, bytes_read) ) {
 			/* Cancelled? */
 			okay = 0;
 		}
-                written = write(out_fd, buf, bytes_read);
-                if( written == -1 ) {
-                        report(rsrc, ERR, "write failed: %s", strerror(errno));
-                        okay = 0;
-                }
         }
 
         progress_destroy(p, okay);
@@ -749,7 +771,7 @@ tcp_connect_async(char *remote_host, int port,
 			FD_ZERO(&fdset);
 			FD_SET(sock_fd, &fdset);
 			tv.tv_sec = 0;
-			tv.tv_usec = 100000;
+			tv.tv_usec = 250000;
 			switch (select(sock_fd+1, NULL, &fdset, NULL, &tv)) {
 			    case -1:  /* Socket broken? */
 				/* FIXME: Print an error message */
