@@ -1,3 +1,8 @@
+1.0f:
+Sam Lantinga - Mon Dec  4 17:39:55 PST 2000
+ * Added CivCTP Limited Edition detection.
+ * Don't go into fully automated update mode when there's a graphical UI.
+
 1.0e:
 Sam Lantinga - Mon Nov 20 15:25:39 PST 2000
  * Added the Loki GPG keyserver to gpg_verify.c
