@@ -1,9 +1,11 @@
 
 TARGET := loki_update
-VERSION := \"1.0b\"
+VERSION := \"1.0c\"
+IMAGE   := /loki/patch-tools/setup-image
 
-OS := $(shell uname -s)
-ARCH := $(shell sh print_arch)
+os := $(shell uname -s)
+arch := $(shell sh print_arch)
+libc := $(shell sh print_libc)
 
 SETUPDB = ../setupdb
 SNARF = snarf-7.0
@@ -11,7 +13,7 @@ CFLAGS = -g -O2 -Wall
 CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=$(VERSION)
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
-LFLAGS += -L$(SETUPDB)/$(ARCH) -lsetupdb
+LFLAGS += -L$(SETUPDB)/$(arch) -lsetupdb
 LFLAGS += -Wl,-Bstatic
 LFLAGS += -L$(shell libglade-config --prefix)
 LFLAGS +=  -lglade
@@ -50,22 +52,39 @@ clean:
 	rm -f *.o core
 	-$(MAKE) -C $(SNARF) $@
 
+install-bin: $(TARGET)
+	@if [ -d $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/ ]; then \
+		cp -v $(TARGET) $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/; \
+		strip $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/$(TARGET); \
+	else \
+		echo No directory to copy the binary files to.; \
+	fi
+
+install-data:
+	tar zcvf $(IMAGE)/$(TARGET)/data.tar.gz loki_update.glade pixmaps/*.xpm
+	tar zcvf $(IMAGE)/$(TARGET)/detect.tar.gz detect/*.txt detect/*.sh detect/*.md5
+	for file in `find locale -name $(TARGET).mo -print`; \
+        do  path="$(IMAGE)/$(TARGET)/`dirname $$file | sed 's,image/setup.data/,,'`"; \
+            mkdirhier $$path; \
+            cp -v $$file $$path; \
+        done;
+
 # i18n rules
 
 # This is the list of supported locales
 LOCALES = fr
 
-po/loki_update.po: $(SRCS) loki_update.glade
-	libglade-xgettext loki_update.glade > po/loki_update.po
-	xgettext -p po -j -d loki_update --keyword=_ $(CORE_OBJS:.o=.c)
+po/$(TARGET).po: $(SRCS) loki_update.glade
+	libglade-xgettext loki_update.glade > po/$(TARGET).po
+	xgettext -p po -j -d $(TARGET) --keyword=_ $(CORE_OBJS:.o=.c)
 
-update-po: po/loki_update.po
+update-po: po/$(TARGET).po
 	for lang in $(LOCALES); do \
-		msgmerge po/$$lang/loki_update.po po/loki_update.po > po/$$lang/tmp; \
-		mv po/$$lang/tmp po/$$lang/loki_update.po; \
+		msgmerge po/$$lang/$(TARGET).po po/$(TARGET).po > po/$$lang/tmp; \
+		mv po/$$lang/tmp po/$$lang/$(TARGET).po; \
 	done
 
-gettext: po/loki_update.po
+gettext: po/$(TARGET).po
 	for lang in $(LOCALES); do \
-		msgfmt -f po/$$lang/loki_update.po -o mo/$$lang/LC_MESSAGES/loki_update.mo; \
+		msgfmt -f po/$$lang/$(TARGET).po -o locale/$$lang/LC_MESSAGES/$(TARGET).mo; \
 	done

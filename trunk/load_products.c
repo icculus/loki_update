@@ -167,7 +167,7 @@ void load_product_list(const char *wanted)
     product_component_t *component;
     product_info_t *info;
 
-    printf("Searching for installed products... "); fflush(stdout);
+    printf(_("Searching for installed products... ")); fflush(stdout);
 
     /* First load the "official" installed product list */
     num_products = 0;
@@ -200,7 +200,7 @@ void load_product_list(const char *wanted)
         load_detected_products(wanted);
     }
 
-    printf("done!\n");
+    printf(_("done!\n"));
 }
 
 int get_num_products(void)
