@@ -20,7 +20,6 @@
 */
 
 #include <sys/types.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -30,7 +29,7 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include "mkdirhier.h"
+#include "prefpath.h"
 #include "log_output.h"
 #include "gpg_verify.h"
 
@@ -305,12 +304,11 @@ int get_publickey(const char *key, update_callback update, void *udata)
     gpg_result status = GPG_CANCELLED;
 
     /* Open/create the list of keyservers */
-    sprintf(keyserver, "%s/.loki/loki_update/keyservers.txt", getenv("HOME"));
+    preferences_path("keyservers.txt", keyserver, sizeof(keyserver));
     fp = fopen(keyserver, "r");
     if ( ! fp ) {
         int i;
 
-        mkdirhier(keyserver);
         fp = fopen(keyserver, "w+");
         if ( ! fp ) {
             sprintf(text, _("Unable to create %s"), keyserver);

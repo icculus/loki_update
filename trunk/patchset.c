@@ -285,7 +285,7 @@ static void free_patch(patch *patch)
 {
     if ( patch ) {
         free(patch->description);
-        free_urlset(patch->urls);
+        free(patch->file);
         safe_free(patch->apply);
         free_patch(patch->next);
         free(patch);
@@ -298,6 +298,7 @@ void free_patchset(struct patchset *patchset)
         free_patchset(patchset->next);
         free_version_node(patchset->root);
         free_patch(patchset->patches);
+        free_urlset(patchset->mirrors);
         free(patchset);
     }
 }
@@ -334,6 +335,7 @@ patchset *create_patchset(const char *product)
         loki_closeproduct(loki_product);
     }
     patchset->patches = NULL;
+    patchset->mirrors = create_urlset();
     patchset->next = NULL;
 
     /* We're ready to go */
@@ -447,7 +449,7 @@ int add_patch(const char *product,
               const char *applies,
               const char *note,
               const char *size,
-              urlset *urls,
+              const char *file,
               struct patchset *patchset)
 {
     const char *next;
@@ -473,7 +475,6 @@ int add_patch(const char *product,
 
     if ( strcasecmp(product, patchset->product_name) != 0 ) {
         log(LOG_DEBUG, "Patch for different product, dropping\n");
-        free_urlset(urls);
         return(0);
     }
 
@@ -492,7 +493,6 @@ int add_patch(const char *product,
         }
         if ( ! matched_arch ) {
             log(LOG_DEBUG, _("Patch for different architecture, dropping\n"));
-            free_urlset(urls);
             return(0);
         }
     }
@@ -512,7 +512,6 @@ int add_patch(const char *product,
         }
         if ( ! matched_libc ) {
             log(LOG_DEBUG, _("Patch for different version of libc, dropping\n"));
-            free_urlset(urls);
             return(0);
         }
     }
@@ -521,7 +520,6 @@ int add_patch(const char *product,
     node = get_version_node(patchset->root, component, version, description);
     if ( ! node ) {
         log(LOG_DEBUG, _("Update obsolete by installed version, dropping\n"));
-        free_urlset(urls);
         return(0);
     }
     /* Add any user-note for this node */
@@ -534,12 +532,12 @@ int add_patch(const char *product,
     patch = (struct patch *)safe_malloc(sizeof *patch);
     patch->patchset = patchset;
     patch->description = safe_strdup(description);
+    patch->file = safe_strdup(file);
     if ( size ) {
         patch->size = sizeK_from_string(size);
     } else {
         patch->size = 0;
     }
-    patch->urls = urls;
     patch->node = node;
     patch->refcount = 0;
     patch->installed = 0;
