@@ -35,6 +35,7 @@ static char *component = NULL;
 static char *version = NULL;
 static char *arch = NULL;
 static char *applies = NULL;
+static char *note = NULL;
 static urlset *patch_urls = NULL;
 struct {
     const char *prefix;
@@ -44,7 +45,8 @@ struct {
     {   "Component", 1, &component },
     {   "Version", 0, &version },
     {   "Architecture", 0, &arch },
-    {   "Applies", 0, &applies }
+    {   "Applies", 0, &applies },
+    {   "Note", 1, &note }
 };
 
 /* Verify all the parameters and add the current patch to the patchset */
@@ -88,8 +90,8 @@ static int check_and_add_patch(patchset *patchset)
 
     /* Add the patch to our patchset */
     if ( status == 0 ) {
-        add_patch(patchset->product_name,
-                  component, version, arch, applies, patch_urls, patchset);
+        add_patch(patchset->product_name, component, version,
+                  arch, applies, note, patch_urls, patchset);
     } else {
         free_urlset(patch_urls);
     }
@@ -146,9 +148,8 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
                             /* Error, messages already output */
                             goto done_parse;
                         }
-                    } else {
-                        *parse_table[i].variable = strdup(val);
                     }
+                    *parse_table[i].variable = strdup(val);
                     break;
                 }
             }

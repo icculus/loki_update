@@ -105,6 +105,7 @@ static void free_version_node(version_node *node)
         free(node->component);
         free(node->version);
         free(node->description);
+        safe_free(node->note);
         free_version_node(node->child);
         free_version_node(node->sibling);
         free_patch_path(node->shortest_path);
@@ -133,6 +134,7 @@ static version_node *create_version_node(version_node *root,
     node->component = safe_strdup(component);
     node->version = safe_strdup(version);
     node->description = safe_strdup(description);
+    node->note = NULL;
     node->selected = 0;
     node->toggled = 0;
     node->invisible = 0;
@@ -435,6 +437,7 @@ int add_patch(const char *product,
               const char *version,
               const char *arch,
               const char *applies,
+              const char *note,
               urlset *urls,
               struct patchset *patchset)
 {
@@ -487,6 +490,11 @@ int add_patch(const char *product,
         log(LOG_DEBUG, "Patch obsolete by installed version, dropping\n");
         free_urlset(urls);
         return(0);
+    }
+    /* Add any user-note for this node */
+    if ( note ) {
+        safe_free(node->note);
+        node->note = safe_strdup(note);
     }
 
     /* Create the patch */
