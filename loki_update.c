@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <time.h>
+#include <locale.h>
 
 #include "update_ui.h"
 #include "log_output.h"
