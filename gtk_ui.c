@@ -21,9 +21,6 @@
 #include "log_output.h"
 #include "safe_malloc.h"
 
-// FIXME: Add real gnu gettext() support
-#define _(X)    X
-
 #define TOPLEVEL        "loki_update"
 #define UPDATE_GLADE    TOPLEVEL".glade"
 
@@ -922,7 +919,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     clear_details_text();
 #endif
     add_details_text(LOG_VERBOSE, "\n");
-    snprintf(text, (sizeof text), _("%s: %s"),
+    snprintf(text, (sizeof text), "%s: %s",
              get_product_description(patch->patchset->product_name),
              patch->description);
     set_status_message(widget, text);

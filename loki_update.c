@@ -13,17 +13,39 @@
 #include "get_url.h"
 #include "load_products.h"
 
+
+#define PACKAGE "loki_update"
+
 static void print_usage(char *argv0)
 {
     fprintf(stderr,
-"Loki Update Tool " VERSION "\n"
-"Usage: %s [options] [product]\n"
-"The options can be any of:\n"
-"    --verbose               Print verbose messages to standard output\n"
-"    --noselfcheck           Skip check for updates for the update tool\n"
-"    --tmpdir PATH           Use PATH as the temporary download path\n"
-"    --update_url URL        Use URL as the list of product updates\n",
-            argv0);
+_("Loki Update Tool %s\n"
+  "Usage: %s [options] [product]\n"
+  "The options can be any of:\n"
+  "    --verbose               Print verbose messages to standard output\n"
+  "    --noselfcheck           Skip check for updates for the update tool\n"
+  "    --tmpdir PATH           Use PATH as the temporary download path\n"
+  "    --update_url URL        Use URL as the list of product updates\n"),
+            VERSION, argv0);
+}
+
+static void init_locale(void)
+{
+    char locale[PATH_MAX];
+    const char *current_locale;
+
+	setlocale (LC_ALL, "");
+    strcpy(locale, "locale");
+	bindtextdomain (PACKAGE, locale);
+	textdomain (PACKAGE);
+	current_locale = getenv("LC_ALL");
+
+	if(!current_locale) {
+		current_locale = getenv("LC_MESSAGES");
+		if(!current_locale) {
+			current_locale = getenv("LANG");
+		}
+	}
 }
 
 static void goto_installpath(char *argv0)
@@ -97,7 +119,7 @@ static void goto_installpath(char *argv0)
         *(strrchr(datapath, '/')) = '\0';
     }
     if ( ! *datapath || (chdir(datapath) < 0) ) {
-        fprintf(stderr, "Couldn't change to install directory\n");
+        fprintf(stderr, _("Couldn't change to install directory\n"));
         exit(1);
     }
 }
@@ -116,6 +138,9 @@ int main(int argc, char *argv[])
 
     /* Seed the random number generator for choosing URLs */
     srand(time(NULL));
+
+    /* Init the i18n */
+    init_locale();
 
     /* Parse the command line */
     self_check = 1;
@@ -196,12 +221,12 @@ int main(int argc, char *argv[])
     goto_installpath(argv[0]);
     load_product_list(product);
     if ( product && ! is_valid_product(product) ) {
-        log(LOG_ERROR, "%s has not been installed by you.\n", product);
+        log(LOG_ERROR, _("%s has not been installed by you.\n"), product);
         return(1);
     }
     if ( product_path ) {
         if ( ! product ) {
-            log(LOG_ERROR, "Install path set, but no product specified\n");
+            log(LOG_ERROR, _("Install path set, but no product specified\n"));
             return(1);
         }
         set_product_root(product, product_path);
@@ -234,7 +259,7 @@ int main(int argc, char *argv[])
                 ui->cleanup();
                 chdir(get_working_path());
                 execvp(argv[0], argv);
-                fprintf(stderr, "Couldn't exec ourselves!  Exiting\n");
+                fprintf(stderr, _("Couldn't exec ourselves!  Exiting\n"));
                 return(255);
         }
     }
@@ -267,7 +292,7 @@ int main(int argc, char *argv[])
                 ++i;
                 chdir(get_working_path());
                 execvp(argv[i], &argv[i]);
-                fprintf(stderr, "Couldn't exec %s!  Exiting\n", argv[i]);
+                fprintf(stderr, _("Couldn't exec %s!  Exiting\n"), argv[i]);
                 return(255);
             }
         }

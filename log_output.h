@@ -2,6 +2,10 @@
 #ifndef _LOG_OUTPUT_H
 #define _LOG_OUTPUT_H
 
+#include <libintl.h>
+#define _(String) gettext (String)
+#define gettext_noop(String) (String)
+
 enum {
     LOG_DEBUG = 0,
     LOG_VERBOSE,

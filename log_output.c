@@ -24,10 +24,10 @@ void log(int level, const char *fmt, ...)
         va_start(ap, fmt);
         switch (level) {
             case LOG_ERROR:
-                fprintf(stdout, "ERROR: ");
+                fprintf(stdout, _("ERROR: "));
                 break;
             case LOG_WARNING:
-                fprintf(stdout, "WARNING: ");
+                fprintf(stdout, _("WARNING: "));
                 break;
             default:
                 break;

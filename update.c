@@ -57,22 +57,22 @@ int perform_update(const char *update_file, const char *install_path,
     /* First create a pipe for communicating between child and parent */
     signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
-        update_message(LOG_ERROR, "Couldn't create IPC pipe", update, udata);
+        update_message(LOG_ERROR, _("Couldn't create IPC pipe"), update, udata);
         return(-1);
     }
     chmod(update_file, 0700);
 
     /* Show what update file is being executed */
-    sprintf(text, "Update: %s", update_file);
+    sprintf(text, _("Update: %s"), update_file);
     update_message(LOG_VERBOSE, text, update, udata);
-    update_message(LOG_STATUS, "Unpacking archive", update, udata);
+    update_message(LOG_STATUS, _("Unpacking archive"), update, udata);
     status_updated = 0;
 
     child = fork();
     switch (child) {
         case -1:
             /* Fork failed */
-            update_message(LOG_ERROR,"Couldn't fork process", update, udata);
+            update_message(LOG_ERROR, _("Couldn't fork process"), update, udata);
             return(-1);
         case 0:
             /* Child process */
@@ -88,7 +88,7 @@ int perform_update(const char *update_file, const char *install_path,
             args[argc++] = install_path;
             args[argc] = NULL;
             execv(args[0], args);
-            fprintf(stderr, "Couldn't exec %s\n", args[0]);
+            fprintf(stderr, _("Couldn't exec %s\n"), args[0]);
             _exit(-1);
         default:
             break;
@@ -128,7 +128,7 @@ int perform_update(const char *update_file, const char *install_path,
                 }
                 percentage = (float)atoi(spot);
                 if ( ! status_updated ) {
-                    update_message(LOG_STATUS, "Updating files", update, udata);
+                    update_message(LOG_STATUS, _("Updating files"), update, udata);
                     status_updated = 1;
                 }
             } else {
