@@ -56,27 +56,18 @@ void main_cancel_slot( GtkWidget* w, gpointer data )
     gtk_main_quit();
 }
 
-void choose_product_slot( GtkWidget* w, gpointer data )
+static const char *selected_product(void)
 {
-    GtkWidget *window;
-    GtkWidget *notebook;
+    GtkWidget *widget;
+    char *label = "";
 
-    /* Clean up any product patchset that may be around */
-    if ( product_patchset ) {
-        free_patchset(product_patchset);
-        product_patchset = NULL;
-    }
-
-    /* Set the current page to the main product list page */
-    notebook = glade_xml_get_widget(update_glade, "update_notebook");
-    gtk_notebook_set_page(GTK_NOTEBOOK(notebook), PRODUCT_PAGE);
-
-    /* Make sure the window is visible */
-    window = glade_xml_get_widget(update_glade, TOPLEVEL);
-    gtk_widget_realize(window);
+    /* Get the currently selected product */
+    widget = glade_xml_get_widget(update_glade, "product_menu");
+    gtk_label_get(GTK_LABEL(GTK_BIN(widget)->child), &label);
+    return label;
 }
 
-void select_product(const char *product)
+static void select_product(const char *product)
 {
     GtkWidget *widget;
     GList *list, *itemlist;
@@ -113,15 +104,62 @@ void select_product(const char *product)
     }
 }
 
-const char *selected_product(void)
+static void select_next_product(void)
 {
     GtkWidget *widget;
-    char *label = "";
+    GList *list, *itemlist;
+    GtkWidget *menu;
+    GtkWidget *menuitem;
+    int past;
+    int index;
 
-    /* Get the currently selected product */
     widget = glade_xml_get_widget(update_glade, "product_menu");
-    gtk_label_get(GTK_LABEL(GTK_BIN(widget)->child), &label);
-    return label;
+    menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(widget));
+    list = NULL;
+    past = 0;
+    while ( past < 2 ) {
+        if ( ! list ) {
+            list = gtk_container_children(GTK_CONTAINER(menu));
+            index = 0;
+        }
+        menuitem = GTK_WIDGET(list->data);
+        itemlist = gtk_container_children(GTK_CONTAINER(menuitem));
+        if ( itemlist ) {
+            char *label = "";
+            gtk_label_get(GTK_LABEL(itemlist->data), &label);
+            if ( past && (strcasecmp(label, PRODUCT) != 0) ) {
+                gtk_option_menu_set_history(GTK_OPTION_MENU(widget), index);
+                break;
+            }
+        } else {
+            ++past;
+        }
+        ++index;
+        list = list->next;
+    }
+}
+
+void choose_product_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *window;
+    GtkWidget *notebook;
+
+    /* Clean up any product patchset that may be around */
+    if ( product_patchset ) {
+        free_patchset(product_patchset);
+        product_patchset = NULL;
+    }
+
+    /* Set the current page to the main product list page */
+    notebook = glade_xml_get_widget(update_glade, "update_notebook");
+    gtk_notebook_set_page(GTK_NOTEBOOK(notebook), PRODUCT_PAGE);
+
+    /* Make sure the window is visible */
+    window = glade_xml_get_widget(update_glade, TOPLEVEL);
+    gtk_widget_realize(window);
+
+    /* Select the next product in the list */
+    select_next_product();
 }
 
 static void update_balls(int which, int status)
@@ -503,7 +541,6 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     if ( status ) {
         gtk_label_set_text(GTK_LABEL(status), _("Update complete"));
     }
-    return;
 }
 
 /* Cancel the update list stage */
@@ -518,17 +555,21 @@ static void cancel_list_update(const char *status)
     }
 
     /* Set the status message, and enable buttons appropriately */
-    widget = glade_xml_get_widget(update_glade, "list_status_label");
-    if ( widget ) {
-        gtk_label_set_text(GTK_LABEL(widget), status);
-    }
-    widget = glade_xml_get_widget(update_glade, "list_cancel_button");
-    if ( widget ) {
-        gtk_widget_set_sensitive(widget, FALSE);
-    }
-    widget = glade_xml_get_widget(update_glade, "list_done_button");
-    if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+    if ( download_cancelled ) {
+        choose_product_slot(NULL, NULL);
+    } else {
+        widget = glade_xml_get_widget(update_glade, "list_status_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), status);
+        }
+        widget = glade_xml_get_widget(update_glade, "list_cancel_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+        widget = glade_xml_get_widget(update_glade, "list_done_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, TRUE);
+        }
     }
 }
 
@@ -756,15 +797,15 @@ static int gtkui_update_product(const char *product)
     while( gtk_events_pending() ) {
         gtk_main_iteration();
     }
-    select_product(NULL);
     return update_status;
 }
 
 static int gtkui_perform_updates(void)
 {
     update_status = 0;
-    auto_update = 0;
     choose_product_slot(NULL, NULL);
+    auto_update = 0;
+    select_product(NULL);
     gtk_main();
     return update_status;
 }
