@@ -1,7 +1,8 @@
 
 TARGET := loki_update
-VERSION := 1.0f
+VERSION := 1.0.6
 IMAGE   := /loki/patch-tools/setup-image
+UPDATES := /loki/updates/loki_update
 
 os := $(shell uname -s)
 arch := $(shell sh print_arch)
@@ -70,8 +71,15 @@ install-bin: $(TARGET)
 	else \
 		echo No directory to copy the binary files to.; \
 	fi
+	@if [ -d $(UPDATES) ]; then \
+                rm -rf $(UPDATES)/bin-$(arch)-$(VERSION); \
+                mkdir $(UPDATES)/bin-$(arch)-$(VERSION); \
+		cp -v $(TARGET) $(UPDATES)/bin-$(arch)-$(VERSION)/; \
+		strip $(UPDATES)/bin-$(arch)-$(VERSION)/$(TARGET); \
+	fi
 
 install-data:
+	cp -av README icon.xpm $(IMAGE)/$(TARGET)/
 	tar zcvf $(IMAGE)/$(TARGET)/data.tar.gz loki_update.glade pixmaps/*.xpm
 	tar zcvf $(IMAGE)/$(TARGET)/detect.tar.gz detect/*.txt detect/*.sh detect/*.md5
 	for file in `find locale -name $(TARGET).mo -print`; \
@@ -79,6 +87,18 @@ install-data:
             mkdirhier $$path; \
             cp -v $$file $$path; \
         done;
+	if [ -d $(UPDATES) ]; then \
+	        rm -rf $(UPDATES)/data-$(VERSION); \
+                mkdir $(UPDATES)/data-$(VERSION); \
+	        cp -av README icon.xpm $(UPDATES)/data-$(VERSION); \
+	        tar cf - loki_update.glade pixmaps/*.xpm | (cd $(UPDATES)/data-$(VERSION); tar xvf -); \
+	        tar cf - detect/*.txt detect/*.sh detect/*.md5 | (cd $(UPDATES)/data-$(VERSION); tar xvf -); \
+	        for file in `find locale -name $(TARGET).mo -print`; \
+                do  path="$(UPDATES)/data-$(VERSION)/`dirname $$file | sed 's,image/setup.data/,,'`"; \
+                    mkdirhier $$path; \
+                    cp -v $$file $$path; \
+                done; \
+	fi
 
 # i18n rules
 
