@@ -184,9 +184,23 @@ those as the update URLs for the listed products.  URL's may be relative
 filenames as well as normal internet style URLs.  This makes it easy to
 create patch update disks.
 
-The list of keyservers used by the update tool to retrieve GPG keys is
-stored in ~/.loki/loki_update/keyservers.txt.  You can add new servers
-to this file, one per line.
+On the final download screen, you have three buttons that give you control
+over the update download sites.  Each update download site is called a
+"mirror", and you can choose which site gives you the best download speed.
+The first button, "Choose Mirror", brings up a list of download sites for
+the current update, and let's you choose which one you want to use.
+The second button, "Next Mirror", automatically connects to the next
+available download site, continuing the download where it left off,
+if possible.
+The third button, "Save Mirror", saves the current download site to the
+file ~/.loki/loki_update/preferred_mirror.txt, and will use that site
+first for future downloads.
+
+If you download an update that has a GPG signature, the update tool will
+automatically try to download the public key for that signature from a
+public key server.  The list of keyservers that are contacted for public
+keys is stored in ~/.loki/loki_update/keyservers.txt.  You can add new
+servers to this file, one per line.
 
 
 Author

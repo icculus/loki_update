@@ -19,22 +19,51 @@
     info@lokigames.com
 */
 
-/* A set of URLs, an opaque pointer */
-typedef struct url_bucket url_bucket_list;
-typedef struct urlset {
-    url_bucket_list *urls;
-    url_bucket_list *current;
+#include <limits.h>
+
+/* A set of URLs used as mirror locations */
+struct mirror_url {
+    char *url;
+    enum url_status {
+        URL_OK,
+        URL_USED,
+        URL_FAILED
+    } status;
+    void *data;
+    struct mirror_url *next;
+};
+typedef struct {
+    int num_mirrors;
+    int num_okay;
+    struct mirror_url *list;
+    struct mirror_url *current;
+    char full_url[PATH_MAX];
+    char *preferred_site;
 } urlset;
 
-
-/* Create a set of update URLs */
+/* Create a set of mirror URLs */
 extern urlset *create_urlset(void);
 
+/* Get the host from a URL, returning 1 or 0 if there is no host */
+extern int get_url_host(const char *url, char *dst, int maxlen);
+
 /* Add a URL to a set of update URLs */
-extern void add_url(urlset *urlset, const char *url, int order);
+extern void add_url(urlset *urlset, const char *url);
+
+/* Randomize the order of the mirrors */
+extern void randomize_urls(urlset *urlset);
 
 /* Get the next URL to be tried for an update */
-extern const char *get_next_url(urlset *urlset);
+extern const char *get_next_url(urlset *urlset, const char *file);
+
+/* Set the status of the current URL */
+extern void set_url_status(urlset *urlset, enum url_status status);
+
+/* Use the current URL as the preferred URL */
+extern void current_url_preferred(urlset *urlset);
+
+/* Reset the status of a set or URLs */
+extern void reset_urlset(urlset *urlset);
 
 /* Free a set of update URLs */
 extern void free_urlset(urlset *urlset);

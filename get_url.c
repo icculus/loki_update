@@ -48,14 +48,14 @@
 #include "util.h"
 #endif
 
-#include "mkdirhier.h"
+#include "prefpath.h"
 #include "log_output.h"
 #include "update.h"
 
 #define WGET            "wget"
 #define UPDATE_PATH     "%s/.loki/loki_update"
 
-static const char *tmppath = UPDATE_PATH "/tmp";
+static const char *tmppath = "tmp";
 
 #ifdef USE_WGET
 /* This was the default URL transport mechanism, but it's a little
@@ -64,7 +64,6 @@ static const char *tmppath = UPDATE_PATH "/tmp";
 static int wget_url(const char *url, char *file, int maxpath,
                     update_callback update, void *udata)
 {
-    const char *home;
     const char *base;
     int pipefd[2];
     char path[PATH_MAX];
@@ -82,12 +81,7 @@ static int wget_url(const char *url, char *file, int maxpath,
     struct timeval tv;
 
     /* Get the path where files are stored */
-    home = getenv("HOME");
-    if ( ! home ) {
-        home = "";
-    }
-    sprintf(path, tmppath, home);
-    mkdirhier(path);
+    preferences_path(tmppath, path, sizeof(path);
 
     /* Get the full output name */
     base = strrchr(url, '/');
@@ -211,7 +205,6 @@ int default_opts = 0; /* For the snarf code */
 static int snarf_url(const char *url, char *file, int maxpath,
                      update_callback update, void *udata)
 {
-    const char *home;
     const char *base;
     char path[PATH_MAX];
     char text[PATH_MAX];
@@ -219,11 +212,8 @@ static int snarf_url(const char *url, char *file, int maxpath,
     int status;
 
     /* Get the path where files are stored */
-    home = getenv("HOME");
-    if ( ! home ) {
-        home = "";
-    }
-    sprintf(path, tmppath, home);
+    preferences_path(tmppath, path, sizeof(path));
+    mkdir(tmppath, 0700);
 
     /* Get the full output name */
     base = strrchr(url, '/');
@@ -243,7 +233,6 @@ static int snarf_url(const char *url, char *file, int maxpath,
                        update, udata);
         return(-1);
     }
-    mkdirhier(path);
 
     /* Show what URL is being downloaded */
     sprintf(text, "URL: %s", url);

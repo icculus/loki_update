@@ -46,8 +46,9 @@
 #define UPDATE_GLADE    TOPLEVEL".glade"
 
 static GladeXML *update_glade;
-static GladeXML *readme_glade;
-static GladeXML *gpg_glade;
+static GladeXML *readme_glade = NULL;
+static GladeXML *mirrors_glade = NULL;
+static GladeXML *gpg_glade = NULL;
 static GladeXML *details_glade = NULL;
 static GladeXML *save_glade = NULL;
 static patchset *update_patchset;
@@ -76,6 +77,7 @@ static enum {
 static patchset *product_patchset = NULL;
 static int update_proceeding = 0;
 static int download_pending = 0;
+static int switch_mirror = 0;
 static int download_cancelled = 0;
 
 struct download_update_info
@@ -95,6 +97,11 @@ void perform_update_slot( GtkWidget* w, gpointer data );
 void action_button_slot( GtkWidget* w, gpointer data );
 
 /* Extra GTk utility functions */
+
+void gtk_empty_container(GtkWidget *widget, gpointer data)
+{
+    gtk_container_remove(GTK_CONTAINER(data), widget);
+}
 
 void gtk_button_set_text(GtkButton *button, const char *text)
 {
@@ -432,6 +439,7 @@ static gint flash_arrow(gpointer data)
 
 static void start_flash(int which, int status)
 {
+    update_arrows(which, 0);
     flash_data.which = which;
     flash_data.color = status;
     flash_data.colored = 0;
@@ -755,6 +763,193 @@ static void enable_gpg_details(const char *url, char *sig)
     }
 }
 
+static void fill_mirrors_list(urlset *mirrors)
+{
+    struct mirror_url *entry;
+    GSList *radio_list = NULL;
+    GtkWidget *widget;
+    GtkWidget *hbox;
+    GtkWidget *mirrors_vbox;
+    char host[PATH_MAX];
+
+
+    /* Get the area where we can put the list of mirrors */
+    mirrors_vbox = glade_xml_get_widget(mirrors_glade, "mirrors_vbox");
+    if ( ! mirrors_vbox ) {
+        return;
+    }
+
+    /* Clear any previous list of mirrors */
+    gtk_container_foreach(GTK_CONTAINER(mirrors_vbox),
+                          gtk_empty_container, mirrors_vbox);
+
+    /* Populate the vbox with the list of mirrors */
+    for ( entry = mirrors->list; entry; entry = entry->next ) {
+        if ( get_url_host(entry->url, host, sizeof(host)) ) {
+            /* Create an hbox for this line */
+            hbox = gtk_hbox_new(FALSE, 4);
+            gtk_box_pack_start(GTK_BOX(mirrors_vbox), hbox, FALSE, FALSE, 0);
+            gtk_widget_show(hbox);
+            entry->data = hbox;
+
+            /* Create a pixmap status icon */
+            if ( entry->status == URL_OK ) {
+                widget = gtk_pixmap_new(balls[1].pixmap, balls[1].bitmap);
+            } else {
+                widget = gtk_pixmap_new(balls[4].pixmap, balls[4].bitmap);
+            }
+            gtk_box_pack_start(GTK_BOX(hbox), widget, FALSE, FALSE, 0);
+            gtk_widget_show(widget);
+
+            /* Create a radio button for this mirror */
+            widget = gtk_radio_button_new_with_label(radio_list, host);
+            gtk_box_pack_start(GTK_BOX(hbox), widget, FALSE, FALSE, 0);
+            radio_list = gtk_radio_button_group(GTK_RADIO_BUTTON(widget));
+            if ( entry == mirrors->current ) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
+            }
+            if ( entry->status == URL_OK ) {
+                gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+            } else {
+                gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+            }
+            gtk_widget_show(widget);
+
+            /* If this is a preferred mirror, note that in the UI */
+            if ( strcasecmp(host, mirrors->preferred_site) == 0 ) {
+                widget = gtk_label_new(_(" (preferred)"));
+                gtk_box_pack_start(GTK_BOX(hbox), widget, FALSE, FALSE, 0);
+                gtk_misc_set_alignment(GTK_MISC(widget), 0, .5);
+                gtk_widget_show(widget);
+            }
+        } else {
+            entry->data = NULL;
+        }
+    }
+}
+
+static void select_current_mirror(urlset *mirrors)
+{
+    GtkWidget *hbox;
+    GList *list;
+
+    hbox = (GtkWidget *)mirrors->current->data;
+    if ( hbox ) {
+        list = gtk_container_children(GTK_CONTAINER(hbox));
+        list = list->next;
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(list->data), TRUE);
+    }
+}
+
+static void failed_current_mirror(urlset *mirrors)
+{
+    GtkWidget *hbox;
+    GList *list;
+
+    hbox = (GtkWidget *)mirrors->current->data;
+    if ( hbox ) {
+        list = gtk_container_children(GTK_CONTAINER(hbox));
+        gtk_pixmap_set(GTK_PIXMAP(list->data),
+                       balls[4].pixmap, balls[4].bitmap);
+        list = list->next;
+        gtk_widget_set_sensitive(GTK_WIDGET(list->data), FALSE);
+    }
+}
+
+void show_mirrors_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget(mirrors_glade, "mirrors_dialog");
+    if ( widget ) {
+        gtk_widget_show(widget);
+    }
+}
+
+void close_mirrors_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget(mirrors_glade, "mirrors_dialog");
+    if ( widget ) {
+        gtk_widget_hide(widget);
+    }
+}
+
+void choose_mirror_slot( GtkWidget* w, gpointer data )
+{
+    urlset *mirrors;
+    struct mirror_url *entry, *stop, *prev;
+    GtkWidget *hbox;
+    GList *list;
+
+    /* If we didn't change the currently selected mirror, we're done */
+    mirrors = update_patchset->mirrors; 
+    entry = mirrors->current;
+    hbox = (GtkWidget *)mirrors->current->data;
+    if ( hbox ) {
+        list = gtk_container_children(GTK_CONTAINER(hbox));
+        list = list->next;
+        if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(list->data)) ) {
+            return;
+        }
+    }
+
+    /* Find the toggled entry and mark it as the next mirror */
+    stop = entry;
+    do {
+        prev = entry;
+        entry = entry->next;
+        if ( ! entry ) {
+            entry = mirrors->list;
+        }
+        hbox = (GtkWidget *)entry->data;
+        if ( hbox ) {
+            list = gtk_container_children(GTK_CONTAINER(hbox));
+            list = list->next;
+            if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(list->data)) ) {
+                switch_mirror = 1;
+                mirrors->current = prev;
+                break;
+            }
+        }
+    } while ( entry != stop );
+}
+
+void switch_mirror_slot( GtkWidget* w, gpointer data )
+{
+    switch_mirror = 1;
+}
+
+void save_mirror_slot( GtkWidget* w, gpointer data )
+{
+    if ( update_patchset ) {
+        current_url_preferred(update_patchset->mirrors);
+        fill_mirrors_list(update_patchset->mirrors);
+    }
+}
+
+static void mirror_buttons_sensitive(gboolean sensitive)
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget(update_glade, "choose_mirror_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, sensitive);
+    }
+    widget = glade_xml_get_widget(update_glade, "switch_mirror_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, sensitive);
+    }
+    widget = glade_xml_get_widget(update_glade, "save_mirror_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, sensitive);
+    }
+    if ( ! sensitive ) {
+        close_mirrors_slot(NULL, NULL);
+    }
+}
+
 void cancel_download_slot( GtkWidget* w, gpointer data )
 {
     download_cancelled = 1;
@@ -784,6 +979,8 @@ static void set_download_info(struct download_update_info *info,
     info->eta_label = eta_label;
     info->last_rate = 0.0f;
     info->last_update = 0;
+    switch_mirror = 0;
+    download_cancelled = 0;
 }
 
 static void set_status_message(GtkWidget *status_label, const char *text)
@@ -864,7 +1061,7 @@ static int download_update(int status_level, const char *status,
     while( gtk_events_pending() ) {
         gtk_main_iteration();
     }
-    return(download_cancelled);
+    return(download_cancelled || switch_mirror);
 }
 
 static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
@@ -883,7 +1080,6 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
     if ( gpg_code == GPG_NOPUBKEY ) {
         verify = glade_xml_get_widget(update_glade, "verify_status_label");
         set_status_message(verify, _("Downloading public key"));
-        download_cancelled = 0;
         set_download_info(&info, status, NULL, NULL, NULL);
         get_publickey(sig, download_update, &info);
         gpg_code = gpg_verify(file, sig, maxsig);
@@ -891,7 +1087,7 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
     return gpg_code;
 }
 
-void set_progress_url(GtkProgress *progress, const char *url)
+static void set_progress_url(GtkProgress *progress, const char *url)
 {
     char text[1024], *bufp;
     int len;
@@ -1132,12 +1328,15 @@ void download_update_slot( GtkWidget* w, gpointer data )
     have_readme = FALSE;
     verified = DOWNLOAD_FAILED;
     download_pending = 1;
+    reset_urlset(patch->patchset->mirrors);
+    fill_mirrors_list(patch->patchset->mirrors);
     do {
         /* Grab the next URL to try */
-        url = get_next_url(patch->urls);
+        url = get_next_url(patch->patchset->mirrors, patch->file);
         if ( ! url ) {
             break;
         }
+        select_current_mirror(patch->patchset->mirrors);
 
         /* Reset the panel */
         widget = glade_xml_get_widget(update_glade, "update_download_progress");
@@ -1181,6 +1380,13 @@ void download_update_slot( GtkWidget* w, gpointer data )
         }
         update_balls(-1, 0);
     
+        /* Set the mirror button state */
+        if ( patch->patchset->mirrors->num_okay > 1 ) {
+            mirror_buttons_sensitive(TRUE);
+        } else {
+            mirror_buttons_sensitive(FALSE);
+        }
+
         /* Download the README and enable the button if we have a README */
         if ( ! have_readme && (interactive != FULLY_AUTOMATIC) ) {
             set_status_message(status, _("Downloading README"));
@@ -1189,7 +1395,6 @@ void download_update_slot( GtkWidget* w, gpointer data )
                 gtk_label_set_text(GTK_LABEL(widget), _("Downloading README"));
             }
             sprintf(readme_file, "%s.txt", url);
-            download_cancelled = 0;
             set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(readme_file, readme_file, sizeof(readme_file),
                          download_update, &info) == 0 ) {
@@ -1198,6 +1403,10 @@ void download_update_slot( GtkWidget* w, gpointer data )
                     gtk_button_set_sensitive(widget, TRUE);
                 }
                 have_readme = TRUE;
+            } else {
+                if ( switch_mirror ) {
+                    continue;
+                }
             }
         }
     
@@ -1211,26 +1420,35 @@ void download_update_slot( GtkWidget* w, gpointer data )
         strcpy(update_url, url);
         progress = glade_xml_get_widget(update_glade, "update_download_progress");
         set_progress_url(GTK_PROGRESS(progress), update_url);
-        download_cancelled = 0;
         set_download_info(&info, status, progress,
             glade_xml_get_widget(update_glade, "update_rate_label"),
             glade_xml_get_widget(update_glade, "update_eta_label"));
         if ( get_url(update_url, update_url, sizeof(update_url),
                       download_update, &info) != 0 ) {
+            /* Switch to the next available mirror */
+            if ( switch_mirror ) {
+                continue;
+            }
+
+            /* The download was cancelled or the download failed */
             update_balls(1, 4);
             verified = DOWNLOAD_FAILED;
+            set_url_status(patch->patchset->mirrors, URL_FAILED);
+            failed_current_mirror(patch->patchset->mirrors);
         } else {
+            mirror_buttons_sensitive(FALSE);
             update_balls(1, 2);
             verified = VERIFY_UNKNOWN;
         }
     
         /* Verify the update */
-        update_balls(2, 1);
+        if ( verified == VERIFY_UNKNOWN ) {
+            update_balls(2, 1);
+        }
         /* First check the GPG signature */
         if ( verified == VERIFY_UNKNOWN ) {
             set_status_message(verify, _("Verifying GPG signature"));
             sprintf(sum_file, "%s.sig", url);
-            download_cancelled = 0;
             set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
                          download_update, &info) == 0 ) {
@@ -1275,7 +1493,6 @@ void download_update_slot( GtkWidget* w, gpointer data )
         if ( verified == VERIFY_UNKNOWN ) {
             set_status_message(verify, _("Verifying MD5 checksum"));
             sprintf(sum_file, "%s.md5", url);
-            download_cancelled = 0;
             set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
                          download_update, &info) == 0 ) {
@@ -1299,7 +1516,8 @@ void download_update_slot( GtkWidget* w, gpointer data )
             }
             unlink(sum_file);
         }
-    } while ( (verified == DOWNLOAD_FAILED) || (verified == VERIFY_FAILED) );
+    } while ( ((verified == DOWNLOAD_FAILED) || (verified == VERIFY_FAILED)) &&
+              !download_cancelled );
     download_pending = 0;
 
     /* We either ran out of update URLs or we downloaded a valid update */
@@ -1374,11 +1592,6 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     start_flash(1, 1);
     ++update_status;
     cleanup_update(_("Update complete"), 1);
-}
-
-static void empty_container(GtkWidget *widget, gpointer data)
-{
-    gtk_container_remove(GTK_CONTAINER(data), widget);
 }
 
 void select_all_updates_slot( GtkWidget* w, gpointer data )
@@ -1498,7 +1711,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     update_vbox = glade_xml_get_widget(update_glade, "update_vbox");
     
     /* Clear any previous list of updates */
-    gtk_container_foreach(GTK_CONTAINER(update_vbox), empty_container, update_vbox);
+    gtk_container_foreach(GTK_CONTAINER(update_vbox), gtk_empty_container, update_vbox);
 
     /* Show the initial status for this operation */
     status = glade_xml_get_widget(update_glade, "list_status_label");
@@ -1554,7 +1767,6 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         strcpy(update_url, get_product_url(patchset->product_name));
         progress = glade_xml_get_widget(update_glade, "update_list_progress");
         set_progress_url(GTK_PROGRESS(progress), update_url);
-        download_cancelled = 0;
         set_download_info(&info, status, progress,
             glade_xml_get_widget(update_glade, "list_rate_label"),
             glade_xml_get_widget(update_glade, "list_eta_label"));
@@ -1743,11 +1955,13 @@ static int gtkui_init(int argc, char *argv[])
     /* Initialize Glade */
     glade_init();
     update_glade = glade_xml_new(UPDATE_GLADE, TOPLEVEL); 
+    mirrors_glade = glade_xml_new(UPDATE_GLADE, "mirrors_dialog");
     gpg_glade = glade_xml_new(UPDATE_GLADE, "gpg_dialog");
     details_glade = glade_xml_new(UPDATE_GLADE, "details_dialog");
 
     /* Add all signal handlers defined in glade file */
     glade_xml_signal_autoconnect(update_glade);
+    glade_xml_signal_autoconnect(mirrors_glade);
     glade_xml_signal_autoconnect(gpg_glade);
     glade_xml_signal_autoconnect(details_glade);
 
@@ -1835,6 +2049,7 @@ static void gtkui_cleanup(void)
 
     /* Clean up the Glade files */
     gtk_object_unref(GTK_OBJECT(update_glade));
+    gtk_object_unref(GTK_OBJECT(mirrors_glade));
     gtk_object_unref(GTK_OBJECT(gpg_glade));
     gtk_object_unref(GTK_OBJECT(details_glade));
 }

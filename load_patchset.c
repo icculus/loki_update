@@ -50,7 +50,6 @@ void print_patchset(patchset *patchset)
 }
 
 /* Variables used to store patch information during parsing */
-static char parsed_name[1024];
 static char *component = NULL;
 static char *version = NULL;
 static char *arch = NULL;
@@ -58,7 +57,7 @@ static char *libc = NULL;
 static char *applies = NULL;
 static char *note = NULL;
 static char *size = NULL;
-static urlset *patch_urls = NULL;
+static char *file = NULL;
 struct {
     const char *prefix;
     int optional;
@@ -71,7 +70,8 @@ struct {
     {   "Libc", 1, 1, &libc },
     {   "Applies", 0, 1, &applies },
     {   "Note", 1, 0, &note },
-    {   "Size", 1, 0, &size }
+    {   "Size", 1, 0, &size },
+    {   "File", 0, 0, &file }
 };
 
 /* Verify all the parameters and add the current patch to the patchset */
@@ -99,12 +99,9 @@ static int check_and_add_patch(patchset *patchset)
             status = -1;
         }
     }
-    if ( ! patch_urls->urls ) {
-        log(LOG_ERROR, "No update URL defined for this update\n");
-        status = -1;
-    }
     if ( status != 0 ) {
-        log(LOG_ERROR, "Parsed so far in this update for %s:\n", parsed_name);
+        log(LOG_ERROR, "Parsed so far in this update for %s:\n",
+            patchset->product_name);
         for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
             if ( *parse_table[i].variable ) {
                 log(LOG_ERROR, "%s: %s\n",
@@ -116,9 +113,7 @@ static int check_and_add_patch(patchset *patchset)
     /* Add the patch to our patchset */
     if ( status == 0 ) {
         add_patch(patchset->product_name, component, version,
-                  arch, libc, applies, note, size, patch_urls, patchset);
-    } else {
-        free_urlset(patch_urls);
+                  arch, libc, applies, note, size, file, patchset);
     }
 
     /* Clean up for the next patch */
@@ -128,7 +123,6 @@ static int check_and_add_patch(patchset *patchset)
             *parse_table[i].variable = NULL;
         }
     }
-    patch_urls = create_urlset();
 
     return(status);
 }
@@ -137,28 +131,19 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
 {
     struct text_fp *file;
 
+    /* Open the update list */
     file = text_open(patchlist);
     if ( file ) {
         int i;
         char key[1024], val[1024];
-        char url[2048];
-
-        /* Skip to the appropriate product section */
-        parsed_name[0] = '\0';
-        while ( strcasecmp(parsed_name, patchset->product_name) != 0 ) {
-            if ( ! text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
-                break;
-            }
-            if ( strcasecmp(key, "product") == 0 ) {
-                strcpy(parsed_name, val);
-            }
-        }
+        int valid_product;
 
         /* Parse patches for this product */
-        patch_urls = create_urlset();
-        while ( strcasecmp(parsed_name, patchset->product_name) == 0 ) {
-            if ( ! text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
-                break;
+        valid_product = 0;
+        while ( text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
+            if ( strcasecmp(key, "mirror") == 0 ) {
+                add_url(patchset->mirrors, val);
+                continue;
             }
             /* If there's a new product tag, check it above */
             if ( strcasecmp(key, "product") == 0 ) {
@@ -166,9 +151,17 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
                     /* Error, messages already output */
                     goto done_parse;
                 }
-                strcpy(parsed_name, val);
+                if ( strcasecmp(val, patchset->product_name) == 0 ) {
+                    valid_product = 1;
+                } else {
+                    valid_product = 0;
+                }
                 continue;
             }
+            if ( ! valid_product ) {
+                continue;
+            }
+
             /* Look for known tags */
             for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                 if ( strcasecmp(parse_table[i].prefix, key) == 0 ) {
@@ -199,16 +192,9 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
                     break;
                 }
             }
-            if ( (strncasecmp("URL", key, 3) == 0) &&
-                 (!key[3] || isdigit(key[3])) ) {
-                compose_url(get_product_url(parsed_name),
-                            val, url, sizeof(url));
-                add_url(patch_urls, url, atoi(&key[3]));
-            }
         }
         check_and_add_patch(patchset);
 done_parse:
-        free_urlset(patch_urls);
         text_close(file);
     }
 
@@ -218,5 +204,15 @@ done_parse:
 #ifdef DEBUG
     print_patchset(patchset);
 #endif
+
+    /* Randomize the mirrors */
+    if ( patchset->mirrors->num_mirrors == 0 ) {
+        char url[PATH_MAX];
+
+        compose_url(get_product_url(patchset->product_name), "",
+                    url, sizeof(url));
+        add_url(patchset->mirrors, url);
+    }
+    randomize_urls(patchset->mirrors);
     return patchset;
 }

@@ -6,22 +6,14 @@
   <program_name>project1</program_name>
   <directory></directory>
   <source_directory>src</source_directory>
-  <pixmaps_directory>.</pixmaps_directory>
+  <pixmaps_directory>pixmaps</pixmaps_directory>
   <language>C</language>
   <gnome_support>False</gnome_support>
   <gettext_support>True</gettext_support>
-  <use_widget_names>False</use_widget_names>
   <output_main_file>False</output_main_file>
   <output_support_files>False</output_support_files>
   <output_build_files>False</output_build_files>
   <backup_source_files>False</backup_source_files>
-  <main_source_file>interface.c</main_source_file>
-  <main_header_file>interface.h</main_header_file>
-  <handler_source_file>callbacks.c</handler_source_file>
-  <handler_header_file>callbacks.h</handler_header_file>
-  <support_source_file>support.c</support_source_file>
-  <support_header_file>support.h</support_header_file>
-  <translatable_strings_file></translatable_strings_file>
 </project>
 
 <widget>
@@ -34,7 +26,7 @@
   </signal>
   <title>Loki Update Tool</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
-  <position>GTK_WIN_POS_NONE</position>
+  <position>GTK_WIN_POS_CENTER</position>
   <modal>False</modal>
   <allow_shrink>False</allow_shrink>
   <allow_grow>True</allow_grow>
@@ -60,7 +52,7 @@
       <widget>
 	<class>GtkLabel</class>
 	<name>label9</name>
-	<label>Select the products you want to update:</label>
+	<label>Please select the products you would like to update:</label>
 	<justify>GTK_JUSTIFY_CENTER</justify>
 	<wrap>False</wrap>
 	<xalign>0</xalign>
@@ -247,6 +239,7 @@
 	    <yalign>0.5</yalign>
 	    <xpad>4</xpad>
 	    <ypad>4</ypad>
+	    <build_insensitive>True</build_insensitive>
 	    <child>
 	      <left_attach>0</left_attach>
 	      <right_attach>1</right_attach>
@@ -472,6 +465,7 @@
 	  <yalign>0.5</yalign>
 	  <xpad>0</xpad>
 	  <ypad>0</ypad>
+	  <build_insensitive>True</build_insensitive>
 	  <child>
 	    <padding>0</padding>
 	    <expand>False</expand>
@@ -815,7 +809,7 @@
 	<widget>
 	  <class>GtkTable</class>
 	  <name>table8</name>
-	  <rows>2</rows>
+	  <rows>3</rows>
 	  <columns>2</columns>
 	  <homogeneous>False</homogeneous>
 	  <row_spacing>0</row_spacing>
@@ -834,6 +828,7 @@
 	    <yalign>0.5</yalign>
 	    <xpad>0</xpad>
 	    <ypad>0</ypad>
+	    <build_insensitive>True</build_insensitive>
 	    <child>
 	      <left_attach>0</left_attach>
 	      <right_attach>1</right_attach>
@@ -1010,6 +1005,96 @@
 	      <yfill>False</yfill>
 	    </child>
 	  </widget>
+
+	  <widget>
+	    <class>GtkHButtonBox</class>
+	    <name>hbuttonbox15</name>
+	    <layout_style>GTK_BUTTONBOX_START</layout_style>
+	    <spacing>30</spacing>
+	    <child_min_width>85</child_min_width>
+	    <child_min_height>27</child_min_height>
+	    <child_ipad_x>7</child_ipad_x>
+	    <child_ipad_y>0</child_ipad_y>
+	    <child>
+	      <left_attach>1</left_attach>
+	      <right_attach>2</right_attach>
+	      <top_attach>2</top_attach>
+	      <bottom_attach>3</bottom_attach>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>True</xexpand>
+	      <yexpand>True</yexpand>
+	      <xshrink>False</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>True</xfill>
+	      <yfill>True</yfill>
+	    </child>
+
+	    <widget>
+	      <class>GtkButton</class>
+	      <name>choose_mirror_button</name>
+	      <can_default>True</can_default>
+	      <can_focus>True</can_focus>
+	      <signal>
+		<name>clicked</name>
+		<handler>show_mirrors_slot</handler>
+		<last_modification_time>Sun, 19 Nov 2000 23:18:45 GMT</last_modification_time>
+	      </signal>
+	      <label>Choose Mirror</label>
+	    </widget>
+
+	    <widget>
+	      <class>GtkButton</class>
+	      <name>switch_mirror_button</name>
+	      <can_default>True</can_default>
+	      <can_focus>True</can_focus>
+	      <signal>
+		<name>clicked</name>
+		<handler>switch_mirror_slot</handler>
+		<last_modification_time>Sun, 19 Nov 2000 19:36:14 GMT</last_modification_time>
+	      </signal>
+	      <label>Switch Mirror</label>
+	    </widget>
+
+	    <widget>
+	      <class>GtkButton</class>
+	      <name>save_mirror_button</name>
+	      <can_default>True</can_default>
+	      <can_focus>True</can_focus>
+	      <signal>
+		<name>clicked</name>
+		<handler>save_mirror_slot</handler>
+		<last_modification_time>Sun, 19 Nov 2000 20:22:10 GMT</last_modification_time>
+	      </signal>
+	      <label>Save Mirror</label>
+	    </widget>
+	  </widget>
+
+	  <widget>
+	    <class>GtkLabel</class>
+	    <name>label71</name>
+	    <label></label>
+	    <justify>GTK_JUSTIFY_CENTER</justify>
+	    <wrap>False</wrap>
+	    <xalign>0.5</xalign>
+	    <yalign>0.5</yalign>
+	    <xpad>0</xpad>
+	    <ypad>0</ypad>
+	    <child>
+	      <left_attach>0</left_attach>
+	      <right_attach>1</right_attach>
+	      <top_attach>2</top_attach>
+	      <bottom_attach>3</bottom_attach>
+	      <xpad>0</xpad>
+	      <ypad>0</ypad>
+	      <xexpand>False</xexpand>
+	      <yexpand>False</yexpand>
+	      <xshrink>False</xshrink>
+	      <yshrink>False</yshrink>
+	      <xfill>False</xfill>
+	      <yfill>False</yfill>
+	    </child>
+	  </widget>
 	</widget>
       </widget>
 
@@ -1045,6 +1130,7 @@
 	  <yalign>0.5</yalign>
 	  <xpad>0</xpad>
 	  <ypad>0</ypad>
+	  <build_insensitive>True</build_insensitive>
 	  <child>
 	    <left_attach>0</left_attach>
 	    <right_attach>1</right_attach>
@@ -1265,6 +1351,7 @@
 	  <yalign>0.5</yalign>
 	  <xpad>0</xpad>
 	  <ypad>0</ypad>
+	  <build_insensitive>True</build_insensitive>
 	  <child>
 	    <left_attach>0</left_attach>
 	    <right_attach>1</right_attach>
@@ -1392,6 +1479,7 @@
 	  <yalign>0.5</yalign>
 	  <xpad>0</xpad>
 	  <ypad>0</ypad>
+	  <build_insensitive>True</build_insensitive>
 	  <child>
 	    <padding>0</padding>
 	    <expand>False</expand>
@@ -1551,28 +1639,6 @@
     <spacing>0</spacing>
 
     <widget>
-      <class>GtkScrolledWindow</class>
-      <name>scrolledwindow1</name>
-      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
-      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
-      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
-      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-
-      <widget>
-	<class>GtkText</class>
-	<name>readme_area</name>
-	<can_focus>True</can_focus>
-	<editable>False</editable>
-	<text></text>
-      </widget>
-    </widget>
-
-    <widget>
       <class>GtkHBox</class>
       <child_name>Dialog:action_area</child_name>
       <name>dialog-action_area1</name>
@@ -1602,6 +1668,28 @@
 	  <expand>False</expand>
 	  <fill>True</fill>
 	</child>
+      </widget>
+    </widget>
+
+    <widget>
+      <class>GtkScrolledWindow</class>
+      <name>scrolledwindow1</name>
+      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
+      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+
+      <widget>
+	<class>GtkText</class>
+	<name>readme_area</name>
+	<can_focus>True</can_focus>
+	<editable>False</editable>
+	<text></text>
       </widget>
     </widget>
   </widget>
@@ -1634,19 +1722,6 @@
     <spacing>0</spacing>
 
     <widget>
-      <class>GtkText</class>
-      <name>gpg_details_text</name>
-      <can_focus>True</can_focus>
-      <editable>False</editable>
-      <text>[GPG signature details]</text>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-    </widget>
-
-    <widget>
       <class>GtkHBox</class>
       <child_name>Dialog:action_area</child_name>
       <name>dialog-action_area2</name>
@@ -1677,6 +1752,19 @@
 	</child>
       </widget>
     </widget>
+
+    <widget>
+      <class>GtkText</class>
+      <name>gpg_details_text</name>
+      <can_focus>True</can_focus>
+      <editable>False</editable>
+      <text>[GPG signature details]</text>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+    </widget>
   </widget>
 </widget>
 
@@ -1705,28 +1793,6 @@
     <name>dialog-vbox3</name>
     <homogeneous>False</homogeneous>
     <spacing>0</spacing>
-
-    <widget>
-      <class>GtkScrolledWindow</class>
-      <name>scrolledwindow4</name>
-      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
-      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
-      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
-      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-
-      <widget>
-	<class>GtkText</class>
-	<name>update_details_text</name>
-	<can_focus>True</can_focus>
-	<editable>False</editable>
-	<text>[Update status messages]</text>
-      </widget>
-    </widget>
 
     <widget>
       <class>GtkHBox</class>
@@ -1784,6 +1850,28 @@
 	</widget>
       </widget>
     </widget>
+
+    <widget>
+      <class>GtkScrolledWindow</class>
+      <name>scrolledwindow4</name>
+      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
+      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+
+      <widget>
+	<class>GtkText</class>
+	<name>update_details_text</name>
+	<can_focus>True</can_focus>
+	<editable>False</editable>
+	<text>[Update status messages]</text>
+      </widget>
+    </widget>
   </widget>
 </widget>
 
@@ -1827,6 +1915,153 @@
       <last_modification_time>Wed, 15 Nov 2000 17:09:55 GMT</last_modification_time>
     </signal>
     <label>Cancel</label>
+  </widget>
+</widget>
+
+<widget>
+  <class>GtkDialog</class>
+  <name>mirrors_dialog</name>
+  <visible>False</visible>
+  <title>Choose Mirror</title>
+  <type>GTK_WINDOW_TOPLEVEL</type>
+  <position>GTK_WIN_POS_MOUSE</position>
+  <modal>False</modal>
+  <allow_shrink>True</allow_shrink>
+  <allow_grow>True</allow_grow>
+  <auto_shrink>False</auto_shrink>
+
+  <widget>
+    <class>GtkVBox</class>
+    <child_name>Dialog:vbox</child_name>
+    <name>dialog-vbox4</name>
+    <homogeneous>False</homogeneous>
+    <spacing>0</spacing>
+
+    <widget>
+      <class>GtkHBox</class>
+      <child_name>Dialog:action_area</child_name>
+      <name>dialog-action_area4</name>
+      <border_width>10</border_width>
+      <homogeneous>True</homogeneous>
+      <spacing>5</spacing>
+      <child>
+	<padding>0</padding>
+	<expand>False</expand>
+	<fill>True</fill>
+	<pack>GTK_PACK_END</pack>
+      </child>
+
+      <widget>
+	<class>GtkHButtonBox</class>
+	<name>hbuttonbox16</name>
+	<layout_style>GTK_BUTTONBOX_DEFAULT_STYLE</layout_style>
+	<spacing>30</spacing>
+	<child_min_width>85</child_min_width>
+	<child_min_height>27</child_min_height>
+	<child_ipad_x>7</child_ipad_x>
+	<child_ipad_y>0</child_ipad_y>
+	<child>
+	  <padding>0</padding>
+	  <expand>True</expand>
+	  <fill>True</fill>
+	</child>
+
+	<widget>
+	  <class>GtkButton</class>
+	  <name>button29</name>
+	  <can_default>True</can_default>
+	  <can_focus>True</can_focus>
+	  <signal>
+	    <name>clicked</name>
+	    <handler>close_mirrors_slot</handler>
+	    <last_modification_time>Sun, 19 Nov 2000 23:19:05 GMT</last_modification_time>
+	  </signal>
+	  <label>Close</label>
+	</widget>
+
+	<widget>
+	  <class>GtkButton</class>
+	  <name>button30</name>
+	  <can_default>True</can_default>
+	  <can_focus>True</can_focus>
+	  <signal>
+	    <name>clicked</name>
+	    <handler>choose_mirror_slot</handler>
+	    <last_modification_time>Sun, 19 Nov 2000 23:22:04 GMT</last_modification_time>
+	  </signal>
+	  <label>Choose</label>
+	</widget>
+      </widget>
+    </widget>
+
+    <widget>
+      <class>GtkVBox</class>
+      <name>vbox7</name>
+      <homogeneous>False</homogeneous>
+      <spacing>0</spacing>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+
+      <widget>
+	<class>GtkLabel</class>
+	<name>label72</name>
+	<label>Please choose the download site you would like to use:</label>
+	<justify>GTK_JUSTIFY_CENTER</justify>
+	<wrap>False</wrap>
+	<xalign>0</xalign>
+	<yalign>0.5</yalign>
+	<xpad>4</xpad>
+	<ypad>4</ypad>
+	<child>
+	  <padding>0</padding>
+	  <expand>False</expand>
+	  <fill>False</fill>
+	</child>
+      </widget>
+
+      <widget>
+	<class>GtkHSeparator</class>
+	<name>hseparator7</name>
+	<child>
+	  <padding>0</padding>
+	  <expand>False</expand>
+	  <fill>False</fill>
+	</child>
+      </widget>
+
+      <widget>
+	<class>GtkVBox</class>
+	<name>mirrors_vbox</name>
+	<border_width>4</border_width>
+	<homogeneous>False</homogeneous>
+	<spacing>4</spacing>
+	<child>
+	  <padding>0</padding>
+	  <expand>True</expand>
+	  <fill>True</fill>
+	</child>
+
+	<widget>
+	  <class>GtkLabel</class>
+	  <name>label73</name>
+	  <label>[mirror site list goes here]</label>
+	  <justify>GTK_JUSTIFY_CENTER</justify>
+	  <wrap>False</wrap>
+	  <xalign>0.5</xalign>
+	  <yalign>0.5</yalign>
+	  <xpad>0</xpad>
+	  <ypad>0</ypad>
+	  <child>
+	    <padding>0</padding>
+	    <expand>False</expand>
+	    <fill>False</fill>
+	  </child>
+	</widget>
+      </widget>
+    </widget>
   </widget>
 </widget>
 

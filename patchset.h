@@ -67,8 +67,8 @@ typedef struct patch_path {
 typedef struct patch {
     struct patchset *patchset;
     char *description;
+    char *file;
     int size;
-    urlset *urls;
     struct version_node *node;
     int refcount;
     int installed;
@@ -82,6 +82,7 @@ typedef struct patchset {
 
     version_node *root;
     patch *patches;
+    urlset *mirrors;
 
     struct patchset *next;
 
@@ -111,7 +112,7 @@ extern int add_patch(const char *product,
                      const char *applies,
                      const char *note,
                      const char *size,
-                     urlset *urls,
+                     const char *file,
                      struct patchset *patchset);
 
 /* Generate valid patch paths, trimming out versions that don't apply */
