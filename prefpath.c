@@ -36,6 +36,11 @@
 void preferences_path(const char *file, char *dst, int maxlen)
 {
     /* Assemble the path and create any necessary directories */
-    snprintf(dst, maxlen, "%s/.loki/loki_update/%s", detect_home(), file);
+    if ( *file == '/' ) {
+        strncpy(dst, file, maxlen);
+        dst[maxlen-1] = '\0';
+    } else {
+        snprintf(dst, maxlen, "%s/.loki/loki_update/%s", detect_home(), file);
+    }
     mkdirhier(dst);
 }
