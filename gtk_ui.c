@@ -455,8 +455,14 @@ static void cleanup_update(const char *status_msg)
 
     /* Handle auto-update of the next set of patches, if any */
     if ( auto_update ) {
-        download_update_slot(NULL, NULL);
-        return;
+        if ( update_status >= 0 ) {
+            download_update_slot(NULL, NULL);
+        }
+
+        /* If we're really auto-updating, break out, otherwise finish UI */
+        if ( auto_update > 1 ) {
+            return;
+        }
     }
 
     /* We succeeded, enable the action button, and update the status */
@@ -847,6 +853,11 @@ static void update_toggle_option( GtkWidget* widget, gpointer func_data)
     in_update_toggle_option = 0;
 }
 
+void toggle_auto_update_slot( GtkWidget* w, gpointer data )
+{
+    auto_update = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
+}
+
 void choose_update_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *window;
@@ -1120,7 +1131,7 @@ static int gtkui_update_product(const char *product)
 {
     update_status = 0;
     select_product(product);
-    auto_update = 1;
+    auto_update = 2;
     choose_update_slot(NULL, NULL);
     while( gtk_events_pending() ) {
         gtk_main_iteration();
