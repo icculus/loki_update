@@ -195,12 +195,17 @@ static void free_images(void)
     }
 }
 
+static void remove_file(const char *file)
+{
+    unlink(file);
+}
+
 static void remove_readme(void)
 {
     GtkWidget *widget;
 
     if ( readme_file[0] ) {
-        unlink(readme_file);
+        remove_file(readme_file);
         readme_file[0] = '\0';
     }
     widget = glade_xml_get_widget(update_glade, "update_readme_button");
@@ -211,7 +216,7 @@ static void remove_readme(void)
 static void remove_update(void)
 {
     if ( update_url[0] ) {
-        unlink(update_url);
+        remove_file(update_url);
         update_url[0] = '\0';
     }
 }
@@ -1478,7 +1483,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                 set_status_message(gpg_status,
                                    _("GPG signature not available"));
             }
-            unlink(sum_file);
+            remove_file(sum_file);
         }
         /* Now download the MD5 checksum file */
         if ( verified == VERIFY_UNKNOWN ) {
@@ -1506,7 +1511,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             } else {
                 set_status_message(verify, _("MD5 checksum not available"));
             }
-            unlink(sum_file);
+            remove_file(sum_file);
         }
     } while ( ((verified == DOWNLOAD_FAILED) || (verified == VERIFY_FAILED)) &&
               !download_cancelled );
