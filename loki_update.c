@@ -139,7 +139,12 @@ static void goto_installpath(char *argv0)
 int main(int argc, char *argv[])
 {
 #ifdef DYNAMIC_UI
-    static char *ui_list[] = { "./gtk_ui.so", "./tty_ui.so", NULL };
+    static char *ui_list[] = {
+        "./default_ui.so",
+        "./gtk_sh_ui.so",
+        "./gtk_st_ui.so",
+        "./tty_ui.so"
+    };
     void *handle;
 #else
     static update_UI *ui_list[] = { &gtk_ui, &tty_ui, NULL };
@@ -229,6 +234,13 @@ int main(int argc, char *argv[])
                 return(1);
             }
             product_path = argv[++i];
+        } else
+        if ( strcmp(argv[i], "--ui") == 0 ) {
+            if ( ! argv[i+1] ) {
+                print_usage(argv[0]);
+                return(1);
+            }
+            ui_list[0] = argv[++i];
         }
     }
     if ( !product && argv[i] && (argv[i][0] != '-') ) {
