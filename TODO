@@ -1,4 +1,5 @@
 
+Print out "update complete" before doing the next auto-update
 Set the checkball when verifying the update
 Check how the updater handles out-of-diskspace errors
 Add a console UI
