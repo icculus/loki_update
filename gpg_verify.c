@@ -13,12 +13,12 @@
 #define GPG         "gpg"
 #define KEYSERVER   "certserver.pgp.com"
 
-static gpg_result check_signature(const char *file, char *sig, int maxsig)
+gpg_result gpg_verify(const char *file, char *sig, int maxsig)
 {
     int argc;
     const char *args[9];
     pid_t child;
-    int status;
+    int status = -1;
     int pipefd[2];
     char *prefix;
     int len, count;
@@ -144,12 +144,16 @@ static gpg_result check_signature(const char *file, char *sig, int maxsig)
     return(result);
 }
 
-static int get_publickey(const char *key)
+int get_publickey(const char *key,
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
     int argc;
     const char *args[6];
     pid_t child;
-    int status;
+    int status = -1;
+
+    log(LOG_NORMAL, "Downloading public key %s from %s\n", key, KEYSERVER);
 
     child = fork();
     switch (child) {
@@ -159,6 +163,8 @@ static int get_publickey(const char *key)
             return(-1);
         case 0:
             /* Child process */
+            close(0);
+            close(2);
             argc = 0;
             args[argc++] = GPG;
             args[argc++] = "--keyserver";
@@ -167,27 +173,18 @@ static int get_publickey(const char *key)
             args[argc++] = key;
             args[argc] = NULL;
             execvp(args[0], args);
-            exit(0);
+            _exit(-1);
         default:
             /* Parent, wait for child */
-            if ( waitpid(child, &status, 0) < 0 ) {
-                kill(child, SIGTERM);
-                waitpid(child, &status, 0);
-                return(-1);
-            }
+            break;
     }
+    while ( waitpid(child, &status, WNOHANG) == 0 ) {
+        if ( update(0.0f, 0, 0, udata) ) {
+            break;
+        }
+        usleep(1000000);
+    }
+    kill(child, SIGTERM);
+    waitpid(child, &status, 0);
     return(status);
-}
-
-/* Verify the given signature */
-gpg_result gpg_verify(const char *file, char *sig, int maxsig)
-{
-    gpg_result gpg_code;
-
-    gpg_code = check_signature(file, sig, maxsig);
-    if ( gpg_code == GPG_NOPUBKEY ) {
-        get_publickey(sig);
-        gpg_code = check_signature(file, sig, maxsig);
-    }
-    return gpg_code;
 }

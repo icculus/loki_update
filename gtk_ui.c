@@ -369,6 +369,23 @@ static int download_update(float percentage, int size, int total, void *udata)
     return(download_cancelled);
 }
 
+static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
+{
+    gpg_result gpg_code;
+
+    gpg_code = gpg_verify(file, sig, maxsig);
+    if ( gpg_code == GPG_NOPUBKEY ) {
+        GtkWidget *widget;
+        widget = glade_xml_get_widget(update_glade, "verify_status_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), _("Downloading public key"));
+        }
+        get_publickey(sig, download_update, NULL);
+        gpg_code = gpg_verify(file, sig, maxsig);
+    }
+    return gpg_code;
+}
+
 void gtk_button_set_text(GtkButton *button, const char *text)
 {
     gtk_label_set_text(GTK_LABEL(GTK_BIN(button)->child), text);
@@ -625,9 +642,10 @@ void download_update_slot( GtkWidget* w, gpointer data )
                                _("Downloading GPG signature"));
         }
         sprintf(sum_file, "%s.sig", patch->url);
+        download_cancelled = 0;
         if ( get_url(sum_file, sum_file, sizeof(sum_file),
                      download_update, NULL) == 0 ) {
-            switch (gpg_verify(sum_file, sig, sizeof(sig))) {
+            switch (do_gpg_verify(sum_file, sig, sizeof(sig))) {
                 case GPG_NOTINSTALLED:
                     if ( verify_status ) {
                         gtk_label_set_text(GTK_LABEL(verify_status),
@@ -680,6 +698,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                                _("Downloading MD5 checksum"));
         }
         sprintf(sum_file, "%s.md5", patch->url);
+        download_cancelled = 0;
         if ( get_url(sum_file, sum_file, sizeof(sum_file),
                      download_update, NULL) == 0 ) {
             fp = fopen(sum_file, "r");
