@@ -89,7 +89,7 @@ dist:
 	cp -r . ../$$dist; \
 	(cd ../$$dist; make distclean; rm -r `find . -name CVS -print`); \
 	(cd ..; tar zcvf $$dist.tar.gz $$dist); \
-    rm -rf ../$$dist
+	rm -rf ../$$dist
 
 install-bin: $(TARGET)
 	@if [ -d $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/ ]; then \
