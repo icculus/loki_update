@@ -615,7 +615,7 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 #else
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
-                    int (*update)(float percentage, void *udata), void *udata)
+                    int (*update)(float percentage, int size, int total, void *udata), void *udata)
 {
         struct hostent *host;
 	int status;
