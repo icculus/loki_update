@@ -32,7 +32,14 @@ char *compose_url(const char *base, const char *url, char *full, int maxlen)
         }
         strncat(full, url, maxlen-strlen(full));
     } else {
-        strncpy(full, url, maxlen);
+        bufp = strstr(url, "://");
+        if ( working_path[0] && ! bufp && (*url != '/') ) {
+            strncpy(full, working_path, maxlen-1);
+            strcat(full, "/");
+            strncat(full, url, maxlen-strlen(full));
+        } else {
+            strncpy(full, url, maxlen);
+        }
     }
     return(full);
 }
