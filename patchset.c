@@ -460,6 +460,7 @@ int add_patch(const char *product,
     log(LOG_DEBUG, "\tComponent: %s\n", component);
     log(LOG_DEBUG, "\tVersion: %s\n", version);
     log(LOG_DEBUG, "\tArchitecture: %s\n", arch);
+    log(LOG_DEBUG, "\tApplies: %s\n", applies);
 
     if ( strcasecmp(product, patchset->product_name) != 0 ) {
         log(LOG_DEBUG, "Patch for different product, dropping\n");
