@@ -4,37 +4,69 @@
 
 #include "setupdb.h"
 
-typedef enum {
-    TYPE_ANY = -1,
-    TYPE_PATCH,
-    TYPE_ADDON
-} patch_type;
+/* Forward declarations */
+struct patchset;
+struct patch;
+struct patch_path;
 
-typedef struct patch {
-    patch_type type;
-    char *description;
-    char *component;
-    char *version;
-    char *applies;
-    char *url;
-    int selected;
-    struct patch *next;
-} patch;
+/* This is the version node that is traversed for UI display */
+typedef struct version_node {
+    char *component;                /* The component for this node */
+    char *version;                  /* The key data for this node */
+    char *description;              /* The description of this node */
+    int toggled;                    /* True if on the version path selected */
+    int invisible;                  /* Never selectable, true for root nodes */
+    int depth;                      /* Depth in the node tree */
+    struct version_node *root;      /* A pointer to the root for this node */
+    struct version_node *child;     /* Used by the follow-edge nodes */
+    struct version_node *sibling;   /* Other flavors of this version */
+    int num_adjacent;               /* The number of adjacent nodes */
+    struct version_node **adjacent; /* Adjacent nodes (via patches) */
+    struct patch_path *shortest_path; /* Shortest path from root node */
+    void *udata;                    /* Used to store UI information */
+
+    /* Information used in the shortest-path algorithm */
+    int index;
+    struct version_node *next;
+    struct version_node *prev;
+    struct version_node *last;
+
+    /* Information stored in the root node about selected node */
+    struct version_node *selected;
+} version_node;
 
 typedef struct patch_path {
-    patch *leaf;
-    patch *patches;
+    version_node *src;
+    version_node *dst;
+    struct patch *patch;
     struct patch_path *next;
 } patch_path;
+
+typedef struct patch {
+    struct patchset *patchset;
+    char *description;
+    char *url;
+    struct version_node *node;
+    int installed;
+    int num_apply;
+    struct version_node **apply;
+    struct patch *next;
+} patch;
 
 typedef struct patchset {
     product_t *product;
     const char *product_name;
 
-    patch_path *paths;
+    version_node *root;
+    patch *patches;
 
-    int num_patches;
-    struct patch **patchlist;
+    struct patchset *next;
+
+    /* Temporary memory used by the shortest path algorithm */
+    int *seen;
+    int *dist;
+    version_node **parent;
+    version_node **fringe;
 } patchset;
 
 
@@ -56,14 +88,13 @@ extern int add_patch(const char *product,
                      const char *url,
                      struct patchset *patchset);
 
-/* Generate trees of patch versions, trimming out those that don't apply */
-extern void make_tree(patchset *patchset);
-extern void collapse_tree(patchset *patchset);
+/* Generate valid patch paths, trimming out versions that don't apply */
+extern void calculate_paths(patchset *patchset);
 
-/* Select all the patches for components already installed */
+/* Select a particular version node and set toggled state */
+void select_node(version_node *selected_node, int selected);
+
+/* Select the main branch of patches for the installed components */
 extern void autoselect_patches(patchset *patchset);
-
-/* Check the length of a path to a particular version */
-extern int path_length(patch_path *path, const char *version);
 
 #endif /* _patchset_h */

@@ -17,6 +17,7 @@ LFLAGS += -lares
 
 OBJS = loki_update.o gtk_ui.o load_patchset.o patchset.o update.o \
        gpg_verify.o get_url.o text_parse.o mkdirhier.o log_output.o \
+       safe_malloc.o \
        $(SNARF_OBJS)
 
 SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \

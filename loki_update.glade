@@ -32,7 +32,7 @@
     <handler>main_cancel_slot</handler>
     <last_modification_time>Thu, 19 Oct 2000 19:18:30 GMT</last_modification_time>
   </signal>
-  <title>Loki Auto-Update</title>
+  <title>Loki Auto-Update Tool</title>
   <type>GTK_WINDOW_TOPLEVEL</type>
   <position>GTK_WIN_POS_NONE</position>
   <modal>False</modal>
@@ -59,42 +59,8 @@
 
       <widget>
 	<class>GtkLabel</class>
-	<name>label6</name>
-	<label>Welcome to the Loki Auto-Update Tool</label>
-	<justify>GTK_JUSTIFY_CENTER</justify>
-	<wrap>False</wrap>
-	<xalign>0</xalign>
-	<yalign>0.5</yalign>
-	<xpad>4</xpad>
-	<ypad>4</ypad>
-	<child>
-	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
-	</child>
-      </widget>
-
-      <widget>
-	<class>GtkLabel</class>
-	<name>label7</name>
-	<label></label>
-	<justify>GTK_JUSTIFY_CENTER</justify>
-	<wrap>False</wrap>
-	<xalign>0.5</xalign>
-	<yalign>0.5</yalign>
-	<xpad>0</xpad>
-	<ypad>0</ypad>
-	<child>
-	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
-	</child>
-      </widget>
-
-      <widget>
-	<class>GtkLabel</class>
 	<name>label9</name>
-	<label>Please select the product you want to update:</label>
+	<label>Select the products you want to update:</label>
 	<justify>GTK_JUSTIFY_CENTER</justify>
 	<wrap>False</wrap>
 	<xalign>0</xalign>
@@ -109,17 +75,34 @@
       </widget>
 
       <widget>
-	<class>GtkOptionMenu</class>
-	<name>product_menu</name>
-	<border_width>4</border_width>
-	<can_focus>True</can_focus>
-	<items></items>
-	<initial_choice>0</initial_choice>
+	<class>GtkScrolledWindow</class>
+	<name>scrolledwindow3</name>
+	<hscrollbar_policy>GTK_POLICY_NEVER</hscrollbar_policy>
+	<vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+	<hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+	<vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
 	<child>
 	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
+	  <expand>True</expand>
+	  <fill>True</fill>
 	</child>
+
+	<widget>
+	  <class>GtkViewport</class>
+	  <name>viewport2</name>
+	  <shadow_type>GTK_SHADOW_IN</shadow_type>
+
+	  <widget>
+	    <class>GtkVBox</class>
+	    <name>product_vbox</name>
+	    <homogeneous>False</homogeneous>
+	    <spacing>0</spacing>
+
+	    <widget>
+	      <class>Placeholder</class>
+	    </widget>
+	  </widget>
+	</widget>
       </widget>
 
       <widget>
@@ -131,7 +114,6 @@
 	  <padding>0</padding>
 	  <expand>False</expand>
 	  <fill>True</fill>
-	  <pack>GTK_PACK_END</pack>
 	</child>
 
 	<widget>
@@ -160,6 +142,19 @@
 	  <widget>
 	    <class>GtkButton</class>
 	    <name>button9</name>
+	    <can_default>True</can_default>
+	    <can_focus>True</can_focus>
+	    <signal>
+	      <name>clicked</name>
+	      <handler>select_all_products_slot</handler>
+	      <last_modification_time>Wed, 25 Oct 2000 14:28:20 GMT</last_modification_time>
+	    </signal>
+	    <label>Select All</label>
+	  </widget>
+
+	  <widget>
+	    <class>GtkButton</class>
+	    <name>product_continue_button</name>
 	    <can_default>True</can_default>
 	    <can_focus>True</can_focus>
 	    <signal>
@@ -390,10 +385,10 @@
 	    <can_focus>True</can_focus>
 	    <signal>
 	      <name>clicked</name>
-	      <handler>choose_product_slot</handler>
-	      <last_modification_time>Fri, 20 Oct 2000 03:09:41 GMT</last_modification_time>
+	      <handler>update_proceed_slot</handler>
+	      <last_modification_time>Wed, 25 Oct 2000 16:31:35 GMT</last_modification_time>
 	    </signal>
-	    <label>Done</label>
+	    <label>Continue</label>
 	  </widget>
 	</widget>
       </widget>
@@ -436,10 +431,12 @@
       </widget>
 
       <widget>
-	<class>GtkVBox</class>
-	<name>update_vbox</name>
-	<homogeneous>False</homogeneous>
-	<spacing>0</spacing>
+	<class>GtkScrolledWindow</class>
+	<name>scrolledwindow2</name>
+	<hscrollbar_policy>GTK_POLICY_NEVER</hscrollbar_policy>
+	<vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+	<hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+	<vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
 	<child>
 	  <padding>0</padding>
 	  <expand>True</expand>
@@ -447,7 +444,20 @@
 	</child>
 
 	<widget>
-	  <class>Placeholder</class>
+	  <class>GtkViewport</class>
+	  <name>viewport1</name>
+	  <shadow_type>GTK_SHADOW_IN</shadow_type>
+
+	  <widget>
+	    <class>GtkVBox</class>
+	    <name>update_vbox</name>
+	    <homogeneous>False</homogeneous>
+	    <spacing>0</spacing>
+
+	    <widget>
+	      <class>Placeholder</class>
+	    </widget>
+	  </widget>
 	</widget>
       </widget>
 
@@ -493,8 +503,8 @@
 	    <can_focus>True</can_focus>
 	    <signal>
 	      <name>clicked</name>
-	      <handler>perform_update_slot</handler>
-	      <last_modification_time>Thu, 19 Oct 2000 19:22:39 GMT</last_modification_time>
+	      <handler>download_update_slot</handler>
+	      <last_modification_time>Wed, 25 Oct 2000 22:32:24 GMT</last_modification_time>
 	    </signal>
 	    <label>Continue</label>
 	  </widget>
@@ -735,25 +745,70 @@
 	</widget>
 
 	<widget>
-	  <class>GtkButton</class>
-	  <name>gpg_details_button</name>
-	  <can_focus>True</can_focus>
-	  <label>GPG signature details</label>
+	  <class>GtkHBox</class>
+	  <name>hbox4</name>
+	  <homogeneous>False</homogeneous>
+	  <spacing>0</spacing>
 	  <child>
 	    <left_attach>1</left_attach>
 	    <right_attach>2</right_attach>
 	    <top_attach>2</top_attach>
 	    <bottom_attach>3</bottom_attach>
-	    <xpad>1</xpad>
+	    <xpad>0</xpad>
 	    <ypad>0</ypad>
-	    <xexpand>False</xexpand>
+	    <xexpand>True</xexpand>
 	    <yexpand>False</yexpand>
 	    <xshrink>False</xshrink>
 	    <yshrink>False</yshrink>
 	    <xfill>True</xfill>
-	    <yfill>False</yfill>
+	    <yfill>True</yfill>
 	  </child>
+
+	  <widget>
+	    <class>GtkLabel</class>
+	    <name>gpg_status_label</name>
+	    <label>[GPG status]</label>
+	    <justify>GTK_JUSTIFY_CENTER</justify>
+	    <wrap>False</wrap>
+	    <xalign>0</xalign>
+	    <yalign>0.5</yalign>
+	    <xpad>4</xpad>
+	    <ypad>4</ypad>
+	    <child>
+	      <padding>0</padding>
+	      <expand>True</expand>
+	      <fill>True</fill>
+	    </child>
+	  </widget>
+
+	  <widget>
+	    <class>GtkToggleButton</class>
+	    <name>togglebutton1</name>
+	    <can_focus>True</can_focus>
+	    <label>GPG fingerprint</label>
+	    <active>False</active>
+	    <child>
+	      <padding>0</padding>
+	      <expand>False</expand>
+	      <fill>False</fill>
+	    </child>
+	  </widget>
 	</widget>
+      </widget>
+
+      <widget>
+	<class>GtkEntry</class>
+	<name>gpg_fingerprint_entry</name>
+	<visible>False</visible>
+	<editable>False</editable>
+	<text_visible>True</text_visible>
+	<text_max_length>0</text_max_length>
+	<text></text>
+	<child>
+	  <padding>0</padding>
+	  <expand>True</expand>
+	  <fill>True</fill>
+	</child>
       </widget>
 
       <widget>
@@ -769,35 +824,6 @@
 	  <expand>True</expand>
 	  <fill>True</fill>
 	</child>
-
-	<widget>
-	  <class>GtkProgressBar</class>
-	  <name>update_patch_progress</name>
-	  <value>0</value>
-	  <lower>0</lower>
-	  <upper>100</upper>
-	  <bar_style>GTK_PROGRESS_CONTINUOUS</bar_style>
-	  <orientation>GTK_PROGRESS_LEFT_TO_RIGHT</orientation>
-	  <activity_mode>False</activity_mode>
-	  <show_text>False</show_text>
-	  <format>%P %%</format>
-	  <text_xalign>0</text_xalign>
-	  <text_yalign>0.5</text_yalign>
-	  <child>
-	    <left_attach>1</left_attach>
-	    <right_attach>2</right_attach>
-	    <top_attach>1</top_attach>
-	    <bottom_attach>2</bottom_attach>
-	    <xpad>4</xpad>
-	    <ypad>4</ypad>
-	    <xexpand>True</xexpand>
-	    <yexpand>True</yexpand>
-	    <xshrink>False</xshrink>
-	    <yshrink>False</yshrink>
-	    <xfill>True</xfill>
-	    <yfill>False</yfill>
-	  </child>
-	</widget>
 
 	<widget>
 	  <class>GtkPixmap</class>
@@ -840,6 +866,35 @@
 	    <bottom_attach>1</bottom_attach>
 	    <xpad>0</xpad>
 	    <ypad>0</ypad>
+	    <xexpand>True</xexpand>
+	    <yexpand>True</yexpand>
+	    <xshrink>False</xshrink>
+	    <yshrink>False</yshrink>
+	    <xfill>True</xfill>
+	    <yfill>False</yfill>
+	  </child>
+	</widget>
+
+	<widget>
+	  <class>GtkProgressBar</class>
+	  <name>update_patch_progress</name>
+	  <value>0</value>
+	  <lower>0</lower>
+	  <upper>100</upper>
+	  <bar_style>GTK_PROGRESS_CONTINUOUS</bar_style>
+	  <orientation>GTK_PROGRESS_LEFT_TO_RIGHT</orientation>
+	  <activity_mode>False</activity_mode>
+	  <show_text>False</show_text>
+	  <format>%P %%</format>
+	  <text_xalign>0</text_xalign>
+	  <text_yalign>0.5</text_yalign>
+	  <child>
+	    <left_attach>1</left_attach>
+	    <right_attach>2</right_attach>
+	    <top_attach>1</top_attach>
+	    <bottom_attach>2</bottom_attach>
+	    <xpad>4</xpad>
+	    <ypad>4</ypad>
 	    <xexpand>True</xexpand>
 	    <yexpand>True</yexpand>
 	    <xshrink>False</xshrink>
@@ -896,8 +951,8 @@
 	    <can_focus>True</can_focus>
 	    <signal>
 	      <name>clicked</name>
-	      <handler>cancel_download_slot</handler>
-	      <last_modification_time>Fri, 20 Oct 2000 02:56:20 GMT</last_modification_time>
+	      <handler>cancel_button_slot</handler>
+	      <last_modification_time>Wed, 25 Oct 2000 23:19:48 GMT</last_modification_time>
 	    </signal>
 	    <label>Cancel</label>
 	  </widget>
@@ -920,6 +975,11 @@
 	    <name>update_action_button</name>
 	    <can_default>True</can_default>
 	    <can_focus>True</can_focus>
+	    <signal>
+	      <name>clicked</name>
+	      <handler>action_button_slot</handler>
+	      <last_modification_time>Wed, 25 Oct 2000 23:19:18 GMT</last_modification_time>
+	    </signal>
 	    <label>[Action]</label>
 	  </widget>
 	</widget>

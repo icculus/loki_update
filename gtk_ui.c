@@ -1,9 +1,11 @@
 
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
@@ -25,9 +27,12 @@
 
 static GladeXML *update_glade;
 static GladeXML *readme_glade;
+static patchset *update_patchset;
+static version_node *update_root;
 static patch_path *update_path;
 static patch *update_patch;
 static char readme_file[PATH_MAX];
+static char update_url[PATH_MAX];
 
 /* The different notebook pages for the loki_update UI */
 enum {
@@ -42,101 +47,101 @@ static int update_status = 0;
 static int auto_update = 0;
 static patchset *product_patchset = NULL;
 static int update_proceeding = 0;
+static int download_pending = 0;
 static int download_cancelled = 0;
+
+/* Forward declarations for the meat of the operation */
+void download_update_slot( GtkWidget* w, gpointer data );
+void perform_update_slot( GtkWidget* w, gpointer data );
+void action_button_slot( GtkWidget* w, gpointer data );
 
 /*********** GTK slots *************/
 
 void main_cancel_slot( GtkWidget* w, gpointer data )
 {
-    /* Clean up any product patchset that may be around */
-    if ( product_patchset ) {
-        free_patchset(product_patchset);
-        product_patchset = NULL;
-    }
     gtk_main_quit();
 }
 
-static const char *selected_product(void)
+void select_all_products_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *widget;
-    char *label = "";
+    GList *list;
+    GtkWidget *button;
+    const char *product_name;
 
-    /* Get the currently selected product */
-    widget = glade_xml_get_widget(update_glade, "product_menu");
-    gtk_label_get(GTK_LABEL(GTK_BIN(widget)->child), &label);
-    return label;
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
+    while ( list ) {
+        button = GTK_WIDGET(list->data);
+        product_name = gtk_object_get_data(GTK_OBJECT(button), "data");
+        if ( strcasecmp(PRODUCT, product_name) != 0 ) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
+        }
+        list = list->next;
+    }
 }
 
+/* Select a particular product, or deselect all of them if NULL */
 static void select_product(const char *product)
 {
     GtkWidget *widget;
-    GList *list, *itemlist;
-    GtkWidget *menu;
-    GtkWidget *menuitem;
-    int index;
+    GList *list;
+    GtkWidget *button;
 
-    widget = glade_xml_get_widget(update_glade, "product_menu");
-    menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(widget));
-    list = gtk_container_children(GTK_CONTAINER(menu));
-    index = 0;
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
     while ( list ) {
-        char *label = "";
-        menuitem = GTK_WIDGET(list->data);
-        itemlist = gtk_container_children(GTK_CONTAINER(menuitem));
-        if ( itemlist ) {
-            gtk_label_get(GTK_LABEL(itemlist->data), &label);
-        } else {
-            gtk_label_get(GTK_LABEL(GTK_BIN(widget)->child), &label);
-        }
+        button = GTK_WIDGET(list->data);
         if ( product ) {
-            if ( strcasecmp(label, product) == 0 ) {
-                gtk_option_menu_set_history(GTK_OPTION_MENU(widget), index);
+            const char *product_name;
+            product_name = gtk_object_get_data(GTK_OBJECT(button), "data");
+            if ( strcasecmp(product, product_name) == 0 ) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
                 break;
             }
         } else {
-            if ( strcasecmp(label, PRODUCT) != 0 ) {
-                gtk_option_menu_set_history(GTK_OPTION_MENU(widget), index);
-                break;
-            }
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), FALSE);
         }
-        ++index;
         list = list->next;
     }
 }
 
-static void select_next_product(void)
+/* Deselect the currently selected product, if any */
+static void deselect_product(void)
 {
     GtkWidget *widget;
-    GList *list, *itemlist;
-    GtkWidget *menu;
-    GtkWidget *menuitem;
-    int past;
-    int index;
+    GList *list;
+    GtkWidget *button;
 
-    widget = glade_xml_get_widget(update_glade, "product_menu");
-    menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(widget));
-    list = NULL;
-    past = 0;
-    while ( past < 2 ) {
-        if ( ! list ) {
-            list = gtk_container_children(GTK_CONTAINER(menu));
-            index = 0;
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
+    while ( list ) {
+        button = GTK_WIDGET(list->data);
+        if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), FALSE);
+            break;
         }
-        menuitem = GTK_WIDGET(list->data);
-        itemlist = gtk_container_children(GTK_CONTAINER(menuitem));
-        if ( itemlist ) {
-            char *label = "";
-            gtk_label_get(GTK_LABEL(itemlist->data), &label);
-            if ( past && (strcasecmp(label, PRODUCT) != 0) ) {
-                gtk_option_menu_set_history(GTK_OPTION_MENU(widget), index);
-                break;
-            }
-        } else {
-            ++past;
-        }
-        ++index;
         list = list->next;
     }
+}
+
+/* Return the next selected product */
+static const char *selected_product(void)
+{
+    GtkWidget *widget;
+    GList *list;
+    GtkWidget *button;
+
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
+    while ( list ) {
+        button = GTK_WIDGET(list->data);
+        if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ) {
+            return gtk_object_get_data(GTK_OBJECT(button), "data");
+        }
+        list = list->next;
+    }
+    return(NULL);
 }
 
 void choose_product_slot( GtkWidget* w, gpointer data )
@@ -144,7 +149,7 @@ void choose_product_slot( GtkWidget* w, gpointer data )
     GtkWidget *window;
     GtkWidget *notebook;
 
-    /* Clean up any product patchset that may be around */
+    /* Clean up any product patchsets that may be around */
     if ( product_patchset ) {
         free_patchset(product_patchset);
         product_patchset = NULL;
@@ -158,8 +163,8 @@ void choose_product_slot( GtkWidget* w, gpointer data )
     window = glade_xml_get_widget(update_glade, TOPLEVEL);
     gtk_widget_realize(window);
 
-    /* Select the next product in the list */
-    select_next_product();
+    /* Clear selected products */
+    select_product(NULL);
 }
 
 static void update_balls(int which, int status)
@@ -240,6 +245,7 @@ void view_readme_slot( GtkWidget* w, gpointer data )
         gtk_widget_set_sensitive(widget, FALSE);
     }
 }
+
 void close_readme_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *widget;
@@ -258,6 +264,7 @@ void cancel_download_slot( GtkWidget* w, gpointer data )
 
 void update_proceed_slot( GtkWidget* w, gpointer data )
 {
+printf("Update proceed slot\n");
     update_proceeding = 1;
 }
 
@@ -275,50 +282,103 @@ static int download_update(float percentage, void *udata)
     return(download_cancelled);
 }
 
-static patch *skip_to_selected_patch(void)
-{
-    /* Skip to the next selected patch */
-    while ( ! update_patch->selected ) {
-        update_patch = update_patch->next;
-        if ( ! update_patch ) {
-            update_path = update_path->next;
-            if ( ! update_path ) {
-                /* End of the line.. */
-                return(NULL);
-            }
-            update_patch = update_path->patches;
-        }
-    }
-    return update_patch;
-}
-
 void gtk_button_set_text(GtkButton *button, const char *text)
 {
     gtk_label_set_text(GTK_LABEL(GTK_BIN(button)->child), text);
 }
 
-static void cancel_update(const char *status)
+static patch *skip_to_selected_update(void)
 {
-    GtkWidget *widget;
+    if ( update_patch ) {
+        while ( update_patch->installed ) {
+            update_path = update_path->next;
+            if ( ! update_path ) {
+                update_root = update_root->sibling;
+                if ( ! update_root ) {
+                    update_patchset = update_patchset->next;
+                    if ( ! update_patchset ) {
+                        /* End of the line.. */
+                        return(NULL);
+                    }
+                    update_root = update_patchset->root;
+                }
+                update_path = update_root->selected->shortest_path;
+            }
+            update_patch = update_path->patch;
+        }
+    }
+    return(update_patch);
+}
 
-    widget = glade_xml_get_widget(update_glade, "update_action_button");
-    if ( widget ) {
-        gtk_button_set_text(GTK_BUTTON(widget), _("Done"));
-        gtk_signal_connect(GTK_OBJECT(widget), "clicked",
-            GTK_SIGNAL_FUNC(choose_product_slot), (gpointer)0);
-        gtk_widget_set_sensitive(widget, TRUE);
+static void cleanup_update(const char *status_msg)
+{
+    GtkWidget *status;
+    GtkWidget *action;
+    GtkWidget *cancel;
+
+    /* Remove the update patch file */
+    unlink(update_url);
+
+    /* Deselect the current patch path */
+    select_node(update_patch->node, 0);
+
+    /* Handle auto-update of the next set of patches, if any */
+    if ( auto_update ) {
+        download_update_slot(NULL, NULL);
+        return;
     }
-    widget = glade_xml_get_widget(update_glade, "update_cancel_button");
-    if ( widget ) {
-        gtk_widget_set_sensitive(widget, FALSE);
+
+    /* We succeeded, enable the action button, and update the status */
+    action = glade_xml_get_widget(update_glade, "update_action_button");
+    if ( skip_to_selected_update() ) {
+        gtk_button_set_text(GTK_BUTTON(action), _("Continue"));
+    } else {
+        gtk_button_set_text(GTK_BUTTON(action), _("Finished"));
     }
-    widget = glade_xml_get_widget(update_glade, "update_status_label");
-    if ( widget ) {
-        gtk_label_set_text(GTK_LABEL(widget), status);
+    gtk_widget_set_sensitive(action, TRUE);
+
+    cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
+    if ( cancel ) {
+        gtk_widget_set_sensitive(cancel, FALSE);
+    }
+    if ( status_msg ) {
+        status = glade_xml_get_widget(update_glade, "update_status_label");
+        if ( status ) {
+            gtk_label_set_text(GTK_LABEL(status), status_msg);
+        }
+    } else {
+        /* Perform the action button */
+        action_button_slot(NULL, NULL);
     }
 }
 
-void perform_update_slot( GtkWidget* w, gpointer data )
+void action_button_slot(GtkWidget* w, gpointer data)
+{
+    struct stat sb;
+
+    /* If there's a valid patch file, run it! */
+    if ( stat(update_url, &sb) == 0 ) {
+        perform_update_slot(NULL, NULL);
+    } else {
+        /* We're done - do the next patch or quit */
+        if ( skip_to_selected_update() ) {
+            download_update_slot(NULL, NULL);
+        } else {
+            main_cancel_slot(NULL, NULL);
+        }
+    }
+}
+
+void cancel_button_slot(GtkWidget* w, gpointer data)
+{
+    if ( download_pending ) {
+        cancel_download_slot(NULL, NULL);
+    } else {
+        cleanup_update(NULL);
+    }
+}
+
+void download_update_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *notebook;
     GtkWidget *widget;
@@ -327,7 +387,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *action;
     GtkWidget *cancel;
     GtkWidget *progress;
-    char update_url[PATH_MAX];
+    patch *patch;
     char sig[1024];
     char sum_file[PATH_MAX];
     char md5_real[CHECKSUM_SIZE+1];
@@ -335,19 +395,21 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     FILE *fp;
     verify_result verified;
 
+printf("Download update slot\n");
+    /* Verify that we have an update to perform */
+    patch = skip_to_selected_update();
+    if ( ! patch ) {
+        return;
+    }
+    download_pending = 1;
+
     /* Set the current page to the product update page */
     notebook = glade_xml_get_widget(update_glade, "update_notebook");
     gtk_notebook_set_page(GTK_NOTEBOOK(notebook), UPDATE_PAGE);
 
     /* Set the action button to "Update" and disable it for now */
     action = glade_xml_get_widget(update_glade, "update_action_button");
-    if ( ! action ) {
-        log(LOG_ERROR, "No 'update_action_button'");
-        return;
-    }
     gtk_button_set_text(GTK_BUTTON(action), _("Update"));
-    gtk_signal_connect(GTK_OBJECT(action), "clicked",
-        GTK_SIGNAL_FUNC(update_proceed_slot), (gpointer)0);
     gtk_widget_set_sensitive(action, FALSE);
 
     /* Reset the panel */
@@ -361,7 +423,13 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     }
     widget = glade_xml_get_widget(update_glade, "update_name_label");
     if ( widget ) {
-        gtk_label_set_text(GTK_LABEL(widget), update_patch->description);
+        char text[1024];
+        get_product_description(patch->patchset->product, text, sizeof(text));
+        strncat(text, ": ",
+            ((sizeof(text)/sizeof(text[0])) - strlen(text)));
+        strncat(text, patch->description,
+            ((sizeof(text)/sizeof(text[0])) - strlen(text)));
+        gtk_label_set_text(GTK_LABEL(widget), text);
     }
     status = glade_xml_get_widget(update_glade, "update_status_label");
     if ( status ) {
@@ -377,7 +445,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     }
     widget = glade_xml_get_widget(update_glade, "update_readme_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+        gtk_widget_set_sensitive(widget, FALSE);
     }
     if ( readme_file[0] ) {
         unlink(readme_file);
@@ -388,7 +456,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     if ( status ) {
         gtk_label_set_text(GTK_LABEL(status), _("Downloading README"));
     }
-    sprintf(readme_file, "%s.txt", update_patch->url);
+    sprintf(readme_file, "%s.txt", patch->url);
     download_cancelled = 0;
     if ( get_url(readme_file, readme_file, sizeof(readme_file), download_update, NULL) == 0 ) {
         widget = glade_xml_get_widget(update_glade, "update_readme_button");
@@ -402,14 +470,14 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     if ( status ) {
         gtk_label_set_text(GTK_LABEL(status), _("Downloading update"));
     }
-    strcpy(update_url, update_patch->url);
+    strcpy(update_url, patch->url);
     progress = glade_xml_get_widget(update_glade, "update_download_progress");
     download_cancelled = 0;
     if ( get_url(update_url, update_url, sizeof(update_url),
                   download_update, progress) != 0 ) {
         update_balls(1, 4);
-        cancel_update(_("Unable to retrieve update"));
         unlink(update_url);
+        cleanup_update(_("Unable to retrieve update"));
         return;
     }
     update_balls(1, 2);
@@ -426,10 +494,22 @@ void perform_update_slot( GtkWidget* w, gpointer data )
             gtk_label_set_text(GTK_LABEL(verify),
                                _("Downloading GPG signature"));
         }
-        sprintf(sum_file, "%s.sig", update_patch->url);
+        sprintf(sum_file, "%s.sig", patch->url);
         if ( get_url(sum_file, sum_file, sizeof(sum_file),
                      download_update, NULL) == 0 ) {
-            verified = gpg_verify(sum_file, sig, sizeof(sig));
+            switch (gpg_verify(sum_file, sig, sizeof(sig))) {
+                case GPG_NOTINSTALLED:
+                case GPG_CANCELLED:
+                case GPG_NOPUBKEY:
+                    verified = VERIFY_UNKNOWN;
+                    break;
+                case GPG_VERIFYFAIL:
+                    verified = VERIFY_FAILED;
+                    break;
+                case GPG_VERIFYOK:
+                    verified = VERIFY_OK;
+                    break;
+            }
         }
         unlink(sum_file);
     }
@@ -439,7 +519,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
             gtk_label_set_text(GTK_LABEL(verify),
                                _("Downloading MD5 checksum"));
         }
-        sprintf(sum_file, "%s.md5", update_patch->url);
+        sprintf(sum_file, "%s.md5", patch->url);
         if ( get_url(sum_file, sum_file, sizeof(sum_file),
                      download_update, NULL) == 0 ) {
             fp = fopen(sum_file, "r");
@@ -475,102 +555,56 @@ void perform_update_slot( GtkWidget* w, gpointer data )
                 gtk_label_set_text(GTK_LABEL(verify), _("Update corrupted"));
             }
             update_balls(2, 4);
-            cancel_update(_("Verification failed"));
             unlink(update_url);
+            cleanup_update(_("Verification failed"));
             return;
     }
     if ( status ) {
         gtk_label_set_text(GTK_LABEL(status), _("Verification succeeded"));
     }
+    download_pending = 0;
+    gtk_widget_set_sensitive(action, TRUE);
 
     /* Wait for the user to confirm the update */
-    if ( ! auto_update ) {
-        download_cancelled = 0;
-        update_proceeding = 0;
-        gtk_widget_set_sensitive(action, TRUE);
-        while ( ! download_cancelled && ! update_proceeding ) {
-            gtk_main_iteration();
-        }
-        if ( download_cancelled ) {
-            unlink(update_url);
-            choose_product_slot(NULL, NULL);
-            return;
-        }
-        gtk_widget_set_sensitive(action, FALSE);
+    if ( auto_update ) {
+        perform_update_slot(NULL, NULL);
     }
+}
+
+void perform_update_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *action;
+    GtkWidget *status;
+    GtkWidget *cancel;
+    GtkWidget *progress;
 
     /* Actually perform the update */
     update_balls(3, 1);
+    action = glade_xml_get_widget(update_glade, "update_action_button");
+    if ( action ) {
+        gtk_widget_set_sensitive(action, FALSE);
+    }
+    status = glade_xml_get_widget(update_glade, "update_status_label");
     if ( status ) {
         gtk_label_set_text(GTK_LABEL(status), _("Performing update"));
     }
+    cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
     if ( cancel ) {
         gtk_widget_set_sensitive(cancel, FALSE);
     }
     progress = glade_xml_get_widget(update_glade, "update_patch_progress");
-    download_cancelled = 0;
     if ( perform_update(update_url, download_update, progress) != 0 ) {
         update_balls(3, 4);
-        cancel_update(_("Update failed"));
         unlink(update_url);
         update_status = -1;
+        cleanup_update(_("Update failed"));
         return;
     }
     update_balls(3, 2);
-    unlink(update_url);
+
+    /* We're done!  A successful update! */
     ++update_status;
-
-    /* Skip to the next patch, and install it if necessary */
-    update_patch->selected = 0;
-    skip_to_selected_patch();
-    if ( auto_update && update_patch ) {
-        perform_update_slot(NULL, NULL);
-    }
-
-    /* We succeeded, enable the action button, and update the status */
-    if ( update_patch ) {
-        gtk_button_set_text(GTK_BUTTON(action), _("Next"));
-        gtk_signal_connect(GTK_OBJECT(action), "clicked",
-            GTK_SIGNAL_FUNC(perform_update_slot), (gpointer)0);
-    } else {
-        gtk_button_set_text(GTK_BUTTON(action), _("Done"));
-        gtk_signal_connect(GTK_OBJECT(action), "clicked",
-            GTK_SIGNAL_FUNC(choose_product_slot), (gpointer)0);
-    }
-    gtk_widget_set_sensitive(action, TRUE);
-    if ( status ) {
-        gtk_label_set_text(GTK_LABEL(status), _("Update complete"));
-    }
-}
-
-/* Cancel the update list stage */
-static void cancel_list_update(const char *status)
-{
-    GtkWidget *widget;
-
-    /* Clean up any product patchset that may be around */
-    if ( product_patchset ) {
-        free_patchset(product_patchset);
-        product_patchset = NULL;
-    }
-
-    /* Set the status message, and enable buttons appropriately */
-    if ( download_cancelled ) {
-        choose_product_slot(NULL, NULL);
-    } else {
-        widget = glade_xml_get_widget(update_glade, "list_status_label");
-        if ( widget ) {
-            gtk_label_set_text(GTK_LABEL(widget), status);
-        }
-        widget = glade_xml_get_widget(update_glade, "list_cancel_button");
-        if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
-        }
-        widget = glade_xml_get_widget(update_glade, "list_done_button");
-        if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
-        }
-    }
+    cleanup_update(_("Update complete"));
 }
 
 static void empty_container(GtkWidget *widget, gpointer data)
@@ -578,34 +612,57 @@ static void empty_container(GtkWidget *widget, gpointer data)
     gtk_container_remove(GTK_CONTAINER(data), widget);
 }
 
-void update_toggle_option( GtkWidget* widget, gpointer func_data)
+static void update_toggle_option( GtkWidget* widget, gpointer func_data)
 {
-    patch_path *path;
-    patch *patch;
+    static int in_update_toggle_option = 0;
+    version_node *node = (version_node *)func_data;
 
-    path = gtk_object_get_data(GTK_OBJECT(widget), "data");
+    if ( in_update_toggle_option ) {
+        return;
+    }
+    in_update_toggle_option = 1;
+
     if ( GTK_TOGGLE_BUTTON(widget)->active ) {
-        for ( patch=path->patches; patch; patch=patch->next ) {
-            ++patch->selected;
+        /* Select this patch path */
+        select_node(node, 1);
+
+        /* We can always enable the continue button */
+        widget = glade_xml_get_widget(update_glade, "choose_continue_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, TRUE);
         }
     } else {
-        for ( patch=path->patches; patch; patch=patch->next ) {
-            --patch->selected;
-        }
-    }
-    widget = glade_xml_get_widget(update_glade, "choose_continue_button");
-    if ( widget ) {
-        gboolean selected = FALSE;
+        /* Deselect this patch path */
+        select_node(node, 0);
 
-        for (path=product_patchset->paths; path && !selected; path=path->next) {
-            for ( patch=path->patches; patch && !selected; patch=patch->next ) {
-                if ( patch->selected ) {
-                    selected = TRUE;
+        /* We may have to disable the continue button */
+        widget = glade_xml_get_widget(update_glade, "choose_continue_button");
+        if ( widget ) {
+            patchset *patchset;
+            version_node *root;
+            gboolean selected = FALSE;
+
+            for ( patchset = product_patchset;
+                  patchset && !selected; patchset=patchset->next ) {
+                for ( root=patchset->root;
+                      root && !selected; root=root->sibling ) {
+                    if ( root->selected ) {
+                        selected = TRUE;
+                    }
                 }
             }
+            gtk_widget_set_sensitive(widget, selected);
         }
-        gtk_widget_set_sensitive(widget, selected);
     }
+
+    /* Go through all the version nodes and set toggle state */
+    for ( node = node->root; node; node = node->next ) {
+        if ( node->udata ) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(node->udata),
+                                         node->toggled);
+        }
+    }
+    in_update_toggle_option = 0;
 }
 
 void choose_update_slot( GtkWidget* w, gpointer data )
@@ -613,11 +670,16 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *window;
     GtkWidget *notebook;
     GtkWidget *widget;
+    GtkWidget *update_vbox;
+    GtkWidget *frame;
+    GtkWidget *vbox;
     GtkWidget *button;
     GtkWidget *progress;
+    patchset *patchset;
+    const char *product_name;
+    char text[1024];
     char update_url[PATH_MAX];
-    patch_path *path;
-    patch *patch;
+    version_node *node, *root, *trunk;
     int selected;
 
     /* Clean up any product patchset that may be around */
@@ -634,111 +696,201 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     window = glade_xml_get_widget(update_glade, TOPLEVEL);
     gtk_widget_realize(window);
 
-    /* Reset the panel */
-    widget = glade_xml_get_widget(update_glade, "product_label");
-    if ( widget ) {
-        gtk_label_set_text(GTK_LABEL(widget), selected_product());
-    }
-    widget = glade_xml_get_widget(update_glade, "update_list_progress");
-    if ( widget ) {
-        gtk_progress_bar_update(GTK_PROGRESS_BAR(widget), 0.0);
-    }
-    widget = glade_xml_get_widget(update_glade, "list_status_label");
-    if ( widget ) {
-        gtk_label_set_text(GTK_LABEL(widget), "");
-    }
-    widget = glade_xml_get_widget(update_glade, "list_cancel_button");
-    if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
-    }
-    widget = glade_xml_get_widget(update_glade, "list_done_button");
-    if ( widget ) {
-        gtk_widget_set_sensitive(widget, FALSE);
-    }
+    /* Get the update option list widget */
+    update_vbox = glade_xml_get_widget(update_glade, "update_vbox");
+    
+    /* Clear any previous list of updates */
+    gtk_container_foreach(GTK_CONTAINER(update_vbox), empty_container, update_vbox);
 
-    /* Create a patchset for this product */
-    product_patchset = create_patchset(selected_product());
-    if ( ! product_patchset ) {
-        cancel_list_update(_("Unable to open product registry"));
-        return;
-    }
+    /* Build the list of updates for all selected products */
+    selected = 0;
+    while ( (product_name = selected_product()) != NULL ) {
 
-    /* Download the patch list */
-    update_balls(0, 1);
-    strcpy(update_url, loki_getinfo_product(product_patchset->product)->url);
-    progress = glade_xml_get_widget(update_glade, "update_list_progress");
-    download_cancelled = 0;
-    if ( get_url(update_url, update_url, sizeof(update_url),
-                  download_update, progress) != 0 ) {
+        /* Deselect the product so it isn't caught the next time through */
+        deselect_product();
+
+        /* Create a patchset for this product */
+        patchset = create_patchset(product_name);
+        if ( ! patchset ) {
+            log(LOG_WARNING, "Unable to open product '%s'\n", product_name);
+        }
+
+        /* Reset the panel */
+        widget = glade_xml_get_widget(update_glade, "product_label");
+        if ( widget ) {
+            const char *description;
+            description = loki_getinfo_product(patchset->product)->description;
+            gtk_label_set_text(GTK_LABEL(widget), description);
+        }
+        widget = glade_xml_get_widget(update_glade, "update_list_progress");
+        if ( widget ) {
+            gtk_progress_bar_update(GTK_PROGRESS_BAR(widget), 0.0);
+        }
+        widget = glade_xml_get_widget(update_glade, "list_status_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), "");
+        }
+        widget = glade_xml_get_widget(update_glade, "list_cancel_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, TRUE);
+        }
+        widget = glade_xml_get_widget(update_glade, "list_done_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+    
+        /* Download the patch list */
+        update_balls(0, 1);
+        strcpy(update_url, loki_getinfo_product(patchset->product)->url);
+        progress = glade_xml_get_widget(update_glade, "update_list_progress");
+        download_cancelled = 0;
+        if ( get_url(update_url, update_url, sizeof(update_url),
+                      download_update, progress) != 0 ) {
+            unlink(update_url);
+            update_balls(0, 4);
+            if ( ! download_cancelled ) {
+                /* Tell the user what happened, and wait before continuing */
+                update_proceeding = 0;
+                widget=glade_xml_get_widget(update_glade, "list_status_label");
+                if ( widget ) {
+                    gtk_label_set_text(GTK_LABEL(widget),
+                                       _("Unable to retrieve update list"));
+                }
+                widget=glade_xml_get_widget(update_glade, "list_cancel_button");
+                if ( widget ) {
+                    gtk_widget_set_sensitive(widget, FALSE);
+                }
+                widget = glade_xml_get_widget(update_glade, "list_done_button");
+                if ( widget ) {
+                    gtk_widget_set_sensitive(widget, TRUE);
+                }
+                while ( ! update_proceeding ) {
+                    gtk_main_iteration();
+                }
+            }
+            free_patchset(patchset);
+            continue;
+        }
+        update_balls(0, 2);
+    
+        /* Turn the patch list into a set of patches */
+        load_patchset(patchset, update_url);
         unlink(update_url);
-        update_balls(0, 4);
-        cancel_list_update(_("Unable to retrieve update list"));
-        return;
-    }
-    update_balls(0, 2);
+    
+        /* If there are no patches, we're done with this product */
+        if ( ! patchset->patches ) {
+            free_patchset(patchset);
+            continue;
+        }
+    
+        /* Add a frame and label for this product */
+        get_product_description(patchset->product, text, sizeof(text));
+        frame = gtk_frame_new(text);
+        gtk_container_set_border_width(GTK_CONTAINER(frame), 4);
+        gtk_box_pack_start(GTK_BOX(update_vbox), frame, FALSE, TRUE, 0);
+        gtk_widget_show(frame);
+        vbox = gtk_vbox_new(FALSE, 0);
+        gtk_container_add (GTK_CONTAINER (frame), vbox);
+        gtk_widget_show(vbox);
 
-    /* Turn the patch list into a set of patches */
-    load_patchset(product_patchset, update_url);
-    unlink(update_url);
+        /* Build a list of available upgrades for each component */
+        for ( root = patchset->root; root; root = root->sibling ) {
+            for ( trunk = root; trunk; trunk = trunk->child ) {
+                for ( node = trunk; node; node = node->sibling ) {
+                    if ( node->invisible ) {
+                        continue;
+                    }
+                    button = gtk_check_button_new_with_label(node->description);
+                    if ( node->toggled ) {
+                        ++selected;
+                        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button),
+                                                    TRUE);
+                    } else {
+                        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button),
+                                                    FALSE);
+                    }
+                    gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+                    gtk_signal_connect(GTK_OBJECT(button), "toggled",
+                        GTK_SIGNAL_FUNC(update_toggle_option), (gpointer)node);
+                    gtk_widget_show(button);
+                    node->udata = button;
+                }
+            }
+        }
 
-    /* If there are no patches, we're done */
-    if ( ! product_patchset->paths ) {
-        cancel_list_update(_("There are no new updates available"));
-        return;
+        /* Add this patchset to our list */
+        patchset->next = product_patchset;
+        product_patchset = patchset;
     }
-    autoselect_patches(product_patchset);
-    update_path = product_patchset->paths;
-    update_patch = update_path->patches;
-    skip_to_selected_patch();
+
+    /* Skip to the first selected patchset and component */
+    update_patchset = product_patchset;
+    if ( update_patchset ) {
+        update_root = update_patchset->root;
+    } else {
+        update_root = NULL;
+    }
+    update_path = NULL;
+    update_patch = NULL;
+    while ( ! update_path && update_patchset ) {
+        while ( update_root && ! update_root->selected ) {
+            update_root = update_root->sibling;
+        }
+        if ( update_root ) {
+            update_path = update_root->selected->shortest_path;
+            update_patch = update_path->patch;
+        } else {
+            update_patchset = update_patchset->next;
+        }
+    }
 
     /* Handle auto-update mode */
     if ( auto_update ) {
-        /* Auto-select patches and update them */
-        perform_update_slot(NULL, NULL);
+        if ( update_patch ) {
+            download_update_slot(NULL, NULL);
+        }
         return;
     }
-
-    /* Switch the notebook to the selection page */
-    gtk_notebook_set_page(GTK_NOTEBOOK(notebook), SELECT_PAGE);
-
-    /* Get the update option list widget */
-    widget = glade_xml_get_widget(update_glade, "update_vbox");
-
-    /* Clear any previous tree of upgrades */
-    gtk_container_foreach(GTK_CONTAINER(widget), empty_container, widget);
-
-    /* Build a list of available upgrades for each component */
-    path = product_patchset->paths;
-    selected = 0;
-    while ( path ) {
-        patch = path->leaf;
-        button = gtk_check_button_new_with_label(patch->description);
-        if ( patch->selected ) {
-            ++selected;
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
-        } else {
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), FALSE);
+    
+    /* Switch the notebook to the appropriate page */
+    if ( product_patchset ) {
+        gtk_notebook_set_page(GTK_NOTEBOOK(notebook), SELECT_PAGE);
+    
+        /* Disable the continue button until an option is selected */
+        widget = glade_xml_get_widget(update_glade, "choose_continue_button");
+        if ( widget ) {
+            if ( selected ) {
+                gtk_widget_set_sensitive(widget, TRUE);
+            } else {
+                gtk_widget_set_sensitive(widget, FALSE);
+            }
         }
-        gtk_object_set_data(GTK_OBJECT(button), "data", path);
-        gtk_box_pack_start(GTK_BOX(widget), button, FALSE, FALSE, 0);
-        gtk_signal_connect(GTK_OBJECT(button), "toggled",
-             GTK_SIGNAL_FUNC(update_toggle_option), (gpointer)path);
-        gtk_widget_show(button);
-        path = path->next;
-    }
-
-    /* Disable the continue button until an option is selected */
-    widget = glade_xml_get_widget(update_glade, "choose_continue_button");
-    if ( widget ) {
-        if ( selected ) {
-            gtk_widget_set_sensitive(widget, TRUE);
-        } else {
-            gtk_widget_set_sensitive(widget, FALSE);
-        }
+    } else {
+        choose_product_slot(NULL, NULL);
     }
 
     /* Allow the user to select the desired upgrades */
     return;
+}
+
+static void product_toggle_option( GtkWidget* widget, gpointer func_data)
+{
+    GList *list;
+    gboolean enabled;
+
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
+    enabled = FALSE;
+    while ( list ) {
+        if ( gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(list->data)) ) {
+            enabled = TRUE;
+        }
+        list = list->next;
+    }
+    widget = glade_xml_get_widget(update_glade, "product_continue_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, enabled);
+    }
 }
 
 static int gtkui_detect(void)
@@ -749,6 +901,10 @@ static int gtkui_detect(void)
 static int gtkui_init(int argc, char *argv[])
 {
     GtkWidget *widget;
+    GtkWidget *button;
+    product_t *product;
+    const char *product_name;
+    char text[1024];
 
     gtk_init(&argc,&argv);
 
@@ -760,30 +916,35 @@ static int gtkui_init(int argc, char *argv[])
     glade_xml_signal_autoconnect(update_glade);
 
     /* Fill in the list of products */
-    widget = glade_xml_get_widget(update_glade, "product_menu");
+    widget = glade_xml_get_widget(update_glade, "product_vbox");
     if ( widget ) {
-        GtkWidget *menu;
-        GtkWidget *menuitem;
-        const char *product;
-
-        menu = gtk_menu_new();
-        for ( product=loki_getfirstproduct();
-              product;
-              product=loki_getnextproduct() ) {
-            /* Create a menu item for that product */
-            menuitem = gtk_menu_item_new_with_label(product);
-            gtk_menu_append(GTK_MENU(menu), menuitem);
-
-            /* Keep our product hidden, show everything else */
-            if ( strcasecmp(product, PRODUCT) != 0 ) {
-                gtk_widget_show(menuitem);
+        for ( product_name=loki_getfirstproduct();
+              product_name;
+              product_name=loki_getnextproduct() ) {
+            product = loki_openproduct(product_name);
+            if ( ! product ) {
+                log(LOG_WARNING, "Unable to open product '%s'\n", product_name);
+                continue;
             }
+            get_product_description(product, text, sizeof(text));
+            button = gtk_check_button_new_with_label(text);
+            gtk_object_set_data(GTK_OBJECT(button), "data",
+                                (gpointer)product_name);
+            gtk_box_pack_start(GTK_BOX(widget), button, FALSE, FALSE, 0);
+            if ( strcasecmp(PRODUCT, product_name) != 0 ) {
+                gtk_signal_connect(GTK_OBJECT(button), "toggled",
+                    GTK_SIGNAL_FUNC(product_toggle_option), (gpointer)0);
+                gtk_widget_show(button);
+            }
+            loki_closeproduct(product);
         }
-        gtk_widget_show(menu);
-        gtk_option_menu_set_menu(GTK_OPTION_MENU(widget), menu);
     } else {
-        //log(LOG_ERROR, _("No product menu in glade file!\n"));
+        log(LOG_ERROR, _("No product_vbox in glade file!\n"));
         return(-1);
+    }
+    widget = glade_xml_get_widget(update_glade, "product_continue_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, FALSE);
     }
     return 0;
 }
@@ -805,13 +966,19 @@ static int gtkui_perform_updates(void)
     update_status = 0;
     choose_product_slot(NULL, NULL);
     auto_update = 0;
-    select_product(NULL);
     gtk_main();
     return update_status;
 }
 
 static void gtkui_cleanup(void)
 {
+    /* Clean up any product patchset that may be around */
+    if ( product_patchset ) {
+        free_patchset(product_patchset);
+        product_patchset = NULL;
+    }
+
+    /* Remove any left over README file */
     if ( readme_file[0] ) {
         unlink(readme_file);
     }
