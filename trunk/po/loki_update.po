@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2001-02-14 17:25-0800\n"
+"POT-Creation-Date: 2001-04-04 10:43-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -182,7 +182,7 @@ msgstr ""
 #, c-format
 msgid ""
 "Loki Update Tool %s\n"
-"Usage: %s [options] [product]\n"
+"Usage: %s [options] [product or install directory]\n"
 "The options can be any of:\n"
 "    --verbose               Print verbose messages to standard output\n"
 "    --noselfcheck           Skip check for updates for the update tool\n"
@@ -194,24 +194,29 @@ msgstr ""
 msgid "Couldn't change to install directory\n"
 msgstr ""
 
-#: loki_update.c:235
+#: loki_update.c:237
+#, c-format
+msgid "Couldn't modify or link to %s\n"
+msgstr ""
+
+#: loki_update.c:248
 msgid "Install path set, but no product specified\n"
 msgstr ""
 
-#: loki_update.c:259
+#: loki_update.c:273
 msgid "No user interface modules available\n"
 msgstr ""
 
-#: loki_update.c:278
+#: loki_update.c:292
 msgid "Couldn't exec ourselves!  Exiting\n"
 msgstr ""
 
-#: loki_update.c:291 tty_ui.c:415
+#: loki_update.c:304 tty_ui.c:415
 #, c-format
 msgid "%s not found, are you the one who installed it?\n"
 msgstr ""
 
-#: loki_update.c:317
+#: loki_update.c:330
 #, c-format
 msgid "Couldn't exec %s!  Exiting\n"
 msgstr ""
@@ -364,9 +369,15 @@ msgstr ""
 msgid "No product_vbox in glade file!\n"
 msgstr ""
 
-#: gtk_ui.c:2041
+#: gtk_ui.c:2037
 #, c-format
-msgid "\"%s\" not found, are you the one who installed it?"
+msgid ""
+"\n"
+"\"%s\"\n"
+"\n"
+"This is not recognized as either a product tag or a product\n"
+"installation directory.  If this is a product tag, are you running\n"
+"as the user who installed the product?"
 msgstr ""
 
 #: tty_ui.c:420
@@ -378,21 +389,21 @@ msgstr ""
 msgid "Setting product url for '%s' to: %s\n"
 msgstr ""
 
-#: load_products.c:66
+#: load_products.c:75
 #, c-format
 msgid "Adding product entry for '%s'\n"
 msgstr ""
 
-#: load_products.c:128
+#: load_products.c:137
 #, c-format
 msgid "Failed scan for product '%s'\n"
 msgstr ""
 
-#: load_products.c:171
+#: load_products.c:180
 msgid "Searching for installed products... "
 msgstr ""
 
-#: load_products.c:208
+#: load_products.c:217
 msgid "done!\n"
 msgstr ""
 
