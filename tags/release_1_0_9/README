@@ -1,0 +1,203 @@
+
+Loki Update Tool 1.0
+
+
+Introduction
+============
+This is a tool written by Loki Software, Inc., designed to be used in
+conjunction with their setup and patchkit tools to automatically update
+installed products.
+
+
+Licensing
+=========
+This update tool is available for use under the GNU General Public License.
+
+
+Basic Operation
+===============
+First the update tool looks for updates for itself, and if any are available,
+automatically downloads and applies them and restarts.  If an application
+name is given on the command line, the update tool looks for all updates
+that apply to the existing application, automatically applies them, and
+then quits.
+
+If the update tool is not given any command line arguments, then it enters
+an interactive mode in which the user can select available updates for any
+installed products.  It then downloads the README for the patch and makes
+it available to the user while the rest of the patch is downloaded.  If a
+GPG signature is available, it will be downloaded and used to verify the
+update.  If the GPG signature isn't available, or cannot be verified for
+some reason, then an MD5 checksum is downloaded and used for verification.
+When the user chooses to continue, the update is executed, and passed the
+"--nox11" and "--noreadme" options, telling it to run in quiet mode and
+print out percentage progress information.  When the patch completes, the
+user can continue applying updates until an error occurs or all updates
+are complete.
+
+Loki's games have a special feature built into them which allow you to
+run the game with the '--update' option to automatically update them and
+then restart for normal play.
+
+
+Update Creation
+===============
+The update tool assumes that your patches have been created using the
+Loki patchkit tools, and packed using the makeself.sh script written
+by Stephane Peter.
+
+The patchkit tools are available from Loki Software, Inc.
+
+The makeself.sh script is available from:
+http://www.lokigames.com/~megastep/makeself/
+
+When the product is installed with Loki's setup tool, it is provided
+with an product update URL, a place where a list of updates for this
+product are listed.  The listing can be text or HTML, and must contain
+a set of entries in the form:
+
+Product:
+Version:
+Architecture:
+Libc:
+Applies:
+File:
+
+The product is the keyword name of the product, as specified by the
+"product" tag in the product installation description file.  The name
+of the product actually shown the user is the product description, as
+specified by the "desc" tag in the product installation description file.
+
+The version is the version of the patch, i.e. what the final version of the
+product will be after the patch is applied.  The patch is responsible for
+updating the installation database, which is done automatically by Loki's
+patchkit tools.
+
+The architecture is an optional comma separated list of architectures for
+which the patch is valid.  The default is to match any architecture.
+Recognized keywords are: x86, ppc, alpha, sparc64, arm, any
+New keywords may be added by modifying arch.c in the setupdb distribution.
+
+The libc is an optional comma separated list of versions of libc for
+which the patch is valid.  The default is to match any version of libc.
+Recognized keywords are: libc5, glibc-2.0, glibc-2.1
+New keywords may be added by modifying arch.c in the setupdb distribution.
+
+The applies field is a comma separated list of product versions to which
+the patch may be applied.  If the installed version of the product doesn't
+match one of these strings, then the patch is discarded.
+
+The file field is the archive file used to upgrade this product.
+
+You can also add an optional "Note: blah blah" field which is listed in
+parenthesis after the update version when shown to the user.  These notes
+apply to versions, not patches, so if you want a note about a version, you
+only need to add it to one of the update listings for that version.
+
+The update tool supports patches that linearly increase an application
+version, convert to a different "flavor" of the product, or add extra
+functionality to the application.
+
+
+Components
+==========
+Patches that add extra functionality to an application, in the form of
+an "add-on" or expansion pack are considered special in several ways:
+
+ * They are considered separate components and may be patched separately
+   from the main application.
+
+ * They require a separate "Component" keyword that comes before the
+   "Version" keyword in the patch description indicating the verbose
+   name of the component.
+
+ * The applies field of the patch description contains only a single
+   version, and represents the minimum version of the product which
+   must be installed for this component to show up as an update option.
+
+ * Patches to this component must have a matching "Component" keyword.
+
+ * The component installation update must be specified in the same file
+   as the patches to this component.  Since the description syntax for a
+   new component update and patches to that component are the same, the
+   entry with the lowest version number is considered the base update.
+
+ * The component update must not modify any files in the base install,
+   it should just add new files.
+
+Examples of good candidates for "components" might be game level editors,
+mission packs, development kits, etc.
+
+
+Flavors
+=======
+An application flavor is designated by an extension to the application
+version, using any character except alphanumeric characters, the period,
+or a comma, followed by any amount of non-whitespace characters.  An
+example of an application flavor might be "1.0 Spanish", or "1.1-demo"
+
+The patch tools support patches that convert from one flavor to another
+or upgrade the version of a particular flavor, but keep in mind that 
+this is equivalent to a separate product in that only updates for your
+particular product flavor will be visible on the update selection list.
+
+The product as installed usually has no "flavor", this is the default.
+
+
+GNU Privacy Guard
+=================
+While the update tool does not ship with GPG for legal reasons, it will
+take advantage of GPG for update checksum and verification if it is
+installed on the user's system.  They do not need to know how to use
+GPG, the appropriate public keys are automatically downloaded from a
+public key server for update verification.
+
+More information about GNU Privacy Guard can be found at:
+http://www.gnupg.org/
+
+
+Advanced Operation
+==================
+If you give the update tool the command line argument "--verbose", it will
+be verbose about file transfers and patch application.
+
+If you give the update tool the command line argument "--debug", it will
+give full debug information about file transfers and internal parsing.
+
+If you give the update tool the command line argument "--noselfcheck", it
+will skip the normal check for updates for itself before going into normal
+operation.
+
+If you give the update tool the command line argument '--tmppath" followed
+by a directory name, it will use that directory as the temporary download
+path for updates and signatures.  This defaults to ~/.loki/loki_update/tmp
+
+If you give the update tool the command line argument "--meta_url URL",
+it will parse the given URL for "product: URL" key/value pairs, and use
+those as the update URLs for the listed products.  URL's may be relative
+filenames as well as normal internet style URLs.  This makes it easy to
+create patch update disks.
+
+On the final download screen, you have three buttons that give you control
+over the update download sites.  Each update download site is called a
+"mirror", and you can choose which site gives you the best download speed.
+The first button, "Choose Mirror", brings up a list of download sites for
+the current update, and let's you choose which one you want to use.
+The second button, "Next Mirror", automatically connects to the next
+available download site, continuing the download where it left off,
+if possible.
+The third button, "Save Mirror", saves the current download site to the
+file ~/.loki/loki_update/preferred_mirror.txt, and will use that site
+first for future downloads.
+
+If you download an update that has a GPG signature, the update tool will
+automatically try to download the public key for that signature from a
+public key server.  The list of keyservers that are contacted for public
+keys is stored in ~/.loki/loki_update/keyservers.txt.  You can add new
+servers to this file, one per line.
+
+
+Author
+======
+The Loki update tool was written by Sam Lantinga at Loki Software, Inc.
+
