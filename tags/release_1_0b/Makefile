@@ -1,0 +1,50 @@
+
+TARGET := loki_update
+VERSION := \"1.0b\"
+
+OS := $(shell uname -s)
+ARCH := $(shell sh print_arch)
+
+SETUPDB = ../setupdb
+SNARF = snarf-7.0
+CFLAGS = -g -O2 -Wall
+CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=$(VERSION)
+CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
+CFLAGS += $(shell xml-config --cflags)
+LFLAGS += -L$(SETUPDB)/$(ARCH) -lsetupdb
+LFLAGS += -Wl,-Bstatic
+LFLAGS += -L$(shell libglade-config --prefix)
+LFLAGS +=  -lglade
+LFLAGS += -L$(shell gtk-config --prefix)
+LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+LFLAGS += -L$(shell xml-config --prefix)
+LFLAGS += -lxml -lz
+LFLAGS += -Wl,-Bdynamic
+LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -ldl
+# Used for non-blocking gethostbyname
+# You can find Ares at: ftp://athena-dist.mit.edu/pub/ATHENA/ares
+LFLAGS += -lares
+
+OBJS = loki_update.o gtk_ui.o url_paths.o meta_url.o load_products.o \
+       load_patchset.o patchset.o urlset.o update.o gpg_verify.o get_url.o \
+       mkdirhier.o text_parse.o log_output.o safe_malloc.o \
+       $(SNARF_OBJS)
+
+SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \
+             $(SNARF)/file.o $(SNARF)/ftp.o $(SNARF)/gopher.o $(SNARF)/http.o
+
+all: $(TARGET)
+
+$(TARGET): $(SNARF)/snarf $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LFLAGS)
+
+$(SNARF)/snarf:
+	(cd $(SNARF); test -f Makefile || ./configure; make)
+
+distclean: clean
+	rm -f $(TARGET)
+	-$(MAKE) -C $(SNARF) $@
+
+clean:
+	rm -f *.o core
+	-$(MAKE) -C $(SNARF) $@

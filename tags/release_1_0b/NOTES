@@ -1,0 +1,38 @@
+
+Notes on the auto-updater
+
+Interactive mode:
+Lists installed product(s), and available versions.
+The user can select products and update them.
+
+Automatic mode:
+Automatically retrieves the latest version of the selected product
+and updates it.
+
+Each product has a separate meta-info page which provides the following
+information for each patch:
+
+Product
+
+Patch version
+Architecture {x86,ppc,alpha,etc}
+Updates version(s)
+Diskspace required
+Patch URL
+
+.
+.
+.
+
+Recommended patch file names:
+product-version-{incremental|full}-arch.run
+
+
+Updater process:
+
+Check for loki_update updates
+Apply any pending updates, restart if patched
+
+Check for installed products
+Check for new versions of products
+Prompt to apply updates
