@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := 1.0.7
+VERSION := 1.0.8
 IMAGE   := /loki/patch-tools/setup-image
 UPDATES := /loki/updates/loki_update
 
@@ -80,6 +80,7 @@ install-bin: $(TARGET)
 		cp -v $(TARGET) $(UPDATES)/bin-$(arch)-$(VERSION)/; \
 		strip $(UPDATES)/bin-$(arch)-$(VERSION)/$(TARGET); \
 	fi
+	@echo "Don't forget to update the version in setup.xml to $(VERSION)"
 
 install-data:
 	cp -av README icon.xpm $(IMAGE)/$(TARGET)/
