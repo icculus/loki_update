@@ -837,6 +837,7 @@ static void failed_current_mirror(urlset *mirrors)
         list = list->next;
         gtk_widget_set_sensitive(GTK_WIDGET(list->data), FALSE);
     }
+    set_url_status(mirrors, URL_FAILED);
 }
 
 void show_mirrors_slot( GtkWidget* w, gpointer data )
@@ -1420,10 +1421,9 @@ void download_update_slot( GtkWidget* w, gpointer data )
             }
 
             /* The download was cancelled or the download failed */
+            failed_current_mirror(patch->patchset->mirrors);
             update_balls(1, 4);
             verified = DOWNLOAD_FAILED;
-            set_url_status(patch->patchset->mirrors, URL_FAILED);
-            failed_current_mirror(patch->patchset->mirrors);
         } else {
             mirror_buttons_sensitive(FALSE);
             update_balls(1, 2);
@@ -1461,6 +1461,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                         /* Used internally, never happens */
                         break;
                     case GPG_VERIFYFAIL:
+                        failed_current_mirror(patch->patchset->mirrors);
                         set_status_message(gpg_status,
                                            _("GPG verify failed"));
                         verified = VERIFY_FAILED;
@@ -1495,6 +1496,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                         }
                         md5_compute(update_url, md5_real, 0);
                         if ( strcmp(md5_calc, md5_real) != 0 ) {
+                            failed_current_mirror(patch->patchset->mirrors);
                             verified = VERIFY_FAILED;
                         }
                     }
