@@ -73,17 +73,17 @@ static version_node *create_version_node(version_node *root,
                         get_version_extension(node)) == 0 ) {
             if ( root->top_root ) {
                 snprintf(description, sizeof(description),
-                         "Upgrade to %s", version);
+                         _("Upgrade to %s"), version);
             } else {
                 snprintf(description, sizeof(description),
-                         "Upgrade to %s %s", component, version);
+                         _("Upgrade to %s %s"), component, version);
             }
         } else {
             snprintf(description, sizeof(description),
-                     "Convert to %s", version);
+                     _("Convert to %s"), version);
         }
     } else {
-        snprintf(description, sizeof(description), "Install %s", component);
+        snprintf(description, sizeof(description), _("Install %s"), component);
     }
     node->description = safe_strdup(description);
     node->note = NULL;
@@ -461,7 +461,7 @@ int add_patch(const char *product,
             }
         }
         if ( ! matched_arch ) {
-            log(LOG_DEBUG, "Patch for different architecture, dropping\n");
+            log(LOG_DEBUG, _("Patch for different architecture, dropping\n"));
             free_urlset(urls);
             return(0);
         }
@@ -481,7 +481,7 @@ int add_patch(const char *product,
             }
         }
         if ( ! matched_libc ) {
-            log(LOG_DEBUG, "Patch for different version of libc, dropping\n");
+            log(LOG_DEBUG, _("Patch for different version of libc, dropping\n"));
             free_urlset(urls);
             return(0);
         }
@@ -490,7 +490,7 @@ int add_patch(const char *product,
     /* Create (or retrieve) the version_node */
     node = get_version_node(patchset->root, component, version, description);
     if ( ! node ) {
-        log(LOG_DEBUG, "Patch obsolete by installed version, dropping\n");
+        log(LOG_DEBUG, _("Patch obsolete by installed version, dropping\n"));
         free_urlset(urls);
         return(0);
     }
@@ -550,7 +550,7 @@ int add_patch(const char *product,
                 add_adjacent_node(node, patch);
             } else {
                 log(LOG_DEBUG,
-                    "Version combination %s and %s isn't legal, dropping\n",
+                    _("Version combination %s and %s isn't legal, dropping\n"),
                     node->description, patch->node->description);
             }
         }

@@ -9,6 +9,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "log_output.h"
+
 struct text_fp {
     char *data;
     char *pos;
@@ -34,14 +36,14 @@ struct text_fp *text_open(const char *file)
 
     /* Get the size of the file */
     if ( stat(file, &sb) < 0 ) {
-        fprintf(stderr, "Unable to find %s\n", file);
+        fprintf(stderr, _("Unable to find %s\n"), file);
         return(NULL);
     }
 
     /* Allocate memory for the file structure */
     textfp = (struct text_fp *)malloc(sizeof *textfp);
     if ( ! textfp ) {
-        fprintf(stderr, "Out of memory\n");
+        fprintf(stderr, _("Out of memory\n"));
         return(NULL);
     }
     memset(textfp, 0, (sizeof *textfp));
@@ -49,21 +51,21 @@ struct text_fp *text_open(const char *file)
     /* Allocate memory to hold the file */
     textfp->data = (char *)malloc(sb.st_size+1);
     if ( ! textfp->data ) {
-        fprintf(stderr, "Out of memory\n");
+        fprintf(stderr, _("Out of memory\n"));
         return(NULL);
     }
 
     /* Open and read the file */
     fp = fopen(file, "r");
     if ( ! fp ) {
-        fprintf(stderr, "Unable to open %s\n", file);
+        fprintf(stderr, _("Unable to open %s\n"), file);
         text_close(textfp);
         return(NULL);
     }
     was_read = fread(textfp->data, sb.st_size, 1, fp);
     fclose(fp);
     if ( ! was_read ) {
-        fprintf(stderr, "Unable to read %s\n", file);
+        fprintf(stderr, _("Unable to read %s\n"), file);
         text_close(textfp);
         return(NULL);
     }

@@ -1,0 +1,282 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-11-15 19:45-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+
+# SOME DESCRIPTIVE TITLE
+#: loki_update.glade:275 loki_update.glade:803 loki_update.glade:1183
+msgid "%P %%"
+msgstr ""
+
+#: loki_update.glade:569
+msgid "(0 MB)"
+msgstr ""
+
+#: loki_update.glade:552
+msgid "Available updates:"
+msgstr ""
+
+#: loki_update.glade:500 loki_update.glade:666 loki_update.glade:1371
+#: loki_update.glade:1720
+msgid "Cancel"
+msgstr ""
+
+#: loki_update.glade:1490 loki_update.glade:1563 loki_update.glade:1661
+msgid "Close"
+msgstr ""
+
+#: gtk_ui.c:825 gtk_ui.c:1323 gtk_ui.c:1451 loki_update.glade:164
+#: loki_update.glade:513 loki_update.glade:692
+msgid "Continue"
+msgstr ""
+
+#: loki_update.glade:464 loki_update.glade:1335
+msgid "Details"
+msgstr ""
+
+#: loki_update.glade:845
+msgid "Downloading [README/update]"
+msgstr ""
+
+#: loki_update.glade:317
+msgid "Downloading update list"
+msgstr ""
+
+#: loki_update.glade:138
+msgid "Exit"
+msgstr ""
+
+#: loki_update.glade:1512
+msgid "GPG Signature Details"
+msgstr ""
+
+#: loki_update.glade:1036
+msgid "GPG signature "
+msgstr ""
+
+#: loki_update.glade:34
+msgid "Loki Update Tool"
+msgstr ""
+
+#: loki_update.glade:334 loki_update.glade:862
+msgid "N / N MB"
+msgstr ""
+
+#: loki_update.glade:1706
+msgid "OK"
+msgstr ""
+
+#: loki_update.glade:1205
+msgid "Performing update:"
+msgstr ""
+
+#: loki_update.glade:624
+msgid "Quick-update (no user interaction)"
+msgstr ""
+
+#: loki_update.glade:1384
+msgid "README"
+msgstr ""
+
+#: loki_update.glade:1429
+msgid "Readme File"
+msgstr ""
+
+#: loki_update.glade:1674
+msgid "Save"
+msgstr ""
+
+#: loki_update.glade:151 loki_update.glade:679
+msgid "Select All"
+msgstr ""
+
+#: loki_update.glade:1686
+msgid "Select File"
+msgstr ""
+
+#: loki_update.glade:62
+msgid "Select the products you want to update:"
+msgstr ""
+
+#: loki_update.glade:408 loki_update.glade:1279
+msgid "Status:"
+msgstr ""
+
+#: loki_update.glade:1585
+msgid "Update Status Details"
+msgstr ""
+
+#: loki_update.glade:1049
+msgid "Verifying update:"
+msgstr ""
+
+#: loki_update.glade:1397
+msgid "[Action]"
+msgstr ""
+
+#: loki_update.glade:1532
+msgid "[GPG signature details]"
+msgstr ""
+
+#: loki_update.glade:1002
+msgid "[GPG status]"
+msgstr ""
+
+#: loki_update.glade:192
+msgid "[Product]"
+msgstr ""
+
+#: loki_update.glade:1618
+msgid "[Update status messages]"
+msgstr ""
+
+#: loki_update.glade:720
+msgid "[Update]"
+msgstr ""
+
+#: loki_update.glade:425 loki_update.glade:1296
+msgid "[current status]"
+msgstr ""
+
+#: loki_update.glade:956
+msgid "[verify status]"
+msgstr ""
+
+#: gtk_ui.c:685
+msgid "Downloading public key"
+msgstr ""
+
+#: gtk_ui.c:743
+#, c-format
+msgid "(%d MB)"
+msgstr ""
+
+#: gtk_ui.c:830 gtk_ui.c:1442
+msgid "Finished"
+msgstr ""
+
+#: gtk_ui.c:916
+msgid "Update"
+msgstr ""
+
+#: gtk_ui.c:925
+#, c-format
+msgid "%s: %s"
+msgstr ""
+
+#: gtk_ui.c:980 gtk_ui.c:983
+msgid "Downloading README"
+msgstr ""
+
+#: gtk_ui.c:999 gtk_ui.c:1002
+msgid "Downloading update"
+msgstr ""
+
+#: gtk_ui.c:1023
+msgid "Verifying GPG signature"
+msgstr ""
+
+#: gtk_ui.c:1032
+msgid "GPG not installed"
+msgstr ""
+
+#: gtk_ui.c:1037
+msgid "GPG was cancelled"
+msgstr ""
+
+#: gtk_ui.c:1042
+msgid "GPG key not available"
+msgstr ""
+
+#: gtk_ui.c:1050
+msgid "GPG verify failed"
+msgstr ""
+
+#: gtk_ui.c:1055
+msgid "GPG verify succeeded"
+msgstr ""
+
+#: gtk_ui.c:1062
+msgid "GPG signature not available"
+msgstr ""
+
+#: gtk_ui.c:1068
+msgid "Verifying MD5 checksum"
+msgstr ""
+
+#: gtk_ui.c:1085
+msgid "MD5 checksum not available"
+msgstr ""
+
+#: gtk_ui.c:1095 gtk_ui.c:1099
+msgid "Verification succeeded"
+msgstr ""
+
+#: gtk_ui.c:1103
+msgid "Verification failed"
+msgstr ""
+
+#: gtk_ui.c:1106
+msgid "Update corrupted"
+msgstr ""
+
+#: gtk_ui.c:1110
+msgid "Unable to retrieve update"
+msgstr ""
+
+#: gtk_ui.c:1113
+msgid "Ready for update"
+msgstr ""
+
+#: gtk_ui.c:1137
+msgid "Performing update"
+msgstr ""
+
+#: gtk_ui.c:1149
+msgid "Update failed"
+msgstr ""
+
+#: gtk_ui.c:1156
+msgid "Update complete"
+msgstr ""
+
+#: gtk_ui.c:1286
+msgid "Listing product updates"
+msgstr ""
+
+#: gtk_ui.c:1340
+msgid "Download cancelled"
+msgstr ""
+
+#: gtk_ui.c:1342
+msgid "Unable to retrieve update list"
+msgstr ""
+
+#: gtk_ui.c:1361
+msgid "Retrieved update list"
+msgstr ""
+
+#: gtk_ui.c:1438
+msgid "No new updates available"
+msgstr ""
+
+#: gtk_ui.c:1540
+msgid ""
+"No products found.\n"
+"Are you the one that installed the software?"
+msgstr ""
+
+#: gtk_ui.c:1545
+msgid "No product_vbox in glade file!\n"
+msgstr ""

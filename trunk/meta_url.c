@@ -42,7 +42,7 @@ void load_meta_url(const char *meta_url)
         while ( text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
             compose_url(meta_url, val, product_url, sizeof(product_url));
             log(LOG_DEBUG,
-                "Setting product url for '%s' to: %s\n", key, product_url);
+                _("Setting product url for '%s' to: %s\n"), key, product_url);
             set_product_url(key, product_url);
         }
         text_close(file);

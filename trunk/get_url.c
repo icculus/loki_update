@@ -77,14 +77,14 @@ static int wget_url(const char *url, char *file, int maxpath,
         base = url;
     }
     if ( maxpath < (strlen(path)+1+strlen(base)+1) ) {
-        update_message(LOG_ERROR, "Path too long for internal buffer",
+        update_message(LOG_ERROR, _("Path too long for internal buffer"),
                        update, udata);
         return(-1);
     }
 
     /* First create a pipe for communicating between child and parent */
     if ( pipe(pipefd) < 0 ) {
-        update_message(LOG_ERROR, "Couldn't create IPC pipe", update, udata);
+        update_message(LOG_ERROR, _("Couldn't create IPC pipe"), update, udata);
         return(-1);
     }
 
@@ -96,7 +96,7 @@ static int wget_url(const char *url, char *file, int maxpath,
     switch (child) {
         case -1:
             /* Fork failed */
-            update_message(LOG_ERROR, "Couldn't fork process", update, udata);
+            update_message(LOG_ERROR, _("Couldn't fork process"), update, udata);
             return(-1);
         case 0:
             /* Child process */
@@ -114,7 +114,7 @@ static int wget_url(const char *url, char *file, int maxpath,
             args[argc++] = url;
             args[argc] = NULL;
             execvp(args[0], args);
-            fprintf(stderr, "Couldn't exec " WGET "\n");
+            fprintf(stderr, _("Couldn't exec %s\n"), WGET);
             exit(-1);
         default:
             break;
@@ -213,13 +213,13 @@ static int snarf_url(const char *url, char *file, int maxpath,
         base = url;
     }
     if ( ! *base ) {
-        update_message(LOG_ERROR, "No file specified in URL", update, udata);
+        update_message(LOG_ERROR, _("No file specified in URL"), update, udata);
         return(-1);
     }
     strcat(path, "/");
     strcat(path, base);
     if ( maxpath < (strlen(path)+1) ) {
-        update_message(LOG_ERROR, "Path too long for internal buffer",
+        update_message(LOG_ERROR, _("Path too long for internal buffer"),
                        update, udata);
         return(-1);
     }
@@ -231,17 +231,17 @@ static int snarf_url(const char *url, char *file, int maxpath,
 
     rsrc = url_resource_new();
     if ( ! rsrc ) {
-        log(LOG_ERROR, "Out of memory\n");
+        log(LOG_ERROR, _("Out of memory\n"));
         return(-1);
     }
     rsrc->url = url_new();
     if ( ! rsrc->url ) {
-        log(LOG_ERROR, "Out of memory\n");
+        log(LOG_ERROR, _("Out of memory\n"));
         url_resource_destroy(rsrc);
         return(-1);
     }
     if ( ! url_init(rsrc->url, url) ) {
-        update_message(LOG_ERROR, "Malformed URL, aborting", update, udata);
+        update_message(LOG_ERROR, _("Malformed URL, aborting"), update, udata);
         url_resource_destroy(rsrc);
         return(-1);
     }

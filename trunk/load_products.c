@@ -43,7 +43,7 @@ static void add_product(const char *product, const char *version,
     product_entry *new_entry, *entry, *prev;
 
     /* Create the entry */
-    log(LOG_DEBUG, "Adding product entry for '%s'\n", product);
+    log(LOG_DEBUG, _("Adding product entry for '%s'\n"), product);
     new_entry = (product_entry *)safe_malloc(sizeof *entry);
     new_entry->product = safe_strdup(product);
     new_entry->version = safe_strdup(version);
@@ -105,7 +105,7 @@ static void detect_product(const char *product_name)
             add_product(product_name, version,
                         description, root, update_url, "Default Install");
         } else {
-            log(LOG_DEBUG, "Failed scan for product '%s'\n", product_name);
+            log(LOG_DEBUG, _("Failed scan for product '%s'\n"), product_name);
         }
         pclose(detect);
     }

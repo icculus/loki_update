@@ -36,7 +36,7 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
     /* First create a pipe for communicating between child and parent */
     signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
-        log(LOG_ERROR, "Couldn't create IPC pipe\n");
+        log(LOG_ERROR, _("Couldn't create IPC pipe\n"));
         return(GPG_CANCELLED);
     }
 
@@ -44,7 +44,7 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
     switch (child) {
         case -1:
             /* Fork failed */
-            log(LOG_ERROR, "Couldn't fork process\n");
+            log(LOG_ERROR, _("Couldn't fork process\n"));
             return(GPG_CANCELLED);
         case 0:
             /* Child process */
@@ -168,7 +168,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
     /* First create a pipe for communicating between child and parent */
     signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
-        log(LOG_ERROR, "Couldn't create IPC pipe\n");
+        log(LOG_ERROR, _("Couldn't create IPC pipe\n"));
         return(GPG_CANCELLED);
     }
 
@@ -176,7 +176,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
     switch (child) {
         case -1:
             /* Fork failed */
-            update_message(LOG_ERROR, "Couldn't fork process", update, udata);
+            update_message(LOG_ERROR, _("Couldn't fork process"), update, udata);
             return(GPG_CANCELLED);
         case 0:
             /* Child process */
@@ -283,15 +283,15 @@ int get_publickey(const char *key, update_callback update, void *udata)
     /* Search the keyservers for the key */
     status = GPG_CANCELLED;
     for ( i=0; keyservers[i] && (status != GPG_IMPORTED); ++i ) {
-        sprintf(text, "Downloading public key %s from %s", key, keyservers[i]);
+        sprintf(text, _("Downloading public key %s from %s"), key, keyservers[i]);
         update_message(LOG_VERBOSE, text, update, udata);
         status = get_publickey_from(key, keyservers[i], update, udata);
         switch (status) {
             case GPG_NOPUBKEY:
-                update_message(LOG_VERBOSE, "Key not found", update, udata);
+                update_message(LOG_VERBOSE, _("Key not found"), update, udata);
                 break;
             case GPG_IMPORTED:
-                update_message(LOG_VERBOSE, "Key downloaded", update, udata);
+                update_message(LOG_VERBOSE, _("Key downloaded"), update, udata);
                 break;
             default:
                 break;
