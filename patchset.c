@@ -303,7 +303,7 @@ static void free_patch(patch *patch)
 {
     if ( patch ) {
         free(patch->description);
-        free(patch->url);
+        free_urlset(patch->urls);
         safe_free(patch->apply);
         free_patch(patch->next);
         free(patch);
@@ -435,10 +435,9 @@ int add_patch(const char *product,
               const char *version,
               const char *arch,
               const char *applies,
-              const char *url,
+              urlset *urls,
               struct patchset *patchset)
 {
-    const char *saved_component;
     int matched_arch;
     const char *next;
     char word[128];
@@ -447,7 +446,6 @@ int add_patch(const char *product,
     version_node *node;
 
     /* It's legal to have no component, which means the default component */
-    saved_component = component;
     if ( component ) {
         snprintf(description, sizeof(description), "%s %s", component, version);
     } else {
@@ -459,10 +457,10 @@ int add_patch(const char *product,
     log(LOG_DEBUG, "\tComponent: %s\n", component);
     log(LOG_DEBUG, "\tVersion: %s\n", version);
     log(LOG_DEBUG, "\tArchitecture: %s\n", arch);
-    log(LOG_DEBUG, "\tURL: %s\n", url);
 
     if ( strcasecmp(product, patchset->product_name) != 0 ) {
         log(LOG_DEBUG, "Patch for different product, dropping\n");
+        free_urlset(urls);
         return(0);
     }
 
@@ -479,6 +477,7 @@ int add_patch(const char *product,
     }
     if ( ! matched_arch ) {
         log(LOG_DEBUG, "Patch for different architecture, dropping\n");
+        free_urlset(urls);
         return(0);
     }
 
@@ -486,6 +485,7 @@ int add_patch(const char *product,
     node = get_version_node(patchset->root, component, version, description);
     if ( ! node ) {
         log(LOG_DEBUG, "Patch obsolete by installed version, dropping\n");
+        free_urlset(urls);
         return(0);
     }
 
@@ -493,7 +493,7 @@ int add_patch(const char *product,
     patch = (struct patch *)safe_malloc(sizeof *patch);
     patch->patchset = patchset;
     patch->description = safe_strdup(description);
-    patch->url = safe_strdup(url);
+    patch->urls = urls;
     patch->node = node;
     patch->refcount = 0;
     patch->installed = 0;

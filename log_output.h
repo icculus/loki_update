@@ -8,5 +8,5 @@ enum {
 };
 
 extern void set_logging(int level);
+extern int get_logging(void);
 extern void log(int level, const char *fmt, ...);
-extern void log_warning(const char *fmt, ...);

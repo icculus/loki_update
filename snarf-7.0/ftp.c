@@ -455,11 +455,15 @@ ftp_transfer(UrlResource *rsrc)
                 
         retval = dump_data(rsrc, data_sock, out);
 
+#if 0 /* Some ftp servers don't apparently negotiate well, and hang here */
         line = get_line(rsrc, sock); /* 226 Transfer complete */
         safe_free(line);
         send_control(sock, "QUIT\r\n", NULL);
         line = get_line(rsrc, sock); /* 221 Goodbye */
         safe_free(line);
+#else
+        send_control(sock, "QUIT\r\n", NULL);
+#endif
 
 
         fclose(out);

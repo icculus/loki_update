@@ -84,7 +84,9 @@ the patch may be applied.  If the installed version of the product doesn't
 match one of these strings, then the patch is discarded.
 
 The URL is an FTP or HTTP style URL that designates the location of the
-patch file used to upgrade this product.
+patch file used to upgrade this product.  Multiple URL lines may exist,
+and the update tool will choose randomly among them until it succeeds
+in downloading the update.
 
 The update tool supports patches that linearly increase an application
 version, convert to a different "flavor" of the product, or add extra
