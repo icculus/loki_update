@@ -113,8 +113,9 @@ an "add-on" or expansion pack are considered special in several ways:
  * They are considered separate components and may be patched separately
    from the main application.
 
- * They require a separate "Component" keyword in the patch description
-   indicating the verbose name of the component.
+ * They require a separate "Component" keyword that comes before the
+   "Version" keyword in the patch description indicating the verbose
+   name of the component.
 
  * The applies field of the patch description contains only a single
    version, and represents the minimum version of the product which
@@ -163,8 +164,11 @@ http://www.gnupg.org/
 
 Advanced Operation
 ==================
+If you give the update tool the command line argument "--verbose", it will
+be verbose about file transfers and patch application.
+
 If you give the update tool the command line argument "--debug", it will
-be very verbose about file transfers and internal parsing.
+give full debug information about file transfers and internal parsing.
 
 If you give the update tool the command line argument "--noselfcheck", it
 will skip the normal check for updates for itself before going into normal

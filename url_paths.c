@@ -11,6 +11,11 @@ void set_working_path(const char *cwd)
     strncpy(working_path, cwd, sizeof(working_path));
 }
 
+const char *get_working_path(void)
+{
+    return(working_path);
+}
+
 /* Compose a full URL from a base and a relative URL */
 char *compose_url(const char *base, const char *url, char *full, int maxlen)
 {

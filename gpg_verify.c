@@ -153,7 +153,7 @@ int get_publickey(const char *key,
     pid_t child;
     int status = -1;
 
-    log(LOG_NORMAL, "Downloading public key %s from %s\n", key, KEYSERVER);
+    log(LOG_VERBOSE, "Downloading public key %s from %s\n", key, KEYSERVER);
 
     child = fork();
     switch (child) {

@@ -151,18 +151,25 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
                             char tmp[1024];
                             snprintf(tmp, sizeof(tmp), "%s, %s",
                                      *parse_table[i].variable, val);
+                            strcpy(val, tmp);
                             free(*parse_table[i].variable);
-                            *parse_table[i].variable = strdup(tmp);
                         } else {
                             if ( check_and_add_patch(patchset) < 0 ) {
                                 /* Error, messages already output */
                                 goto done_parse;
                             }
-                            *parse_table[i].variable = strdup(val);
                         }
-                    } else {
-                        *parse_table[i].variable = strdup(val);
+                    } else
+                    if ( strcasecmp(key, "Component") == 0 ) {
+                        /* Look for version, if found, starting new entry */
+                        if ( *parse_table[1].variable ) {
+                            if ( check_and_add_patch(patchset) < 0 ) {
+                                /* Error, messages already output */
+                                goto done_parse;
+                            }
+                        }
                     }
+                    *parse_table[i].variable = strdup(val);
                     break;
                 }
             }
