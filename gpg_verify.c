@@ -28,6 +28,7 @@ static gpg_result check_signature(const char *file, char *sig, int maxsig)
     gpg_result result;
 
     /* First create a pipe for communicating between child and parent */
+    signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
         log(LOG_ERROR, "Couldn't create IPC pipe\n");
         return(GPG_CANCELLED);
@@ -61,7 +62,7 @@ static gpg_result check_signature(const char *file, char *sig, int maxsig)
             /* Uh oh, we couldn't run GPG */
             prefix = "[GNUPG:] NOTINSTALLED\n";
             write(2, prefix, strlen(prefix));
-            exit(-1);
+            _exit(-1);
         default:
             break;
     }

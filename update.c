@@ -16,7 +16,8 @@
 #include "log_output.h"
 
 int perform_update(const char *update_file,
-            int (*update)(float percentage, void *udata), void *udata)
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
     int pipefd[2];
     int argc;
@@ -110,7 +111,7 @@ int perform_update(const char *update_file,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(percentage, udata);
+            cancelled = update(percentage, 0, 0, udata);
         }
 
         /* Why doesn't the pipe close? */

@@ -111,6 +111,7 @@ get_line(UrlResource *rsrc, int control)
 			return(NULL);
 		    case 0:
 			if ( rsrc->progress(rsrc->progress_percent,
+			                    0, 0,
 			                    rsrc->progress_udata) ) {
 				return(NULL);
 			}

@@ -37,7 +37,8 @@
    unwieldy because of the verboseness of the output.
 */
 static int wget_url(const char *url, char *file, int maxpath,
-                    int (*update)(float percentage, void *udata), void *udata)
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
     const char *home;
     const char *base;
@@ -180,7 +181,8 @@ static int wget_url(const char *url, char *file, int maxpath,
 int default_opts = 0; /* For the snarf code */
 
 static int snarf_url(const char *url, char *file, int maxpath,
-                     int (*update)(float percentage, void *udata), void *udata)
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
     const char *home;
     const char *base;
@@ -201,6 +203,10 @@ static int snarf_url(const char *url, char *file, int maxpath,
         base = base+1;
     } else {
         base = url;
+    }
+    if ( ! *base ) {
+        log(LOG_ERROR, "No file specified in URL\n");
+        return(-1);
     }
     strcat(path, "/");
     strcat(path, base);
@@ -247,7 +253,8 @@ static int snarf_url(const char *url, char *file, int maxpath,
 #endif /* USE_SNARF */
 
 int get_url(const char *url, char *file, int maxpath,
-            int (*update)(float percentage, void *udata), void *udata)
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
 #if defined(USE_WGET)
     return wget_url(url, file, maxpath, update, udata);

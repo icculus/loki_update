@@ -350,6 +350,7 @@ progress_update(Progress *	p,
                         p->rsrc->progress_percent = percent_done*100.0;
 			cancelled = p->rsrc->progress(
                                            p->rsrc->progress_percent,
+			                   p->current/1024, p->length/1024,
 			                   p->rsrc->progress_udata);
 		}
        
@@ -564,7 +565,7 @@ static void snarf_host_callback(void *arg, int status, struct hostent *host)
 	
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
-                    int (*update)(float percentage, void *udata), void *udata)
+                    int (*update)(float percentage, int size, int total, void *udata), void *udata)
 {
 	ares_channel channel;
 	int nfds;
@@ -598,7 +599,7 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 		tvp = ares_timeout(channel, &maxtv, &tv);
 		if ( select(nfds, &read_fds, &write_fds, NULL, tvp) == 0 ) {
 			/* No activity, run UI update */
-			cancelled = update(0.0f, udata);
+			cancelled = update(0.0f, 0, 0, udata);
 		}
 		ares_process(channel, &read_fds, &write_fds);
 	}
@@ -652,7 +653,8 @@ static int set_blocking(int sock_fd, int blocking)
 
 int
 tcp_connect_async(char *remote_host, int port,
-                  int (*update)(float percentage, void *udata), void *udata)
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata)
 {
         struct sockaddr_in sa;
         int sock_fd;
@@ -712,7 +714,7 @@ tcp_connect_async(char *remote_host, int port,
 				break;
 			    case 0:
 				/* No activity, run UI update */
-				cancelled = update(0.0f, udata);
+				cancelled = update(0.0f, 0, 0, udata);
 				break;
 			    default:
 				error_size = sizeof(was_error);

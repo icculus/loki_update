@@ -27,6 +27,7 @@
 
 static GladeXML *update_glade;
 static GladeXML *readme_glade;
+static GladeXML *gpg_glade;
 static patchset *update_patchset;
 static version_node *update_root;
 static patch_path *update_path;
@@ -257,6 +258,70 @@ void close_readme_slot( GtkWidget* w, gpointer data )
     gtk_object_unref(GTK_OBJECT(readme_glade));
 }
 
+void view_gpg_details_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    
+    widget = glade_xml_get_widget(gpg_glade, "gpg_dialog");
+    if ( widget ) {
+        gtk_widget_show(widget);
+        widget = glade_xml_get_widget(update_glade, "gpg_details_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+    }
+}
+
+void close_gpg_details_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    
+    widget = glade_xml_get_widget(gpg_glade, "gpg_dialog");
+    if ( widget ) {
+        gtk_widget_hide(widget);
+    }
+    widget = glade_xml_get_widget(update_glade, "gpg_details_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, TRUE);
+    }
+}
+
+static void enable_gpg_details(const char *url, char *sig)
+{
+    GtkWidget *widget;
+    char *file;
+    char *signature;
+    char *fingerprint;
+    char text[1024];
+
+    /* Fill in the information for this signature */
+    widget = glade_xml_get_widget(gpg_glade, "gpg_details_text");
+    if ( ! widget ) {
+        /* Hum, not much we can do.. */
+        return;
+    }
+    gtk_editable_delete_text(GTK_EDITABLE(widget), 0, -1);
+    file = strrchr(url, '/')+1;
+    fingerprint = sig;
+    signature = strchr(sig, ' ');
+    *signature++ = '\0';
+    sprintf(text, "%s\nSigned by %s\nGPG Fingerprint: ", file, signature);
+    while ( *fingerprint ) {
+        strncat(text, fingerprint, 4);
+        strcat(text, " ");
+        fingerprint += 4;
+    }
+    strcat(text, "\n");
+    gtk_text_insert(GTK_TEXT(widget), NULL, NULL, NULL, text, strlen(text));
+    gtk_editable_set_position(GTK_EDITABLE(widget), 0);
+
+    /* Enable the button to pop up the signature details */
+    widget = glade_xml_get_widget(update_glade, "gpg_details_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, TRUE);
+    }
+}
+
 void cancel_download_slot( GtkWidget* w, gpointer data )
 {
     download_cancelled = 1;
@@ -264,16 +329,38 @@ void cancel_download_slot( GtkWidget* w, gpointer data )
 
 void update_proceed_slot( GtkWidget* w, gpointer data )
 {
-printf("Update proceed slot\n");
     update_proceeding = 1;
 }
 
-static int download_update(float percentage, void *udata)
+static int download_update(float percentage, int size, int total, void *udata)
 {
     GtkWidget *progress = (GtkWidget *)udata;
 
     if ( progress ) {
         gtk_progress_bar_update(GTK_PROGRESS_BAR(progress), percentage/100.0);
+    }
+    if ( total ) {
+        GtkWidget *widget;
+        char text[32], *metric;
+
+        metric = "K";
+        if ( total >= 4192 ) {
+            metric = "MB";
+            total /= 1024;
+            size /= 1024;
+        }
+        widget = glade_xml_get_widget(update_glade, "size_download_label");
+        if ( widget ) {
+            sprintf(text, "%d %s", size, metric);
+            /* Set it! */
+            gtk_label_set_text(GTK_LABEL(widget), text);
+        }
+        widget = glade_xml_get_widget(update_glade, "total_download_label");
+        if ( widget ) {
+            sprintf(text, "%d %s", total, metric);
+            /* Set it! */
+            gtk_label_set_text(GTK_LABEL(widget), text);
+        }
     }
 
     while( gtk_events_pending() ) {
@@ -316,7 +403,10 @@ static patch *skip_to_selected_update(void)
         while ( update_patch->installed ) {
             update_path = update_path->next;
             if ( ! update_path ) {
-                update_root = update_root->sibling;
+                do {
+                    update_root = update_root->sibling;
+                } while ( update_root && ! update_root->selected );
+
                 if ( ! update_root ) {
                     update_patchset = update_patchset->next;
                     if ( ! update_patchset ) {
@@ -354,25 +444,28 @@ static void cleanup_update(const char *status_msg)
 
     /* We succeeded, enable the action button, and update the status */
     action = glade_xml_get_widget(update_glade, "update_action_button");
-    if ( skip_to_selected_update() ) {
+    cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
+    if ( (update_status >= 0) && skip_to_selected_update() ) {
+        if ( cancel ) {
+            gtk_widget_set_sensitive(cancel, TRUE);
+        }
         gtk_button_set_text(GTK_BUTTON(action), _("Continue"));
     } else {
+        if ( cancel ) {
+            gtk_widget_set_sensitive(cancel, FALSE);
+        }
         gtk_button_set_text(GTK_BUTTON(action), _("Finished"));
     }
     gtk_widget_set_sensitive(action, TRUE);
 
-    cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
-    if ( cancel ) {
-        gtk_widget_set_sensitive(cancel, FALSE);
-    }
     if ( status_msg ) {
         status = glade_xml_get_widget(update_glade, "update_status_label");
         if ( status ) {
             gtk_label_set_text(GTK_LABEL(status), status_msg);
         }
     } else {
-        /* Perform the action button */
-        action_button_slot(NULL, NULL);
+        /* User cancelled the update */
+        choose_product_slot(NULL, NULL);
     }
 }
 
@@ -385,10 +478,14 @@ void action_button_slot(GtkWidget* w, gpointer data)
         perform_update_slot(NULL, NULL);
     } else {
         /* We're done - do the next patch or quit */
-        if ( skip_to_selected_update() ) {
-            download_update_slot(NULL, NULL);
+        if ( update_status < 0 ) {
+            choose_product_slot(NULL, NULL);
         } else {
-            main_cancel_slot(NULL, NULL);
+            if ( skip_to_selected_update() ) {
+                download_update_slot(NULL, NULL);
+            } else {
+                main_cancel_slot(NULL, NULL);
+            }
         }
     }
 }
@@ -411,6 +508,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *action;
     GtkWidget *cancel;
     GtkWidget *progress;
+    GtkWidget *verify_status;
     patch *patch;
     char sig[1024];
     char sum_file[PATH_MAX];
@@ -419,7 +517,6 @@ void download_update_slot( GtkWidget* w, gpointer data )
     FILE *fp;
     verify_result verified;
 
-printf("Download update slot\n");
     /* Verify that we have an update to perform */
     patch = skip_to_selected_update();
     if ( ! patch ) {
@@ -464,11 +561,19 @@ printf("Download update slot\n");
     if ( verify ) {
         gtk_label_set_text(GTK_LABEL(verify), "");
     }
+    verify_status = glade_xml_get_widget(update_glade, "gpg_status_label");
+    if ( verify ) {
+        gtk_label_set_text(GTK_LABEL(verify_status), "");
+    }
     cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
     if ( cancel ) {
         gtk_widget_set_sensitive(cancel, TRUE);
     }
     widget = glade_xml_get_widget(update_glade, "update_readme_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, FALSE);
+    }
+    widget = glade_xml_get_widget(update_glade, "gpg_details_button");
     if ( widget ) {
         gtk_widget_set_sensitive(widget, FALSE);
     }
@@ -524,16 +629,46 @@ printf("Download update slot\n");
                      download_update, NULL) == 0 ) {
             switch (gpg_verify(sum_file, sig, sizeof(sig))) {
                 case GPG_NOTINSTALLED:
+                    if ( verify_status ) {
+                        gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG not installed"));
+                    }
+                    verified = VERIFY_UNKNOWN;
+                    break;
                 case GPG_CANCELLED:
+                    if ( verify_status ) {
+                        gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG was cancelled"));
+                    }
+                    verified = VERIFY_UNKNOWN;
+                    break;
                 case GPG_NOPUBKEY:
+                    if ( verify_status ) {
+                        gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG key not available"));
+                    }
                     verified = VERIFY_UNKNOWN;
                     break;
                 case GPG_VERIFYFAIL:
+                    if ( verify_status ) {
+                        gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG verify failed"));
+                    }
                     verified = VERIFY_FAILED;
                     break;
                 case GPG_VERIFYOK:
+                    if ( verify_status ) {
+                        gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG verify succeeded"));
+                    }
+                    enable_gpg_details(update_url, sig);
                     verified = VERIFY_OK;
                     break;
+            }
+        } else {
+            if ( verify_status ) {
+                gtk_label_set_text(GTK_LABEL(verify_status),
+                               _("GPG signature not available"));
             }
         }
         unlink(sum_file);
@@ -563,15 +698,13 @@ printf("Download update slot\n");
     switch (verified) {
         case VERIFY_OK:
             if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify),
-                                   _("Update okay, GPG signature verified"));
+                gtk_label_set_text(GTK_LABEL(verify), _("Update okay"));
             }
             update_balls(2, 2);
             break;
         case VERIFY_UNKNOWN:
             if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify),
-                                   _("Update okay, unable to check signature"));
+                gtk_label_set_text(GTK_LABEL(verify), _("Update okay"));
             }
             update_balls(2, 3);
             break;
@@ -581,6 +714,7 @@ printf("Download update slot\n");
             }
             update_balls(2, 4);
             unlink(update_url);
+            update_status = -1;
             cleanup_update(_("Verification failed"));
             return;
     }
@@ -920,9 +1054,11 @@ static int gtkui_init(int argc, char *argv[])
     /* Initialize Glade */
     glade_init();
     update_glade = glade_xml_new(UPDATE_GLADE, TOPLEVEL); 
+    gpg_glade = glade_xml_new(UPDATE_GLADE, "gpg_dialog");
 
     /* Add all signal handlers defined in glade file */
     glade_xml_signal_autoconnect(update_glade);
+    glade_xml_signal_autoconnect(gpg_glade);
 
     /* Fill in the list of products */
     widget = glade_xml_get_widget(update_glade, "product_vbox");
@@ -991,6 +1127,10 @@ static void gtkui_cleanup(void)
     if ( readme_file[0] ) {
         unlink(readme_file);
     }
+
+    /* Clean up the Glade files */
+    gtk_object_unref(GTK_OBJECT(update_glade));
+    gtk_object_unref(GTK_OBJECT(gpg_glade));
 }
 
 update_UI gtk_ui = {

@@ -9,8 +9,15 @@ CFLAGS += -I$(SETUPDB) -I$(SNARF)
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
 LFLAGS += -L$(SETUPDB)/$(ARCH) -lsetupdb
-LFLAGS += $(shell gtk-config --libs) $(shell libglade-config --libs)
-LFLAGS += $(shell xml-config --libs)
+LFLAGS += -Wl,-Bstatic
+LFLAGS += -L$(shell libglade-config --prefix)
+LFLAGS +=  -lglade
+LFLAGS += -L$(shell gtk-config --prefix)
+LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+LFLAGS += -L$(shell xml-config --prefix)
+LFLAGS += -lxml -lz
+LFLAGS += -Wl,-Bdynamic
+LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -ldl
 # Used for non-blocking gethostbyname
 # You can find Ares at: ftp://athena-dist.mit.edu/pub/ATHENA/ares
 LFLAGS += -lares
