@@ -711,7 +711,7 @@ static int download_update(int status_level, const char *status,
                 } else {
                     sprintf(text, _("ETA: "));
                 }
-                sprintf(&text[strlen(text)], _("%2.2ld:%2.2ld"),
+                sprintf(&text[strlen(text)], "%2.2ld:%2.2ld",
                         eta/60, eta%60);
             } else {
                 strcpy(text, _("unknown"));
