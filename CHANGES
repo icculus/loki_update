@@ -1,3 +1,7 @@
+1.0.13:
+Sam Lantinga - Sat Apr 28 15:18:34 PDT 2001
+ * Fixed crash when saving mirror while downloading multiple patches
+
 1.0.12:
 Sam Lantinga - Wed Apr 11 15:22:15 PDT 2001
  * Added a dynamically linked GTk user interface module as default
