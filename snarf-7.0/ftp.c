@@ -348,7 +348,7 @@ ftp_transfer(UrlResource *rsrc)
 
         if( !check_numeric("220", line) ) {
                 safe_free(line);
-                report(ERR, "bad server greeting: %s");
+                report(rsrc, ERR, "bad server greeting: %s");
                 return 0;
         }
 
@@ -362,7 +362,7 @@ ftp_transfer(UrlResource *rsrc)
         if( !check_numeric("230", line) ) {
                 if( !check_numeric("331", line)) {
                         safe_free(line);
-                        report(ERR, "bad/unexpected response: %s", line);
+                        report(rsrc, ERR, "bad/unexpected response: %s", line);
                         return 0;
                 } else {
                         safe_free(line);
@@ -372,7 +372,7 @@ ftp_transfer(UrlResource *rsrc)
                         if( !((line = get_line(rsrc, sock)) &&
                               check_numeric("230", line)) ) {
                                 safe_free(line);
-                                report(ERR, "login failed");
+                                report(rsrc, ERR, "login failed");
                                 return 0;
                         }
                         safe_free(line);
@@ -436,7 +436,7 @@ ftp_transfer(UrlResource *rsrc)
                     check_numeric("350", line)) ) {
                         safe_free(line);
                         close_quit(sock);
-                        report(ERR, "server does not support FTP resume, "
+                        report(rsrc, ERR, "server does not support FTP resume, "
                                "try again without -r");
                         return 0;
                 }
@@ -463,7 +463,7 @@ ftp_transfer(UrlResource *rsrc)
         safe_free(line);
 
         if( ! (out = open_outfile(rsrc)) ) {
-                report(ERR, "opening %s: %s", rsrc->outfile, 
+                report(rsrc, ERR, "opening %s: %s", rsrc->outfile, 
                       strerror(errno));
                 close_quit(sock);
                 return 0;

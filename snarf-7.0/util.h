@@ -23,7 +23,9 @@ struct _Progress {
         UrlResource *rsrc;	/* Info such as file name and offset */
 };
 
-enum report_levels { DEBUG, WARN, ERR };
+// Sam 11/2/00 - Modified to match the levels used by the UI code
+//enum report_levels { DEBUG, WARN, ERR };
+enum report_levels { DEBUG, VERBOSE, STAT, NORMAL, WARN, ERR };
 
 #ifdef PROTOTYPES
 
@@ -38,7 +40,7 @@ char *get_proxy(const char *);
 int dump_data(UrlResource *, int, FILE *);
 char *strconcat(const char *, ...);
 char *base64(char *, int);
-void report(enum report_levels, char *, ...);
+void report(UrlResource *, enum report_levels, char *, ...);
 int tcp_connect(char *, int);
 int tcp_connect_async(char *remote_host, int port, int (*update)(int status_level, const char *status, float percentage, int size, int total, void *udata), void *udata);
 off_t get_file_size(const char *);

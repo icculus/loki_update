@@ -79,7 +79,7 @@ set_options(unsigned char opts, char *optstring)
                         debug_enabled = !debug_enabled;
                         break;
                 default:
-                        report(WARN, "unknown option `%c', ignoring", optstring[i]);
+                        report(NULL, WARN, "unknown option `%c', ignoring", optstring[i]);
                 }
         }
 

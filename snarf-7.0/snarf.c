@@ -109,7 +109,7 @@ main(int argc, char *argv[])
                 if( strcmp(argv[i], "LATEST") == 0 ) {
                         u = url_new();
                         if( !url_init(u, LATEST_URL) ) {
-                                report(ERR, "`%s' is not a valid URL");
+                                report(NULL, ERR, "`%s' is not a valid URL");
                                 continue;
                         }
 
@@ -132,7 +132,7 @@ main(int argc, char *argv[])
                 if( !rsrc->url ) {
                         u = url_new();
                         if( !url_init(u, argv[i]) ) {
-                                report(ERR, "bad url `%s'", argv[i]);
+                                report(NULL, ERR, "bad url `%s'", argv[i]);
                                 continue;
                         }
                         rsrc->url = u;
@@ -142,13 +142,13 @@ main(int argc, char *argv[])
 
                         u = url_new();
                         if( !url_init(u, argv[i]) ) {
-                                report(ERR, "bad url `%s'", argv[i]);
+                                report(NULL, ERR, "bad url `%s'", argv[i]);
                                 continue;
                         }
                         rsrc->url = u;
                 } else {
                         if( rsrc->outfile )
-                                report(WARN, "ignoring `%s' for outfile",
+                                report(NULL, WARN, "ignoring `%s' for outfile",
                                        argv[i]);
                         else
                                 rsrc->outfile = strdup(argv[i]);
