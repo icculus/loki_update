@@ -11,6 +11,9 @@ libc := $(shell sh print_libc)
 SETUPDB = ../setupdb
 SNARF = snarf-7.0
 CFLAGS = -g -O2 -Wall
+ifeq ($(arch),alpha)
+CFLAGS += -mcpu=ev4 -Wa,-mall
+endif
 CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=\"$(VERSION)\"
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
@@ -72,8 +75,8 @@ install-bin: $(TARGET)
 		echo No directory to copy the binary files to.; \
 	fi
 	@if [ -d $(UPDATES) ]; then \
-                rm -rf $(UPDATES)/bin-$(arch)-$(VERSION); \
-                mkdir $(UPDATES)/bin-$(arch)-$(VERSION); \
+		rm -rf $(UPDATES)/bin-$(arch)-$(VERSION); \
+		mkdir $(UPDATES)/bin-$(arch)-$(VERSION); \
 		cp -v $(TARGET) $(UPDATES)/bin-$(arch)-$(VERSION)/; \
 		strip $(UPDATES)/bin-$(arch)-$(VERSION)/$(TARGET); \
 	fi
