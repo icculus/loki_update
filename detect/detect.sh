@@ -25,7 +25,8 @@ fi
 
 # Otherwise, perform a standard algorithm that catches most cases
 if [ ! -f "$product.md5" ]; then
-    echo "No MD5 checksum file for $product" >&2
+    # This is a product that isn't covered by the detection scripts
+    #echo "No MD5 checksum file for $product" >&2
     exit 2
 fi
 product_desc=`tail +2 "$product.md5" | head -n 1`

@@ -1,4 +1,6 @@
 1.0f:
+Sam Lantinga - Thu Dec  7 18:30:19 PST 2000
+ * Added Railroad Tycoon II on PowerPC detection.
 Sam Lantinga - Mon Dec  4 17:39:55 PST 2000
  * Added CivCTP Limited Edition detection.
  * Don't go into fully automated update mode when there's a graphical UI.
