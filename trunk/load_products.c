@@ -82,17 +82,44 @@ static char *get_line(char *line, int maxlen, FILE *file)
     }
     return(line);
 }
-   
-static void load_scanned_products(void)
+
+static void detect_product(const char *product_name)
 {
-    FILE *list, *detect;
+    FILE *detect;
     char command[1024];
-    char product_name[1024];
     char version[1024];
     char description[1024];
     char root[1024];
     char update_url[1024];
 
+    sprintf(command, "sh ./detect/detect.sh %s", product_name);
+    detect = popen(command, "r");
+    if ( detect ) {
+        if ( get_line(version, sizeof(version), detect) &&
+             get_line(description, sizeof(description), detect) &&
+             get_line(root, sizeof(root), detect) &&
+             get_line(update_url, sizeof(update_url), detect) ) {
+            add_product(product_name, version,
+                        description, root, update_url, "Default Install");
+        } else {
+            log(LOG_DEBUG, "Failed scan for product '%s'\n", product_name);
+        }
+        pclose(detect);
+    }
+}
+
+static void load_detected_products(const char *wanted)
+{
+    FILE *list;
+    char product_name[1024];
+
+    /* If we want something in particular, look for that */
+    if ( wanted ) {
+        detect_product(wanted);
+        return;
+    }
+
+    /* Otherwise scan for all known legacy products */
     list = fopen("detect/products.txt", "r");
     if ( ! list ) {
         /* No worries, I guess there's nothing to detect */
@@ -106,20 +133,7 @@ static void load_scanned_products(void)
         }
 
         /* Open up the detection routine */
-        sprintf(command, "sh ./detect/detect.sh %s", product_name);
-        detect = popen(command, "r");
-        if ( detect ) {
-            if ( get_line(version, sizeof(version), detect) &&
-                 get_line(description, sizeof(description), detect) &&
-                 get_line(root, sizeof(root), detect) &&
-                 get_line(update_url, sizeof(update_url), detect) ) {
-                add_product(product_name, version,
-                            description, root, update_url, "Default Install");
-            } else {
-                log(LOG_DEBUG, "Failed scan for product '%s'\n", product_name);
-            }
-            pclose(detect);
-        }
+        detect_product(product_name);
     }
 }
 
@@ -136,6 +150,10 @@ void load_product_list(const char *wanted)
     for ( product_name = loki_getfirstproduct();
           product_name;
           product_name = loki_getnextproduct() ) {
+        /* Skip unwanted entries, if we're looking for something */
+        if ( wanted && (strcasecmp(wanted, product_name) != 0) ) {
+            continue;
+        }
         product = loki_openproduct(product_name);
         if ( product ) {
             info = loki_getinfo_product(product);
@@ -152,7 +170,9 @@ void load_product_list(const char *wanted)
     }
 
     /* Now see what non-official products we should scan for */
-    load_scanned_products();
+    if ( ! wanted || ! product_list ) {
+        load_detected_products(wanted);
+    }
 
     printf("done!\n");
 }
