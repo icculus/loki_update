@@ -1,3 +1,7 @@
+1.0.10:
+Sam Lantinga - Thu Mar  8 14:56:22 PST 2001
+ * Always use the effective user id for the home directory
+
 1.0.9:
 Sam Lantinga - Mon Feb 19 22:45:23 PST 2001
  * Perform updates fully automated when doing auto-updates
