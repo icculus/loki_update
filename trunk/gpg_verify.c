@@ -8,7 +8,6 @@
 #include <sys/wait.h>
 
 #include "log_output.h"
-#include "download.h"
 #include "gpg_verify.h"
 
 #define GPG         "gpg"
@@ -149,6 +148,7 @@ static gpg_result check_signature(const char *file, char *sig, int maxsig)
         snprintf(sig, maxsig, "%s %s", fingerprint, signature);
     }
     waitpid(child, &status, 0);
+    close(pipefd[0]);
     return(result);
 }
 

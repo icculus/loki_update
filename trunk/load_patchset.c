@@ -1,37 +1,20 @@
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
 #include "text_parse.h"
 #include "patchset.h"
-#include "get_url.h"
 #include "log_output.h"
 #include "load_patchset.h"
 
-patchset *load_patchset(const char *product_name)
+patchset *load_patchset(patchset *patchset, const char *patchlist)
 {
-    patchset *patchset;
-    char update_url[PATH_MAX];
     struct text_fp *file;
     int index;
     patch *patch;
     patch_path *path;
 
-    /* Create the patchset that we'll use */
-    patchset = create_patchset(product_name);
-    if ( ! patchset ) {
-        return(NULL);
-    }
-
-    /* Retrieve the update URL and parse it for patches */
-    strcpy(update_url, loki_getinfo_product(patchset->product)->url);
-    if ( get_url(update_url, update_url, sizeof(update_url)) != 0 ) {
-        log(LOG_ERROR, "Unable to retrieve URL:\n%s\n", update_url);
-        free_patchset(patchset);
-        return(NULL);
-    }
-    file = text_open(update_url);
+    file = text_open(patchlist);
     if ( file ) {
         char parsed_name[1024];
         char *component = NULL;
@@ -54,7 +37,7 @@ patchset *load_patchset(const char *product_name)
 
         /* Skip to the appropriate product section */
         parsed_name[0] = '\0';
-        while ( strcasecmp(parsed_name, product_name) != 0 ) {
+        while ( strcasecmp(parsed_name, patchset->product_name) != 0 ) {
             if ( ! text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
                 break;
             }
@@ -64,7 +47,7 @@ patchset *load_patchset(const char *product_name)
         }
 
         /* Parse patches for this product */
-        while ( strcasecmp(parsed_name, product_name) == 0 ) {
+        while ( strcasecmp(parsed_name, patchset->product_name) == 0 ) {
             if ( ! text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
                 break;
             }
@@ -83,8 +66,8 @@ patchset *load_patchset(const char *product_name)
             if ( version && arch && applies && url ) {
                 log(LOG_DEBUG,
                     "Found patch: %s %s for %s applies to %s, at %s\n",
-                     product_name, version, arch, applies, url);
-                add_patch(product_name, component, version, arch, applies, url, patchset);
+                     patchset->product_name, version, arch, applies, url);
+                add_patch(patchset->product_name, component, version, arch, applies, url, patchset);
                 for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                     if ( *parse_table[i].variable ) {
                         free(*parse_table[i].variable);
@@ -95,7 +78,6 @@ patchset *load_patchset(const char *product_name)
         }
         text_close(file);
     }
-    unlink(update_url);
 
     /* Build a tree of patches and reduce it to the most efficient set */
     make_tree(patchset);

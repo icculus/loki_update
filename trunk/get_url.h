@@ -3,4 +3,5 @@
    update directory.
 */
 
-extern int get_url(const char *url, char *file, int maxpath);
+extern int get_url(const char *url, char *file, int maxpath,
+                   int (*update)(float percentage, void *udata), void *udata);
