@@ -47,8 +47,7 @@ The update tool assumes that your patches have been created using the
 Loki patchkit tools, and packed using the makeself.sh script written
 by Stephane Peter.
 
-The patchkit tools are available from:
-[FIXME: insert correct URL]
+The patchkit tools are available from Loki Software, Inc.
 
 The makeself.sh script is available from:
 http://www.lokigames.com/~megastep/makeself/
@@ -63,7 +62,7 @@ Version:
 Architecture:
 Libc:
 Applies:
-URL:
+File:
 
 The product is the keyword name of the product, as specified by the
 "product" tag in the product installation description file.  The name
@@ -89,11 +88,7 @@ The applies field is a comma separated list of product versions to which
 the patch may be applied.  If the installed version of the product doesn't
 match one of these strings, then the patch is discarded.
 
-The URL is an FTP or HTTP style URL that designates the location of the
-patch file used to upgrade this product.  Multiple URL lines may exist,
-and the update tool will choose randomly among them until it succeeds
-in downloading the update.  If the URL is a relative pathname, it is
-assumed to be relative to the URL path containing the product update URL.
+The file field is the archive file used to upgrade this product.
 
 You can also add an optional "Note: blah blah" field which is listed in
 parenthesis after the update version when shown to the user.  These notes
