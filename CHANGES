@@ -1,4 +1,6 @@
 1.0.8
+Sam Lantinga - Mon Feb 19 19:58:46 PST 2001
+ * Fixed memory corruption with certain password protected URLs
 Sam Lantinga - Thu Feb 15 18:14:17 PST 2001
  * Added a reminder to update setup.xml to the Makefile install rule
  * The url specified with --update_url applies to updating loki_update

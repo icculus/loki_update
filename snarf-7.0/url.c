@@ -111,7 +111,7 @@ get_username(const char *string, Url *u)
                 return string;
         }
  
-        username = malloc(i);
+        username = malloc(i + 1);
         memcpy(username, string, i + 1);
 
         username[i] = '\0';
@@ -150,7 +150,7 @@ get_password(const char *string, Url *u)
 
         for(i = 0 ; string[i] != '@'; i++);
         
-        password = malloc(i);
+        password = malloc(i + 1);
 
         /* and finally, get the password portion */
         memcpy(password, string, i);
