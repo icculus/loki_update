@@ -254,6 +254,9 @@ static int snarf_url(const char *url, char *file, int maxpath,
     rsrc->progress_udata = udata;
     if ( transfer(rsrc) ) {
         status = 0;
+        if ( update ) {
+            update(0, NULL, 100.0, 0, 0, udata);
+        }
     } else {
         status = -1;
     }
