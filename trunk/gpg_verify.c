@@ -42,18 +42,21 @@ static char *keyservers[] = {
     NULL
 };
 
-gpg_result gpg_verify(const char *file, char *sig, int maxsig)
+gpg_result gpg_verify(const char *file, char *sig, int maxsig,
+                      update_callback update, void *udata)
 {
     int argc;
     const char *args[9];
     pid_t child;
-    int status = -1;
+    int cancelled;
     int pipefd[2];
     char *prefix;
     int len, count;
     char line[1024];
     char signature[1024];
     char fingerprint[1024];
+    fd_set fdset;
+    struct timeval tv;
     gpg_result result;
 
     /* First create a pipe for communicating between child and parent */
@@ -98,13 +101,30 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
 
     /* Parent, read from child output (slow, but hey..) */
     result = GPG_CANCELLED;
+    cancelled = 0;
     close(pipefd[1]);
     memset(sig, 0, maxsig);
     memset(signature, 0, sizeof(signature));
     memset(fingerprint, 0, sizeof(fingerprint));
     len = 0;
-    while ( (count=read(pipefd[0], &line[len], 1)) >= 0 ) {
-        if ( (len == (sizeof(line)-1)) || (line[len] == '\n') ) {
+    while ( !cancelled ) {
+        count = 0;
+
+        /* See if there is data to read */
+        FD_ZERO(&fdset);
+        FD_SET(pipefd[0], &fdset);
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;
+        if ( select(pipefd[0]+1, &fdset, NULL, NULL, &tv) ) {
+            count = read(pipefd[0], &line[len], 1);
+            if ( count <= 0 ) {
+                break;
+            }
+        }
+
+        /* Parse output lines */
+        if ( (len == (sizeof(line)-1)) ||
+             (line[len] == '\r') || (line[len] == '\n') ) {
             line[len] = '\0';
 
             /* Check for GPG not installed */
@@ -156,19 +176,29 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
                 result = GPG_VERIFYOK;
                 break;
             }
+
             len = 0;
         } else {
             len += count;
         }
+
+        /* Update the UI */
+        if ( update ) {
+            cancelled = update(0, NULL, 0.0f, 0, 0, 0.0f, udata);
+        }
+
         /* Why doesn't the pipe close? */
-        if ( (count == 0) && (waitpid(child, &status, WNOHANG) == child) ) {
+        if ( (count == 0) && (waitpid(child, NULL, WNOHANG) == child) ) {
             break;
         }
     }
     if ( result == GPG_VERIFYOK ) {
         snprintf(sig, maxsig, "%s %s", fingerprint, signature);
     }
-    waitpid(child, &status, 0);
+    if ( cancelled ) {
+        kill(child, SIGTERM);
+    }
+    waitpid(child, NULL, 0);
     close(pipefd[0]);
     return(result);
 }
