@@ -22,8 +22,8 @@ void load_meta_url(const char *meta_url)
     struct text_fp *file;
 
     /* Download the meta file so we can parse it */
-    meta_file[0] = '\0';
-    if ( get_url(meta_url, meta_file, sizeof(meta_file),
+    compose_url(NULL, meta_url, meta_file, sizeof(meta_file));
+    if ( get_url(meta_file, meta_file, sizeof(meta_file),
                  download_progress, NULL) != 0 ) {
         unlink(meta_file);
         return;
