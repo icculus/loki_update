@@ -1,0 +1,522 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-11-19 16:33-0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+
+# SOME DESCRIPTIVE TITLE
+#: loki_update.glade:269 loki_update.glade:858 loki_update.glade:1381
+msgid "%P %%"
+msgstr ""
+
+#: loki_update.glade:623
+msgid "(0 MB)"
+msgstr ""
+
+#: loki_update.glade:328 loki_update.glade:917
+msgid "0.0 K/s"
+msgstr ""
+
+#: loki_update.glade:606
+msgid "Available updates:"
+msgstr ""
+
+#: loki_update.glade:554 loki_update.glade:720 loki_update.glade:1568
+#: loki_update.glade:1917
+msgid "Cancel"
+msgstr ""
+
+#: loki_update.glade:1992
+msgid "Choose"
+msgstr ""
+
+#: loki_update.glade:1043 loki_update.glade:1925
+msgid "Choose Mirror"
+msgstr ""
+
+#: loki_update.glade:1665 loki_update.glade:1747 loki_update.glade:1836
+#: loki_update.glade:1979
+msgid "Close"
+msgstr ""
+
+#: gtk_ui.c:1197 gtk_ui.c:1744 gtk_ui.c:1879 loki_update.glade:157
+#: loki_update.glade:567 loki_update.glade:746
+msgid "Continue"
+msgstr ""
+
+#: loki_update.glade:518 loki_update.glade:1532
+msgid "Details"
+msgstr ""
+
+#: loki_update.glade:900
+msgid "Downloading [README/update]"
+msgstr ""
+
+#: loki_update.glade:311
+msgid "Downloading update list"
+msgstr ""
+
+#: loki_update.glade:362 loki_update.glade:951
+msgid "ETA: 00:00"
+msgstr ""
+
+#: loki_update.glade:131
+msgid "Exit"
+msgstr ""
+
+#: loki_update.glade:1709
+msgid "GPG Signature Details"
+msgstr ""
+
+#: loki_update.glade:1233
+msgid "GPG signature "
+msgstr ""
+
+#: loki_update.glade:27
+msgid "Loki Update Tool"
+msgstr ""
+
+#: loki_update.glade:1903
+msgid "OK"
+msgstr ""
+
+#: loki_update.glade:1403
+msgid "Performing update:"
+msgstr ""
+
+#: loki_update.glade:2011
+msgid "Please choose the download site you would like to use:"
+msgstr ""
+
+#: loki_update.glade:55
+msgid "Please select the products you would like to update:"
+msgstr ""
+
+#: loki_update.glade:678
+msgid "Quick-update (no user interaction)"
+msgstr ""
+
+#: loki_update.glade:1581
+msgid "README"
+msgstr ""
+
+#: loki_update.glade:1626
+msgid "Readme File"
+msgstr ""
+
+#: loki_update.glade:1849
+msgid "Save"
+msgstr ""
+
+#: loki_update.glade:1069
+msgid "Save Mirror"
+msgstr ""
+
+#: loki_update.glade:144 loki_update.glade:733
+msgid "Select All"
+msgstr ""
+
+#: loki_update.glade:1883
+msgid "Select File"
+msgstr ""
+
+#: loki_update.glade:1056
+msgid "Switch Mirror"
+msgstr ""
+
+#: loki_update.glade:1782
+msgid "Update Status Details"
+msgstr ""
+
+#: loki_update.glade:1246
+msgid "Verifying update:"
+msgstr ""
+
+#: loki_update.glade:1594
+msgid "[Action]"
+msgstr ""
+
+#: loki_update.glade:1761
+msgid "[GPG signature details]"
+msgstr ""
+
+#: loki_update.glade:1199
+msgid "[GPG status]"
+msgstr ""
+
+#: loki_update.glade:185
+msgid "[Product]"
+msgstr ""
+
+#: loki_update.glade:1872
+msgid "[Update status messages]"
+msgstr ""
+
+#: loki_update.glade:774
+msgid "[Update]"
+msgstr ""
+
+#: loki_update.glade:479 loki_update.glade:1493
+msgid "[current status]"
+msgstr ""
+
+#: loki_update.glade:2050
+msgid "[mirror site list goes here]"
+msgstr ""
+
+#: loki_update.glade:1153
+msgid "[verify status]"
+msgstr ""
+
+#: loki_update.c:42
+#, c-format
+msgid ""
+"Loki Update Tool %s\n"
+"Usage: %s [options] [product]\n"
+"The options can be any of:\n"
+"    --verbose               Print verbose messages to standard output\n"
+"    --noselfcheck           Skip check for updates for the update tool\n"
+"    --tmpdir PATH           Use PATH as the temporary download path\n"
+"    --update_url URL        Use URL as the list of product updates\n"
+msgstr ""
+
+#: loki_update.c:130
+msgid "Couldn't change to install directory\n"
+msgstr ""
+
+#: loki_update.c:233
+msgid "Install path set, but no product specified\n"
+msgstr ""
+
+#: loki_update.c:266
+msgid "Couldn't exec ourselves!  Exiting\n"
+msgstr ""
+
+#: loki_update.c:279
+#, c-format
+msgid "%s not found, are you the one who installed it?\n"
+msgstr ""
+
+#: loki_update.c:305
+#, c-format
+msgid "Couldn't exec %s!  Exiting\n"
+msgstr ""
+
+#: gtk_ui.c:802
+msgid " (preferred)"
+msgstr ""
+
+#: gtk_ui.c:1028
+#, c-format
+msgid "ETA: %ld:"
+msgstr ""
+
+#: gtk_ui.c:1031
+msgid "ETA: "
+msgstr ""
+
+#: gtk_ui.c:1036
+msgid "unknown"
+msgstr ""
+
+#: gtk_ui.c:1057
+msgid "Running GPG..."
+msgstr ""
+
+#: gtk_ui.c:1064
+msgid "Downloading public key"
+msgstr ""
+
+#: gtk_ui.c:1115
+#, c-format
+msgid "(%d MB)"
+msgstr ""
+
+#: gtk_ui.c:1202 gtk_ui.c:1869
+msgid "Finished"
+msgstr ""
+
+#: gtk_ui.c:1297
+msgid "Update"
+msgstr ""
+
+#: gtk_ui.c:1374 gtk_ui.c:1377
+msgid "Downloading README"
+msgstr ""
+
+#: gtk_ui.c:1397 gtk_ui.c:1400
+msgid "Downloading update"
+msgstr ""
+
+#: gtk_ui.c:1432
+msgid "Verifying GPG signature"
+msgstr ""
+
+#: gtk_ui.c:1440
+msgid "GPG not installed"
+msgstr ""
+
+#: gtk_ui.c:1445
+msgid "GPG was cancelled"
+msgstr ""
+
+#: gtk_ui.c:1450
+msgid "GPG key not available"
+msgstr ""
+
+#: gtk_ui.c:1458
+msgid "GPG verify failed"
+msgstr ""
+
+#: gtk_ui.c:1463
+msgid "GPG verify succeeded"
+msgstr ""
+
+#: gtk_ui.c:1470
+msgid "GPG signature not available"
+msgstr ""
+
+#: gtk_ui.c:1476
+msgid "Verifying MD5 checksum"
+msgstr ""
+
+#: gtk_ui.c:1485
+msgid "Calculating MD5 checksum"
+msgstr ""
+
+#: gtk_ui.c:1497
+msgid "MD5 checksum not available"
+msgstr ""
+
+#: gtk_ui.c:1509 gtk_ui.c:1513
+msgid "Verification succeeded"
+msgstr ""
+
+#: gtk_ui.c:1517
+msgid "Verification failed"
+msgstr ""
+
+#: gtk_ui.c:1521
+msgid "Update corrupted"
+msgstr ""
+
+#: gtk_ui.c:1526
+msgid "Unable to retrieve update"
+msgstr ""
+
+#: gtk_ui.c:1530
+msgid "Ready for update"
+msgstr ""
+
+#: gtk_ui.c:1556
+msgid "Performing update"
+msgstr ""
+
+#: gtk_ui.c:1569
+msgid "Update failed"
+msgstr ""
+
+#: gtk_ui.c:1577
+msgid "Update complete"
+msgstr ""
+
+#: gtk_ui.c:1703
+msgid "Listing product updates"
+msgstr ""
+
+#: gtk_ui.c:1762
+msgid "Download cancelled"
+msgstr ""
+
+#: gtk_ui.c:1764
+msgid "Unable to retrieve update list"
+msgstr ""
+
+#: gtk_ui.c:1784
+msgid "Retrieved update list"
+msgstr ""
+
+#: gtk_ui.c:1862
+msgid "No new updates available"
+msgstr ""
+
+#: gtk_ui.c:1970
+msgid ""
+"No products found.\n"
+"Are you the one that installed the software?"
+msgstr ""
+
+#: gtk_ui.c:1975
+msgid "No product_vbox in glade file!\n"
+msgstr ""
+
+#: gtk_ui.c:2022
+#, c-format
+msgid "\"%s\" not found, are you the one who installed it?"
+msgstr ""
+
+#: meta_url.c:66
+#, c-format
+msgid "Setting product url for '%s' to: %s\n"
+msgstr ""
+
+#: load_products.c:66
+#, c-format
+msgid "Adding product entry for '%s'\n"
+msgstr ""
+
+#: load_products.c:128
+#, c-format
+msgid "Failed scan for product '%s'\n"
+msgstr ""
+
+#: load_products.c:170
+msgid "Searching for installed products... "
+msgstr ""
+
+#: load_products.c:203
+msgid "done!\n"
+msgstr ""
+
+#: patchset.c:96
+#, c-format
+msgid "Upgrade to %s"
+msgstr ""
+
+#: patchset.c:99
+#, c-format
+msgid "Upgrade to %s %s"
+msgstr ""
+
+#: patchset.c:103
+#, c-format
+msgid "Convert to %s"
+msgstr ""
+
+#: patchset.c:106
+#, c-format
+msgid "Install %s"
+msgstr ""
+
+#: patchset.c:495
+msgid "Patch for different architecture, dropping\n"
+msgstr ""
+
+#: patchset.c:514
+msgid "Patch for different version of libc, dropping\n"
+msgstr ""
+
+#: patchset.c:522
+msgid "Update obsolete by installed version, dropping\n"
+msgstr ""
+
+#: patchset.c:581
+#, c-format
+msgid "Version combination %s and %s isn't legal, dropping\n"
+msgstr ""
+
+#: urlset.c:246
+#, c-format
+msgid "Unable to write to %s\n"
+msgstr ""
+
+#: get_url.c:101 update.c:80
+msgid "Couldn't create IPC pipe"
+msgstr ""
+
+#: update.c:86
+#, c-format
+msgid "Update: %s"
+msgstr ""
+
+#: update.c:88
+msgid "Unpacking archive"
+msgstr ""
+
+#: get_url.c:113 gpg_verify.c:201 update.c:95
+msgid "Couldn't fork process"
+msgstr ""
+
+#: get_url.c:131 update.c:111
+#, c-format
+msgid "Couldn't exec %s\n"
+msgstr ""
+
+#: update.c:151
+msgid "Updating files"
+msgstr ""
+
+#: gpg_verify.c:61 gpg_verify.c:193
+msgid "Couldn't create IPC pipe\n"
+msgstr ""
+
+#: gpg_verify.c:69
+msgid "Couldn't fork process\n"
+msgstr ""
+
+#: gpg_verify.c:314
+#, c-format
+msgid "Unable to create %s"
+msgstr ""
+
+#: gpg_verify.c:333
+#, c-format
+msgid "Downloading public key %s from %s"
+msgstr ""
+
+#: gpg_verify.c:338
+msgid "Key not found"
+msgstr ""
+
+#: gpg_verify.c:341
+msgid "Key downloaded"
+msgstr ""
+
+#: get_url.c:94 get_url.c:232
+msgid "Path too long for internal buffer"
+msgstr ""
+
+#: get_url.c:226
+msgid "No file specified in URL"
+msgstr ""
+
+#: get_url.c:243 get_url.c:248 text_parse.c:66 text_parse.c:74
+msgid "Out of memory\n"
+msgstr ""
+
+#: get_url.c:253
+msgid "Malformed URL, aborting"
+msgstr ""
+
+#: text_parse.c:59
+#, c-format
+msgid "Unable to find %s\n"
+msgstr ""
+
+#: text_parse.c:81
+#, c-format
+msgid "Unable to open %s\n"
+msgstr ""
+
+#: text_parse.c:88
+#, c-format
+msgid "Unable to read %s\n"
+msgstr ""
+
+#: log_output.c:47
+msgid "ERROR: "
+msgstr ""
+
+#: log_output.c:50
+msgid "WARNING: "
+msgstr ""
