@@ -1,113 +1,113 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
-#include "patchset.h"
+#include "update_ui.h"
 #include "setupdb.h"
-#include "load_patchset.h"
-#include "update.h"
 #include "log_output.h"
-
-#define PRODUCT             "loki_update"
-
-struct product_entry {
-    patchset *patchset;
-    struct product_entry *next;
-} *product_list = NULL;
 
 static void print_usage(char *argv0)
 {
     fprintf(stderr, "Usage: %s [product]\n", argv0);
 }
 
-static int add_product_entry(const char *product)
+static void goto_installpath(char *argv0)
 {
-    int status;
+    char temppath[PATH_MAX];
+    char datapath[PATH_MAX];
+    char *home;
 
-    status = 0;
-    if ( strcmp(product, PRODUCT) != 0 ) {
-        struct product_entry *entry;
+    home = getenv("HOME");
+    if ( ! home ) {
+        home = ".";
+    }
 
-        entry = (struct product_entry *)malloc(sizeof *entry);
-        if ( entry ) {
-            entry->patchset = load_patchset(product);
-            if ( entry->patchset ) {
-                entry->next = product_list;
-                product_list = entry;
-            } else {
-                free(entry);
-                status = -1;
+    strcpy(temppath, argv0);    /* If this overflows, it's your own fault :) */
+    if ( ! strrchr(temppath, '/') ) {
+        char *path;
+        char *last;
+        int found;
+
+        found = 0;
+        path = getenv("PATH");
+        do {
+            /* Initialize our filename variable */
+            temppath[0] = '\0';
+
+            /* Get next entry from path variable */
+            last = strchr(path, ':');
+            if ( ! last )
+                last = path+strlen(path);
+
+            /* Perform tilde expansion */
+            if ( *path == '~' ) {
+                strcpy(temppath, home);
+                ++path;
             }
-        } else {
-            log(LOG_ERROR, "Out of memory, skipping product: %s\n", product);
-            status = -1;
-        }
+
+            /* Fill in the rest of the filename */
+            if ( last > (path+1) ) {
+                strncat(temppath, path, (last-path));
+                strcat(temppath, "/");
+            }
+            strcat(temppath, "./");
+            strcat(temppath, argv0);
+
+            /* See if it exists, and update path */
+            if ( access(temppath, X_OK) == 0 ) {
+                ++found;
+            }
+            path = last+1;
+
+        } while ( *last && !found );
+
+    } else {
+        /* Increment argv0 to the basename */
+        argv0 = strrchr(argv0, '/')+1;
     }
-    return status;
-}
 
-static void generate_product_list(void)
-{
-    const char *product;
-    struct product_entry *entry;
-
-    /* First free the existing list, if any */
-    while ( product_list ) {
-        entry = product_list;
-        product_list = product_list->next;
-
-        free_patchset(entry->patchset);
-        free(entry);
+    /* Now canonicalize it to a full pathname for the data path */
+    datapath[0] = '\0';
+    if ( realpath(temppath, datapath) ) {
+        /* There should always be '/' in the path */
+        *(strrchr(datapath, '/')) = '\0';
     }
-
-    /* Generate a new list of products */
-    for ( product=loki_getfirstproduct();
-          product;
-          product=loki_getnextproduct() ) {    
-        add_product_entry(product);
+    if ( ! *datapath || (chdir(datapath) < 0) ) {
+        fprintf(stderr, "Couldn't change to install directory\n");
+        exit(1);
     }
-}
-
-static patch *show_product_list(void)
-{
-    /* Show the list of products and patch paths */
-    // TODO
-
-    /* Choose a product and path to update */
-    // TODO
-
-    return(NULL);
 }
 
 int main(int argc, char *argv[])
 {
-    patchset *patchset;
-    patch *patch;
+    update_UI *ui;
 
     /* Initialize the UI */
-    // TODO
+    goto_installpath(argv[0]);
+    ui = &gtk_ui;
+    if ( ui->init(argc, argv) < 0 ) {
+        return(3);
+    }
 
     /* Stage 1: Update ourselves, if necessary */
     {
-        patchset = load_patchset(PRODUCT);
-        if ( ! patchset ) {
-            return(255);
-        }
-        switch (auto_update(patchset)) {
+        switch (ui->auto_update(PRODUCT)) {
             /* An error? return an error code */
             case -1:
+                ui->cleanup();
                 return(255);
             /* No update needed?  Continue.. */
             case 0:
                 break;
             /* Patched ourselves, restart */
             default:
+                ui->cleanup();
                 execvp(argv[0], argv);
                 fprintf(stderr, "Couldn't exec ourselves!  Exiting\n");
                 return(255);
         }
-        free_patchset(patchset);
     }
 
     /* Stage 2: If we are being run automatically, update the product */
@@ -124,15 +124,12 @@ int main(int argc, char *argv[])
             }
         }
         if ( ! argv[i+1] ) {
+            ui->cleanup();
             print_usage(argv[0]);
             return(1);
         }
-        patchset = load_patchset(argv[i+1]);
-        if ( ! patchset ) {
-            return(2);
-        }
         status = 0;
-        switch (auto_update(patchset)) {
+        switch (ui->auto_update(argv[i+1])) {
             /* An error? return an error code */
             case -1:
                 status = 3;
@@ -141,18 +138,23 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
-        free_patchset(patchset);
+        ui->cleanup();
+
+        /* Re-exec everything after "--" on command-line */
+        for ( i=1; argv[i]; ++i ) {
+            if ( strcmp(argv[i], "--") == 0 ) {
+                ++i;
+                execvp(argv[i], &argv[i]);
+                fprintf(stderr, "Couldn't exec %s!  Exiting\n", argv[i]);
+                return(255);
+            }
+        }
         return(status);
     }
 
     /* Stage 3: Generate a list of products and update them */
-    do {
-        generate_product_list();
-        patch = show_product_list();
-        if ( perform_update(patch) < 0 ) {
-            return(3);
-        }
-    } while ( patch );
+    ui->perform_updates();
+    ui->cleanup();
 
     return(0);
 }

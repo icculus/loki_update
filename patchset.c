@@ -6,13 +6,17 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "log_output.h"
 #include "patchset.h"
+#include "arch.h"
+#include "log_output.h"
 
 /* Construct a tree of available versions */
 
 static void free_patch(patch *patch)
 {
+    if ( patch->description ) {
+        free(patch->description);
+    }
     if ( patch->component ) {
         free(patch->component);
     }
@@ -74,6 +78,7 @@ patchset *create_patchset(const char *product)
     patchset = (struct patchset *)malloc(sizeof *patchset);
     if ( patchset ) {
         patchset->product = loki_openproduct(product);
+        patchset->product_name = loki_getinfo_product(patchset->product)->name;
         patchset->paths = NULL;
         patchset->num_patches = 0;
         patchset->patchlist = NULL;
@@ -134,10 +139,13 @@ int add_patch(const char *product,
     int matched_arch;
     const char *next;
     char word[128];
+    char description[256];
     patch *the_patch;
 
     /* It's legal to have no component, which means the default component */
-    if ( ! component ) {
+    if ( component ) {
+        snprintf(description, sizeof(description), "%s %s", component, version);
+    } else {
         product_component_t *product_component;
 
         product_component = loki_getdefault_component(patchset->product);
@@ -146,6 +154,7 @@ int add_patch(const char *product,
         } else {
             component = "";
         }
+        snprintf(description, sizeof(description), "%s %s", product, version);
     }
     log(LOG_DEBUG, "Potential patch:\n");
     log(LOG_DEBUG, "\tProduct: %s\n", product);
@@ -164,7 +173,7 @@ int add_patch(const char *product,
     for ( next=copy_word(arch, word, sizeof(word));
           next; 
           next=copy_word(next, word, sizeof(word)) ) {
-        if ( strcmp(word, detect_arch()) == 0 ) {
+        if ( strcasecmp(word, detect_arch()) == 0 ) {
             matched_arch = 1;
             break;
         }
@@ -181,20 +190,20 @@ int add_patch(const char *product,
         return(-1);
     }
     the_patch->next = NULL;
-    if ( component ) {
-        the_patch->component = strdup(component);
-        if ( ! the_patch->component ) {
-            free_patch(the_patch);
-            log(LOG_ERROR, "Out of memory\n");
-            return(-1);
-        }
+    if ( loki_find_component(patchset->product, component) ) {
+        the_patch->type = TYPE_PATCH;
     } else {
-        the_patch->component = NULL;
+        the_patch->type = TYPE_ADDON;
     }
+    the_patch->description = strdup(description);
+    the_patch->component = strdup(component);
     the_patch->version = strdup(version);
     the_patch->applies = strdup(applies);
     the_patch->url = strdup(url);
-    if ( ! the_patch->version || ! the_patch->applies || ! the_patch->url ) {
+    the_patch->selected = 0;
+    if ( ! the_patch->description ||
+         ! the_patch->component || ! the_patch->version ||
+         ! the_patch->applies || ! the_patch->url ) {
         free_patch(the_patch);
         log(LOG_ERROR, "Out of memory\n");
         return(-1);
@@ -421,4 +430,23 @@ void collapse_tree(patchset *patchset)
 
     /* What we have left is a list of valid short paths */
     free_pathlist(bad_paths);
+}
+
+/* Autoselect the paths which do not involve installing new components */
+void autoselect_patches(patchset *patchset)
+{
+    patch *patch;
+    patch_path *path;
+
+    path = patchset->paths;
+    while ( path ) {
+        patch = path->patches;
+        while ( patch ) {
+            if ( patch->type == TYPE_PATCH ) {
+                patch->selected = 1;
+            }
+            patch = patch->next;
+        }
+        path = path->next;
+    }
 }

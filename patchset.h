@@ -4,11 +4,20 @@
 
 #include "setupdb.h"
 
+typedef enum {
+    TYPE_ANY = -1,
+    TYPE_PATCH,
+    TYPE_ADDON
+} patch_type;
+
 typedef struct patch {
+    patch_type type;
+    char *description;
     char *component;
     char *version;
     char *applies;
     char *url;
+    int selected;
     struct patch *next;
 } patch;
 
@@ -20,6 +29,7 @@ typedef struct patch_path {
 
 typedef struct patchset {
     product_t *product;
+    const char *product_name;
 
     patch_path *paths;
 
@@ -49,6 +59,9 @@ extern int add_patch(const char *product,
 /* Generate trees of patch versions, trimming out those that don't apply */
 extern void make_tree(patchset *patchset);
 extern void collapse_tree(patchset *patchset);
+
+/* Select all the patches for components already installed */
+extern void autoselect_patches(patchset *patchset);
 
 /* Check the length of a path to a particular version */
 extern int path_length(patch_path *path, const char *version);
