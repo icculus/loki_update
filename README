@@ -89,6 +89,11 @@ and the update tool will choose randomly among them until it succeeds
 in downloading the update.  If the URL is a relative pathname, it is
 assumed to be relative to the URL path containing the product update URL.
 
+You can also add an optional "Note: blah blah" field which is listed in
+parenthesis after the update version when shown to the user.  These notes
+apply to versions, not patches, so if you want a note about a version, you
+only need to add it to one of the update listings for that version.
+
 The update tool supports patches that linearly increase an application
 version, convert to a different "flavor" of the product, or add extra
 functionality to the application.

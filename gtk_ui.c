@@ -932,6 +932,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     patchset *patchset;
     const char *product_name;
     const char *description;
+    char text[1024];
     version_node *node, *root, *trunk;
     int selected;
 
@@ -1053,7 +1054,14 @@ void choose_update_slot( GtkWidget* w, gpointer data )
                     if ( node->invisible ) {
                         continue;
                     }
-                    button = gtk_check_button_new_with_label(node->description);
+                    strncpy(text, node->description, sizeof(text));
+                    if ( node->note ) {
+                        int textlen;
+                        textlen = strlen(text);
+                        snprintf(&text[textlen], sizeof(text)-textlen,
+                                 " (%s)", node->note);
+                    }
+                    button = gtk_check_button_new_with_label(text);
                     if ( node->toggled ) {
                         ++selected;
                         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button),

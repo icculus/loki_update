@@ -14,6 +14,7 @@ typedef struct version_node {
     char *component;                /* The component for this node */
     char *version;                  /* The key data for this node */
     char *description;              /* The description of this node */
+    char *note;                     /* A note for the user about this node */
     int toggled;                    /* True if on the version path selected */
     int invisible;                  /* Never selectable, true for root nodes */
     int depth;                      /* Depth in the node tree */
@@ -85,6 +86,7 @@ extern int add_patch(const char *product,
                      const char *version,
                      const char *arch,
                      const char *applies,
+                     const char *note,
                      urlset *urls,
                      struct patchset *patchset);
 
