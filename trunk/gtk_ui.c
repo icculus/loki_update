@@ -1121,7 +1121,6 @@ void perform_update_slot( GtkWidget* w, gpointer data )
                         get_product_root(update_patchset->product_name),
                         download_update, &info) != 0 ) {
         update_balls(3, 4);
-        unlink(update_url);
         update_status = -1;
         cleanup_update(_("Update failed"), 0);
         return;
