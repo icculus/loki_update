@@ -347,7 +347,9 @@ progress_update(Progress *	p,
 		}
 
 		if( p->rsrc->progress ) {
-			cancelled = p->rsrc->progress(percent_done*100.0,
+                        p->rsrc->progress_percent = percent_done*100.0;
+			cancelled = p->rsrc->progress(
+                                           p->rsrc->progress_percent,
 			                   p->rsrc->progress_udata);
 		}
        

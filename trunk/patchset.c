@@ -167,9 +167,11 @@ static version_node *get_version_node(version_node *root,
                                       const char *version,
                                       const char *description)
 {
-    version_node *node, *parent;
+    version_node *main_root;
+    version_node *node, *parent, *branch;
 
     /* Find the correct component root to use for this version */
+    main_root = root;
     while ( root ) {
         if ( strcasecmp(root->component, component) == 0 ) {
             break;
@@ -177,21 +179,40 @@ static version_node *get_version_node(version_node *root,
         root = root->sibling;
     }
     if ( ! root ) {
-        /* This is a new component add-on */
-        // TODO
-        return(NULL);
+        /* This is a new component add-on, add it as a root node */
+        log(LOG_DEBUG, "Adding new component root %s\n", description);
+        root = main_root;
+        node = create_version_node(NULL, component, version, description);
+        node->sibling = root->sibling;
+        root->sibling = node;
+        return(node);
     }
 
-    /* If this is older than the root version, don't use it */
+    /* If this is older than the installed root version, don't use it */
     if ( newer_version(root->version, version) ) {
-        return(NULL);
+        if ( root->invisible ) {
+            return(NULL);
+        } else { /* Hmm, this must be the real component root */
+            log(LOG_DEBUG, "Adding %s as new component root\n", description);
+            node = create_version_node(NULL, component, version, description);
+            for ( branch = root; branch; branch = branch->child ) {
+                branch->root = node;
+            }
+            node->child = root;
+            root = main_root;
+            node->sibling = root->sibling;
+            root->sibling = node;
+            return(node);
+        }
     }
 
     /* Now see if this version node is already available */
+    log(LOG_DEBUG, "Looking for %s\n", description);
     parent = root;
     for ( node = root; node; node = node->child ) {
         /* If this is the exact node we're looking for.. */
         if ( strcasecmp(node->version, version) == 0 ) {
+            log(LOG_DEBUG, "Found correct node on trunk, returning it\n");
             break;
         }
 
@@ -203,20 +224,47 @@ static version_node *get_version_node(version_node *root,
 
         /* If we are not newer than the current node, we are a sibling */
         if ( !newer_version(version, node->version) && (node != root) ) {
-            parent = node;
-            for ( node=node->sibling; node; node=node->sibling ) {
+            branch = node;
+            while ( node ) {
                 /* If this is the exact node we're looking for.. */
-                if ( strcasecmp(node->version, version) == 0 ) {
+                log(LOG_DEBUG, "Checking %s and %s\n", node->version, version);
+                if ( strcasecmp(version, node->version) <= 0 ) {
+                    log(LOG_DEBUG,
+                        "Alphabetical match (less than or equal to)\n");
                     break;
                 }
-                parent = node;
+                branch = node;
+                node = node->sibling;
             }
-            /* We need to add ourselves as a new sibling */
-            if ( ! node ) {
+            if ( node ) {
+                /* We might have found the correct node */
+                if ( strcasecmp(node->version, version) == 0 ) {
+                    log(LOG_DEBUG,
+                        "Found correct node on branch, returning it\n");
+                } else {
+                    /* Need to insert ourselves here */
+                    if ( node == branch ) {
+                        log(LOG_DEBUG, "Inserting ourselves as trunk node\n");
+                        node = create_version_node(root,
+                                           component, version, description);
+                        node->sibling = branch;
+                        node->child = branch->child;
+                        branch->child = NULL;
+                        parent->child = node;
+                    } else {
+                        log(LOG_DEBUG, "Inserting ourselves as sibling node\n");
+                        node = create_version_node(root,
+                                           component, version, description);
+                        node->sibling = branch->sibling;
+                        branch->sibling = node;
+                    }
+                }
+            } else {
+                /* We need to add ourselves as a new sibling */
+                log(LOG_DEBUG, "Creating new leaf sibling node\n");
                 node = create_version_node(root,
                                            component, version, description);
-                node->sibling = parent->sibling;
-                parent->sibling = node;
+                branch->sibling = node;
             }
             break;
         }
@@ -227,6 +275,7 @@ static version_node *get_version_node(version_node *root,
 
     /* If we need to insert ourselves here, do so */
     if ( ! node ) {
+        log(LOG_DEBUG, "Creating new trunk node\n");
         node = create_version_node(root, component, version, description);
         node->child = parent->child;
         parent->child = node;
@@ -275,6 +324,7 @@ patchset *create_patchset(const char *product)
 {
     struct patchset *patchset;
     product_component_t *component;
+    version_node *root;
 
     patchset = (struct patchset *)safe_malloc(sizeof *patchset);
     patchset->product = loki_openproduct(product);
@@ -291,11 +341,24 @@ patchset *create_patchset(const char *product)
         return(NULL);
     }
     patchset->product_name = loki_getinfo_product(patchset->product)->name;
-    patchset->root = create_version_node(NULL,
-                                         loki_getname_component(component),
-                                         loki_getversion_component(component),
-                                         "Root node");
-    patchset->root->invisible = 1;
+    root = create_version_node(NULL, loki_getname_component(component),
+                                     loki_getversion_component(component),
+                                     "Root node");
+    root->invisible = 1;
+    patchset->root = root;
+    for ( component = loki_getfirst_component(patchset->product);
+          component;
+          component = loki_getnext_component(component) ) {
+        if ( ! loki_isdefault_component(component) ) {
+            root = create_version_node(NULL,
+                                       loki_getname_component(component),
+                                       loki_getversion_component(component),
+                                       "Root node");
+            root->invisible = 1;
+            root->sibling = patchset->root->sibling;
+            patchset->root->sibling = root;
+        }
+    }
     patchset->patches = NULL;
     patchset->next = NULL;
 
@@ -367,6 +430,19 @@ static int legal_version_combination(const char *version1,
         legal = 0;
     }
     return(legal);
+}
+
+static int is_new_component_root(version_node *root, version_node *node)
+{
+    int is_new;
+
+    is_new = 0;
+    for ( root = root->sibling; root && !is_new; root = root->sibling ) {
+        if ( (node == root) && ! node->invisible ) {
+            is_new = 1;
+        }
+    }
+    return(is_new);
 }
 
 /*
@@ -445,26 +521,41 @@ int add_patch(const char *product,
     patch->apply = NULL;
     patch->next = NULL;
 
-    /* Link it as adjacent to the versions it applies to */
-    for ( next=copy_word(applies, word, sizeof(word));
-          next; 
-          next=copy_word(next, word, sizeof(word)) ) {
-        if ( component == default_component(patchset->product) ) {
-            snprintf(description, sizeof(description), "Patch %s", word);
-        } else {
-            snprintf(description, sizeof(description), "%s %s", component,word);
+    /* Special case for new component roots, the 'applies' version is
+       the minimum required version of the installed product
+    */
+    if ( is_new_component_root(patchset->root, node) ) {
+        if ( strcasecmp(applies, patchset->root->version) == 0 ) {
+            node->shortest_path = (patch_path *)safe_malloc(
+                                    sizeof *node->shortest_path);
+            node->shortest_path->src = patchset->root;
+            node->shortest_path->dst = node;
+            node->shortest_path->patch = patch;
+            node->shortest_path->next = NULL;
         }
-        node = get_version_node(patchset->root, component, word, description);
-        if ( ! node ) {
-            /* This is an obsolete version, ignore it */
-            continue;
-        }
-        if ( legal_version_combination(node->version, patch->node->version) ) {
-            add_adjacent_node(node, patch);
-        } else {
-            log(LOG_DEBUG,
-                "Version combination %s and %s isn't legal, dropping\n",
-                node->description, patch->node->description);
+    } else {
+        /* Link it as adjacent to the versions it applies to */
+        for ( next=copy_word(applies, word, sizeof(word));
+              next; 
+              next=copy_word(next, word, sizeof(word)) ) {
+            if ( component == default_component(patchset->product) ) {
+                snprintf(description, sizeof(description), "Patch %s", word);
+            } else {
+                snprintf(description, sizeof(description), "%s %s",
+                         component, word);
+            }
+            node = get_version_node(patchset->root, component,word,description);
+            if ( ! node ) {
+                /* This is an obsolete version, ignore it */
+                continue;
+            }
+            if (legal_version_combination(node->version, patch->node->version)){
+                add_adjacent_node(node, patch);
+            } else {
+                log(LOG_DEBUG,
+                    "Version combination %s and %s isn't legal, dropping\n",
+                    node->description, patch->node->description);
+            }
         }
     }
 
@@ -621,6 +712,28 @@ static void trim_unconnected_nodes(version_node *trunk_prev,
     }
 }
 
+static void trim_unconnected_roots(version_node *root)
+{
+    version_node *node, *prev;
+
+    prev = root;
+    for ( node = root->sibling; node; ) {
+        if ( !node->invisible && !node->shortest_path ) {
+            /* It doesn't apply to the installed version, drop it */
+            log(LOG_DEBUG, 
+                "Add-on %s doesn't apply to installed product, trimming\n",
+                node->description);
+            prev->sibling = node->sibling;
+            node->sibling = NULL;
+            free_version_node(node);
+            node = prev->sibling;
+        } else {
+            prev = node;
+            node = node->sibling;
+        }
+    }
+}
+
 /* Generate valid patch paths, trimming out versions that don't apply */
 void calculate_paths(patchset *patchset)
 {
@@ -632,8 +745,10 @@ void calculate_paths(patchset *patchset)
 
     /* Allocate memory for the shortest path algorithm */
     num_nodes = 0;
-    for ( node = patchset->root; node; node = node->next ) {
-        node->index = num_nodes++;
+    for ( root = patchset->root; root; root = root->sibling ) {
+        for ( node = root; node; node = node->next ) {
+            node->index = num_nodes++;
+        }
     }
     if ( num_nodes == 0 ) {
         /* Nothing to do, return */
@@ -645,6 +760,7 @@ void calculate_paths(patchset *patchset)
     patchset->fringe = (version_node **)safe_malloc(num_nodes*(sizeof *patchset->fringe));
 
     root = patchset->root;
+    trim_unconnected_roots(root);
     while ( root ) {
         /* For all the nodes in the tree, generate a path from the root to it */
         depth = 0;
@@ -672,6 +788,9 @@ void calculate_paths(patchset *patchset)
 void select_node(version_node *selected_node, int selected)
 {
     version_node *node;
+    version_node *trunk;
+    version_node *next;
+    patch_path *path;
 
     /* Protect against bad parameters */
     if ( ! selected_node ) {
@@ -692,24 +811,37 @@ void select_node(version_node *selected_node, int selected)
 
     /* Toggle on each node in the patch path, if selected */
     if ( selected ) {
-        /* Now enable toggle state for earlier nodes with our extension */
-        for ( node=selected_node->root; node; node=node->next ) {
-            if ( node->depth < selected_node->depth ) {
-                if ( strcasecmp(get_version_extension(selected_node),
+        /* Now enable toggle state for earlier nodes in our path */
+        path = selected_node->shortest_path;
+        for ( trunk=selected_node->root; path && trunk; trunk=trunk->child ) {
+            if ( trunk->invisible ) {
+                continue;
+            }
+            for ( node = trunk; path && node; ) {
+                if ( strcasecmp(get_version_extension(path->dst),
                                 get_version_extension(node)) == 0 ) {
                     node->toggled = 1;
+                }
+                if ( node == path->dst ) {
+                    path = path->next;
+                    if ( path ) {
+                        node = trunk;
+                    }
+                } else {
+                    node = node->sibling;
                 }
             }
         }
         selected_node->toggled = 1;
     } else {
-        version_node *trunk;
-        version_node *next;
         /* Nothing is selected, select the previous patch in our tree that
            matches our version extension.
          */
         next = NULL;
-        for ( trunk=selected_node->root->child; trunk; trunk=trunk->child ) {
+        for ( trunk=selected_node->root; trunk; trunk=trunk->child ) {
+            if ( trunk->invisible ) {
+                continue;
+            }
             if ( trunk->depth == selected_node->depth ) {
                 break;
             }
@@ -730,6 +862,10 @@ void autoselect_patches(patchset *patchset)
     version_node *node, *root;
 
     for ( root = patchset->root; root; root = root->sibling ) {
+        if ( ! root->invisible ) {
+            /* Not installed yet, don't select it automatically */
+            continue;
+        }
         for ( node=root->child; node; node=node->child ) {
             if ( ! node->child ) {
                 /* This is the final leaf node on the trunk, select it */

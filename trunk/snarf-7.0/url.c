@@ -292,6 +292,7 @@ url_resource_new(void)
         new_resource->outfile_size	= 0;
         new_resource->outfile_offset	= 0;
         new_resource->progress		= NULL;
+        new_resource->progress_percent	= 0.0f;
         new_resource->progress_udata	= NULL;
 
         return new_resource;
