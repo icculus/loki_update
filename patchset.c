@@ -171,13 +171,23 @@ static version_node *get_version_node(version_node *root,
         if ( root->invisible ) {
             return(NULL);
         } else { /* Hmm, this must be the real component root */
-            log(LOG_DEBUG, "Adding %s as new component root\n", description);
-            node = create_version_node(NULL, component, version);
-            for ( branch = root; branch; branch = branch->child ) {
-                branch->root = node;
+            /* Uh oh, we no longer have "applies" information for what
+               we thought was the original component root, so we better
+               discard it.  It will get picked up again if the user runs
+               the updater again after installing the real component root.
+            */
+            log(LOG_DEBUG, "Removing previously invalid component root\n");
+            log(LOG_DEBUG, "(addon patches should be listed after installs)\n");
+            parent = main_root;
+            for ( node = parent->sibling; node != root; node = node->sibling ) {
+                parent = node;
             }
-            node->child = root;
+            parent->sibling = root->sibling;
+            root->sibling = NULL;
+            free_version_node(root);
+            log(LOG_DEBUG, "Adding %s as new component root\n", description);
             root = main_root;
+            node = create_version_node(NULL, component, version);
             node->sibling = root->sibling;
             root->sibling = node;
             return(node);
@@ -510,7 +520,7 @@ int add_patch(const char *product,
     /* Create (or retrieve) the version_node */
     node = get_version_node(patchset->root, component, version, description);
     if ( ! node ) {
-        log(LOG_DEBUG, _("Patch obsolete by installed version, dropping\n"));
+        log(LOG_DEBUG, _("Update obsolete by installed version, dropping\n"));
         free_urlset(urls);
         return(0);
     }
@@ -681,7 +691,6 @@ static patch_path *find_shortest_path(version_node *root,
     if ( node == leaf ) {
         while ( node != root ) {
             newpath = (patch_path *)safe_malloc(sizeof *newpath);
-            newpath->next = path;
             newpath->src = parent[node->index];
             newpath->dst = node;
             newpath->patch = find_linking_patch(patchset,
@@ -689,6 +698,15 @@ static patch_path *find_shortest_path(version_node *root,
             newpath->next = path;
             path = newpath;
             node = newpath->src;
+        }
+        /* Does the root need to be added? */
+        if ( ! root->invisible ) {
+            newpath = (patch_path *)safe_malloc(sizeof *newpath);
+            newpath->src = root->shortest_path->src;
+            newpath->dst = root;
+            newpath->patch = root->shortest_path->patch;
+            newpath->next = path;
+            path = newpath;
         }
     }
     return(path);
