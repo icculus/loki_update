@@ -1501,6 +1501,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     } while ( ((verified == DOWNLOAD_FAILED) || (verified == VERIFY_FAILED)) &&
               !download_cancelled );
     download_pending = 0;
+    mirror_buttons_sensitive(FALSE);
 
     /* We either ran out of update URLs or we downloaded a valid update */
     switch (verified) {
