@@ -31,9 +31,9 @@ fi
 product_bin=`tail +1 "$product.md5" | head -n 1`
 product_desc=`tail +2 "$product.md5" | head -n 1`
 product_url=`tail +3 "$product.md5" | head -n 1`
-for path in /opt /opt/games /usr/games /usr/local/games "$HOME/games" "$HOME"
+for path in "$UPDATE_CWD" /opt /opt/games /usr/games /usr/local/games "$HOME/games" "$HOME"
 do read bin <"$product.md5"
-   binary=`ls "$path"/*/"$product_bin" 2>/dev/null | head -n 1`
+   binary=`ls "$path/$product_bin" "$path"/*/"$product_bin" 2>/dev/null | head -n 1`
    if [ -f "$binary" ]; then
        product_path=`dirname $binary`
        if [ -w "$product_path" ]; then
