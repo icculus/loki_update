@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := 1.0.11
+VERSION := 1.0.12
 IMAGE   := /loki/patch-tools/setup-image
 UPDATES := /loki/updates/loki_update
 
@@ -30,13 +30,21 @@ LFLAGS += -lm -ldl
 
 TTY_LFLAGS =
 
-GTK_LFLAGS = -Wl,-Bstatic
-GTK_LFLAGS += -L$(shell libglade-config --prefix)
-GTK_LFLAGS +=  -lglade
-GTK_LFLAGS += -L$(shell gtk-config --prefix)
-GTK_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
-GTK_LFLAGS += -Wl,-Bdynamic
-GTK_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
+GTK_ST_LFLAGS = -Wl,-Bstatic
+GTK_ST_LFLAGS += -L$(shell libglade-config --prefix)
+GTK_ST_LFLAGS +=  -lglade
+GTK_ST_LFLAGS += -L$(shell gtk-config --prefix)
+GTK_ST_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+GTK_ST_LFLAGS += -Wl,-Bdynamic
+GTK_ST_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
+
+GTK_SH_LFLAGS = -Wl,-Bstatic
+GTK_SH_LFLAGS += -L$(shell libglade-config --prefix)
+GTK_SH_LFLAGS +=  -lglade
+GTK_SH_LFLAGS += -Wl,-Bdynamic
+GTK_SH_LFLAGS += -L$(shell gtk-config --prefix)
+GTK_SH_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+GTK_SH_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
 
 CORE_OBJS = loki_update.o prefpath.o url_paths.o meta_url.o \
             load_products.o load_patchset.o patchset.o urlset.o \
@@ -50,10 +58,13 @@ OBJS = $(CORE_OBJS) $(SNARF_OBJS)
 
 CORE_SRCS = $(CORE_OBJS:.o=.c)
 
-all: $(TARGET) tty_ui.so gtk_ui.so
+all: $(TARGET) tty_ui.so gtk_st_ui.so gtk_sh_ui.so
 
-gtk_ui.so: gtk_ui.o
-	$(CC) -o $@ -shared $^ $(GTK_LFLAGS)
+gtk_sh_ui.so: gtk_ui.o
+	$(CC) -o $@ -shared $^ $(GTK_SH_LFLAGS)
+
+gtk_st_ui.so: gtk_ui.o
+	$(CC) -o $@ -shared $^ $(GTK_ST_LFLAGS)
 
 tty_ui.so: tty_ui.o
 	$(CC) -o $@ -shared $^ $(TTY_LFLAGS)
