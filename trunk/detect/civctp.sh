@@ -1,27 +1,6 @@
 #!/bin/sh
 #
-# This scripts scans for installed versions of Loki games, for setupdb
-
-# Find where the md5sum program is
-cwd=`pwd`
-md5="$cwd/md5sum"
-
-# Get to the correct data directory
-cd "`dirname $0`"
-
-# Check command line
-if [ "$1" = "" ]; then
-    echo "Usage: $0 <product>" >&2
-    exit 1
-fi
-product=$1
-
-# If there's a special script, use that
-if [ -f "$product.sh" ]; then
-    status=2
-    . "$product.sh"
-    exit $status
-fi
+# This scripts scans for installed versions of CivCTP, for setupdb
 
 # Otherwise, perform a standard algorithm that catches most cases
 if [ ! -f "$product.md5" ]; then
@@ -48,8 +27,9 @@ do if [ ! -d "$path" ]; then
            do set -- $line
                if [ "$sum" = "$1" ]; then
                    # Woohoo!  We found it!
-                   product_version=$2
-                   echo "$product_version"
+                   product_version="$2"
+                   product_extension=`tail +4 "$product_path/civpaths.txt" | head -n 1 | tr -d '\r'`
+                   echo "$product_version-$product_extension"
                    echo "$product_desc"
                    echo "$product_path"
                    echo "$product_url"
