@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "safe_malloc.h"
 #include "log_output.h"

@@ -34,6 +34,7 @@ static char parsed_name[1024];
 static char *component = NULL;
 static char *version = NULL;
 static char *arch = NULL;
+static char *libc = NULL;
 static char *applies = NULL;
 static char *note = NULL;
 static urlset *patch_urls = NULL;
@@ -45,7 +46,8 @@ struct {
 } parse_table[] = {
     {   "Component", 1, 0, &component },
     {   "Version", 0, 0, &version },
-    {   "Architecture", 0, 1, &arch },
+    {   "Architecture", 1, 1, &arch },
+    {   "Libc", 1, 1, &libc },
     {   "Applies", 0, 1, &applies },
     {   "Note", 1, 0, &note }
 };
@@ -92,7 +94,7 @@ static int check_and_add_patch(patchset *patchset)
     /* Add the patch to our patchset */
     if ( status == 0 ) {
         add_patch(patchset->product_name, component, version,
-                  arch, applies, note, patch_urls, patchset);
+                  arch, libc, applies, note, patch_urls, patchset);
     } else {
         free_urlset(patch_urls);
     }

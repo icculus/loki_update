@@ -124,15 +124,28 @@ static void free_version_node(version_node *node)
 
 static version_node *create_version_node(version_node *root,
                                          const char *component,
-                                         const char *version,
-                                         const char *description)
+                                         const char *version)
 {
+    char description[1024];
     version_node *node;
 
     /* Create and initialize the node */
     node = (version_node *)safe_malloc(sizeof *node);
     node->component = safe_strdup(component);
     node->version = safe_strdup(version);
+    if ( root ) {
+        if ( strcasecmp(get_version_extension(root),
+                        get_version_extension(node)) == 0 ) {
+            snprintf(description, sizeof(description),
+                     "Upgrade to %s", version);
+        } else {
+            snprintf(description, sizeof(description),
+                     "Convert to %s", version);
+        }
+    } else {
+        snprintf(description, sizeof(description), "Install %s %s",
+                 component, version);
+    }
     node->description = safe_strdup(description);
     node->note = NULL;
     node->selected = 0;
@@ -187,7 +200,7 @@ static version_node *get_version_node(version_node *root,
         /* This is a new component add-on, add it as a root node */
         log(LOG_DEBUG, "Adding new component root %s\n", description);
         root = main_root;
-        node = create_version_node(NULL, component, version, description);
+        node = create_version_node(NULL, component, version);
         node->sibling = root->sibling;
         root->sibling = node;
         return(node);
@@ -199,7 +212,7 @@ static version_node *get_version_node(version_node *root,
             return(NULL);
         } else { /* Hmm, this must be the real component root */
             log(LOG_DEBUG, "Adding %s as new component root\n", description);
-            node = create_version_node(NULL, component, version, description);
+            node = create_version_node(NULL, component, version);
             for ( branch = root; branch; branch = branch->child ) {
                 branch->root = node;
             }
@@ -250,16 +263,14 @@ static version_node *get_version_node(version_node *root,
                     /* Need to insert ourselves here */
                     if ( node == branch ) {
                         log(LOG_DEBUG, "Inserting ourselves as trunk node\n");
-                        node = create_version_node(root,
-                                           component, version, description);
+                        node = create_version_node(root, component, version);
                         node->sibling = branch;
                         node->child = branch->child;
                         branch->child = NULL;
                         parent->child = node;
                     } else {
                         log(LOG_DEBUG, "Inserting ourselves as sibling node\n");
-                        node = create_version_node(root,
-                                           component, version, description);
+                        node = create_version_node(root, component, version);
                         node->sibling = branch->sibling;
                         branch->sibling = node;
                     }
@@ -267,8 +278,7 @@ static version_node *get_version_node(version_node *root,
             } else {
                 /* We need to add ourselves as a new sibling */
                 log(LOG_DEBUG, "Creating new leaf sibling node\n");
-                node = create_version_node(root,
-                                           component, version, description);
+                node = create_version_node(root, component, version);
                 branch->sibling = node;
             }
             break;
@@ -281,7 +291,7 @@ static version_node *get_version_node(version_node *root,
     /* If we need to insert ourselves here, do so */
     if ( ! node ) {
         log(LOG_DEBUG, "Creating new trunk node\n");
-        node = create_version_node(root, component, version, description);
+        node = create_version_node(root, component, version);
         node->child = parent->child;
         parent->child = node;
     }
@@ -331,7 +341,7 @@ patchset *create_patchset(const char *product)
     patchset = (struct patchset *)safe_malloc(sizeof *patchset);
     patchset->product_name = product;
     root = create_version_node(NULL, get_default_component(product),
-                                     get_product_version(product), "Root node");
+                                     get_product_version(product));
     root->invisible = 1;
     patchset->root = root;
     loki_product = loki_openproduct(product);
@@ -343,9 +353,8 @@ patchset *create_patchset(const char *product)
               component = loki_getnext_component(component) ) {
             if ( ! loki_isdefault_component(component) ) {
                 root = create_version_node(NULL,
-                                           loki_getname_component(component),
-                                           loki_getversion_component(component),
-                                           "Root node");
+                                       loki_getname_component(component),
+                                       loki_getversion_component(component));
                 root->invisible = 1;
                 root->sibling = patchset->root->sibling;
                 patchset->root->sibling = root;
@@ -436,12 +445,12 @@ int add_patch(const char *product,
               const char *component,
               const char *version,
               const char *arch,
+              const char *libc,
               const char *applies,
               const char *note,
               urlset *urls,
               struct patchset *patchset)
 {
-    int matched_arch;
     const char *next;
     char word[128];
     char description[1024];
@@ -459,7 +468,8 @@ int add_patch(const char *product,
     log(LOG_DEBUG, "\tProduct: %s\n", product);
     log(LOG_DEBUG, "\tComponent: %s\n", component);
     log(LOG_DEBUG, "\tVersion: %s\n", version);
-    log(LOG_DEBUG, "\tArchitecture: %s\n", arch);
+    log(LOG_DEBUG, "\tArchitecture: %s\n", arch ? arch : "any");
+    log(LOG_DEBUG, "\tLibc: %s\n", libc ? libc : "any");
     log(LOG_DEBUG, "\tApplies: %s\n", applies);
 
     if ( strcasecmp(product, patchset->product_name) != 0 ) {
@@ -469,23 +479,46 @@ int add_patch(const char *product,
     }
 
     /* Parse into individual arch tokens and check them */
-    matched_arch = 0;
-    for ( next=copy_word(arch, word, sizeof(word));
-          next; 
-          next=copy_word(next, word, sizeof(word)) ) {
-        if ( (strcasecmp(word, "any") == 0) ||
-             (strcasecmp(word, detect_arch()) == 0) ) {
-            matched_arch = 1;
-            break;
+    if ( arch ) {
+        int matched_arch = 0;
+        const char *detected_arch = detect_arch();
+        for ( next=copy_word(arch, word, sizeof(word));
+              next; 
+              next=copy_word(next, word, sizeof(word)) ) {
+            if ( (strcasecmp(word, "any") == 0) ||
+                 (strcasecmp(word, detected_arch) == 0) ) {
+                matched_arch = 1;
+                break;
+            }
+        }
+        if ( ! matched_arch ) {
+            log(LOG_DEBUG, "Patch for different architecture, dropping\n");
+            free_urlset(urls);
+            return(0);
         }
     }
-    if ( ! matched_arch ) {
-        log(LOG_DEBUG, "Patch for different architecture, dropping\n");
-        free_urlset(urls);
-        return(0);
+
+    /* Parse into individual libc tokens and check them */
+    if ( libc ) {
+        int matched_libc = 0;
+        const char *detected_libc = detect_libc();
+        for ( next=copy_word(libc, word, sizeof(word));
+              next; 
+              next=copy_word(next, word, sizeof(word)) ) {
+            if ( (strcasecmp(word, "any") == 0) ||
+                 (strcasecmp(word, detected_libc) == 0) ) {
+                matched_libc = 1;
+                break;
+            }
+        }
+        if ( ! matched_libc ) {
+            log(LOG_DEBUG, "Patch for different version of libc, dropping\n");
+            free_urlset(urls);
+            return(0);
+        }
     }
 
-    /* Create the version_node */
+    /* Create (or retrieve) the version_node */
     node = get_version_node(patchset->root, component, version, description);
     if ( ! node ) {
         log(LOG_DEBUG, "Patch obsolete by installed version, dropping\n");
@@ -680,7 +713,7 @@ static void trim_unconnected_nodes(version_node *trunk_prev,
                 prev->sibling = next;
                 node->sibling = NULL;
                 log(LOG_DEBUG, "%s has no patch path, trimming\n", 
-                    node->description);
+                    node->version);
                 free_version_node(node);
             }
         }
@@ -700,7 +733,7 @@ static void trim_unconnected_nodes(version_node *trunk_prev,
             }
             node->child = NULL;
             log(LOG_DEBUG, "%s has no patch path, trimming\n", 
-                node->description);
+                node->version);
             free_version_node(node);
         }
     }
@@ -736,8 +769,7 @@ static void trim_unused_patches(patchset *patchset)
     for ( patch = patchset->patches; patch; ) {
         /* If this patch isn't used in an upgrade path, we can discard it */
         if ( ! patch->refcount ) {
-            log(LOG_DEBUG, 
-                "Patch %s not used in upgrade path, trimming\n",
+            log(LOG_DEBUG, "%s not used in upgrade path, trimming\n",
                 patch->description);
             freeable = patch;
             patch = patch->next;
@@ -762,7 +794,9 @@ void calculate_paths(patchset *patchset)
     int depth;
     int num_nodes;
 
-    log(LOG_DEBUG, "Calculating patch paths for %s\n", patchset->product_name);
+    log(LOG_DEBUG, "Calculating patch paths for %s %s\n",
+        get_product_description(patchset->product_name),
+        get_product_version(patchset->product_name));
 
     /* Allocate memory for the shortest path algorithm */
     num_nodes = 0;
@@ -882,17 +916,21 @@ void select_node(version_node *selected_node, int selected)
 void autoselect_patches(patchset *patchset)
 {
     version_node *node, *root;
+    version_node *final;
 
     for ( root = patchset->root; root; root = root->sibling ) {
         if ( ! root->invisible ) {
             /* Not installed yet, don't select it automatically */
             continue;
         }
+        final = NULL;
         for ( node=root->child; node; node=node->child ) {
-            if ( ! node->child ) {
-                /* This is the final leaf node on the trunk, select it */
-                select_node(node, 1);
+            if ( strcasecmp(get_version_extension(root),
+                            get_version_extension(node)) == 0 ) {
+                final = node;
             }
         }
+        /* This is the final leaf node on the trunk, select it */
+        select_node(final, 1);
     }
 }

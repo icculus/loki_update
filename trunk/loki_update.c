@@ -28,7 +28,7 @@ static void goto_installpath(char *argv0)
     strcpy(temppath, ".");
     getcwd(temppath, sizeof(temppath));
     set_working_path(temppath);
-    { char env[2*PATH_MAX];
+    { static char env[PATH_MAX];
       sprintf(env, "UPDATE_CWD=%s", temppath);
       putenv(env);
     }
