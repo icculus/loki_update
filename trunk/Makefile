@@ -82,16 +82,16 @@ dist:
 
 install-bin: $(TARGET)
 	@if [ -d $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/ ]; then \
-		cp -v $(TARGET) $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/; \
-		strip $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/$(TARGET); \
+		cp -v $(TARGET) *.so $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/; \
+		strip $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/*; \
 	else \
 		echo No directory to copy the binary files to.; \
 	fi
 	@if [ -d $(UPDATES) ]; then \
 		rm -rf $(UPDATES)/bin-$(arch)-$(VERSION); \
 		mkdir $(UPDATES)/bin-$(arch)-$(VERSION); \
-		cp -v $(TARGET) $(UPDATES)/bin-$(arch)-$(VERSION)/; \
-		strip $(UPDATES)/bin-$(arch)-$(VERSION)/$(TARGET); \
+		cp -v $(TARGET) *.so $(UPDATES)/bin-$(arch)-$(VERSION)/; \
+		strip $(UPDATES)/bin-$(arch)-$(VERSION)/*; \
 	fi
 	@echo "Don't forget to update the version in setup.xml to $(VERSION)"
 
