@@ -68,14 +68,14 @@ static int newer_version(const char *version1, const char *version2)
         if ( isdigit(*version1) ) {
             num1 = get_num(&version1);
             num2 = get_num(&version2);
-            if ( num1 > num2 ) {
-                newer = 1;
+            if ( num1 != num2 ) {
+                return(num1 > num2);
             }
         } else {
             get_word(&version1, word1, sizeof(word1));
             get_word(&version2, word2, sizeof(word2));
-            if ( strcasecmp(word1, word2) > 0 ) {
-                newer = 1;
+            if ( strcasecmp(word1, word2) != 0 ) {
+                return (strcasecmp(word1, word2) > 0);
             }
         }
         if ( *version1 == '.' ) {
