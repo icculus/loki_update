@@ -2074,3 +2074,16 @@ update_UI gtk_ui = {
     gtkui_perform_updates,
     gtkui_cleanup
 };
+
+#ifdef DYNAMIC_UI
+update_UI *create_ui(void)
+{
+	update_UI *ui;
+
+	ui = NULL;
+	if ( gtk_ui.detect() ) {
+		ui = &gtk_ui;
+	}
+	return ui;
+}
+#endif /* DYNAMIC_UI */

@@ -31,5 +31,7 @@ typedef struct {
     void (*cleanup)(void);
 } update_UI;
 
+#ifndef DYNAMIC_UI
 extern update_UI gtk_ui;
 extern update_UI tty_ui;
+#endif
