@@ -130,6 +130,7 @@ static int check_and_add_patch(patchset *patchset)
 patchset *load_patchset(patchset *patchset, const char *patchlist)
 {
     struct text_fp *file;
+    char url[PATH_MAX];
 
     /* Open the update list */
     file = text_open(patchlist);
@@ -205,14 +206,13 @@ done_parse:
     print_patchset(patchset);
 #endif
 
-    /* Randomize the mirrors */
-    if ( patchset->mirrors->num_mirrors == 0 ) {
-        char url[PATH_MAX];
-
-        compose_url(get_product_url(patchset->product_name), "",
-                    url, sizeof(url));
+    /* Add the product URL if it's on disk or there are no mirrors */
+    compose_url(get_product_url(patchset->product_name), "", url, sizeof(url));
+    if ( (*url == '/') || (patchset->mirrors->num_mirrors == 0) ) {
         add_url(patchset->mirrors, url);
     }
+
+    /* Randomize the mirrors */
     randomize_urls(patchset->mirrors);
     return patchset;
 }

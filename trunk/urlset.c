@@ -113,15 +113,30 @@ void randomize_urls(urlset *urlset)
     if ( urlset->num_mirrors < 2 ) {
         return;
     }
+    index = 0;
 
     /* Create a list of pointers we can sort */
-    list = (struct mirror_url **)safe_malloc(urlset->num_mirrors*(sizeof *list));
+    list = (struct mirror_url **)
+           safe_malloc(urlset->num_mirrors*(sizeof *list));
     memset(list, 0, urlset->num_mirrors*(sizeof *list));
 
+    /* First, go through and add any local disk URLs */
+    for ( current = urlset->list; current; current = current->next ) {
+        if ( current->status == URL_USED ) {
+            continue;
+        }
+        if ( *current->url == '/' ) {
+            list[index++] = current;
+            current->status = URL_USED;
+        }
+    }
+
     /* Now we go through and move the preferred URLs to the new list */
-    index = 0;
     if ( urlset->preferred_site ) {
         for ( current = urlset->list; current; current = current->next ) {
+            if ( current->status == URL_USED ) {
+                continue;
+            }
             if ( get_url_host(current->url, host, sizeof(host)) &&
                  (strcasecmp(host, urlset->preferred_site) == 0) ) {
                 list[index++] = current;
