@@ -36,7 +36,8 @@ struct _UrlResource {
         off_t outfile_size;
         off_t outfile_offset;
         int (*progress)(int status_level, const char *status,
-			float percentage, int size, int total, void *udata);
+			float percentage, int size, int total, float rate,
+            void *udata);
 	float progress_percent;
         void *progress_udata;
 };

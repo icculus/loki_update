@@ -162,7 +162,7 @@ static int wget_url(const char *url, char *file, int maxpath,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(0, NULL, percentage, 0, 0, udata);
+            cancelled = update(0, NULL, percentage, 0, 0, 0.0f, udata);
         }
 
         /* Why doesn't the pipe close? */
@@ -258,7 +258,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
     if ( transfer(rsrc) ) {
         status = 0;
         if ( update ) {
-            update(0, NULL, 100.0, 0, 0, udata);
+            update(0, NULL, 100.0, 0, 0, 0.0f, udata);
         }
     } else {
         status = -1;

@@ -12,7 +12,8 @@
 #include "meta_url.h"
 
 static int download_progress(int status_level, const char *status,
-                             float progress, int size, int total, void *udata)
+                             float progress, int size, int total,
+                             float rate, void *udata)
 {
     if ( status ) {
         log(status_level, "%s\n", status);
