@@ -7,6 +7,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
+#include <unistd.h>
 #include <ctype.h>
 #include "url.h"
 #include "util.h"
@@ -38,6 +39,16 @@ get_service_type(const char *string, Url *u)
         /* fixme: what if the string isn't at the beginning of the 
            *string? */
         
+        if( strstr(string, "file:/") ) {
+                string += 5;		/* skip past that part */
+                u->service_type = SERVICE_FILE;
+                return string;
+        }
+        if ( access(string, F_OK) == 0 ) {
+                u->service_type = SERVICE_FILE;
+                return string;
+        }
+
         if( strstr(string, "http://") ) {
                 string += 7;		/* skip past that part */
                 u->service_type = SERVICE_HTTP;
@@ -68,9 +79,13 @@ get_service_type(const char *string, Url *u)
                 return string;
         }
 
-        /* default to browser-style serviceless http URL */
-        u->full_url = strconcat("http://", u->full_url, NULL);
-        u->service_type = SERVICE_HTTP;
+        /* default to file, or browser-style serviceless http URL */
+        if ( *u->full_url == '/' ) {
+            u->service_type = SERVICE_FILE;
+        } else {
+            u->full_url = strconcat("http://", u->full_url, NULL);
+            u->service_type = SERVICE_HTTP;
+        }
         return string;
 }
 
@@ -337,7 +352,7 @@ url_init(Url *u, const char *string)
 
         sp = get_hostname(sp, u);
 
-        if( ! (u->host && *(u->host)) )
+        if( ! (u->host && *(u->host)) && (u->service_type != SERVICE_FILE) )
                 return NULL;
 
         sp = get_port(sp, u);

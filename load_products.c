@@ -206,6 +206,17 @@ void set_product_root(const char *product, const char *root)
     }
 }
 
+void set_product_url(const char *product, const char *url)
+{
+    product_entry *entry;
+
+    entry = find_product(product);
+    if ( entry ) {
+        free(entry->update_url);
+        entry->update_url = safe_strdup(url);
+    }
+}
+
 const char *get_product_version(const char *product)
 {
     product_entry *entry;

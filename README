@@ -54,7 +54,7 @@ The makeself.sh script is available from:
 http://www.lokigames.com/~megastep/makeself/
 
 When the product is installed with Loki's setup tool, it is provided
-with an auto-update URL, a place where a list of updates for this
+with an product update URL, a place where a list of updates for this
 product are listed.  The listing can be text or HTML, and must contain
 a set of entries in the form:
 
@@ -86,7 +86,8 @@ match one of these strings, then the patch is discarded.
 The URL is an FTP or HTTP style URL that designates the location of the
 patch file used to upgrade this product.  Multiple URL lines may exist,
 and the update tool will choose randomly among them until it succeeds
-in downloading the update.
+in downloading the update.  If the URL is a relative pathname, it is
+assumed to be relative to the URL path containing the product update URL.
 
 The update tool supports patches that linearly increase an application
 version, convert to a different "flavor" of the product, or add extra
@@ -147,6 +148,22 @@ public key server for update verification.
 
 More information about GNU Privacy Guard can be found at:
 http://www.gnupg.org/
+
+
+Advanced Operation
+==================
+If you give the update tool the command line argument "--debug", it will
+be very verbose about file transfers and internal parsing.
+
+If you give the update tool the command line argument "--noselfcheck", it
+will skip the normal check for updates for itself before going into normal
+operation.
+
+If you give the update tool the command line argument "--meta_url URL",
+it will parse the given URL for "product: URL" key/value pairs, and use
+those as the update URLs for the listed products.  URL's may be relative
+filenames as well as normal internet style URLs.  This makes it easy to
+create patch update disks.
 
 
 Author

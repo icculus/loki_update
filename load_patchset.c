@@ -5,8 +5,10 @@
 #include <ctype.h>
 
 #include "text_parse.h"
-#include "patchset.h"
 #include "log_output.h"
+#include "patchset.h"
+#include "url_paths.h"
+#include "load_products.h"
 #include "load_patchset.h"
 
 void print_patchset(patchset *patchset)
@@ -112,6 +114,7 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
     if ( file ) {
         int i;
         char key[1024], val[1024];
+        char url[2048];
 
         /* Skip to the appropriate product section */
         parsed_name[0] = '\0';
@@ -151,7 +154,9 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
             }
             if ( (strncasecmp("URL", key, 3) == 0) &&
                  (!key[3] || isdigit(key[3])) ) {
-                add_url(patch_urls, val, atoi(&key[3]));
+                compose_url(get_product_url(parsed_name),
+                            val, url, sizeof(url));
+                add_url(patch_urls, url, atoi(&key[3]));
             }
         }
         check_and_add_patch(patchset);
