@@ -1,0 +1,59 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define to `long' if <sys/types.h> doesn't define.  */
+#undef off_t
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+#undef PACKAGE
+#undef VERSION
+#undef PROTOTYPES
+#undef socklen_t
+#undef ssize_t
+
+/* Use ioctl() to determine window width */
+#undef GUESS_WINSIZE
+
+/* Don't print progress bars by default */
+#undef PROGRESS_DEFAULT_OFF
+
+/* Define whether to ares library for non-blocking gethostbyname */
+#undef HAVE_ARES_H
+
+/* Define whether to build in SOCKS 5 support */
+#undef USE_SOCKS5
+
+/* Define if you have the gettimeofday function.  */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define if you have the strdup function.  */
+#undef HAVE_STRDUP
+
+/* Define if you have the strerror function.  */
+#undef HAVE_STRERROR
+
+/* Define if you have the <stdarg.h> header file.  */
+#undef HAVE_STDARG_H
+
+/* Define if you have the <string.h> header file.  */
+#undef HAVE_STRING_H
+
+/* Define if you have the <strings.h> header file.  */
+#undef HAVE_STRINGS_H
+
+/* Define if you have the <sys/ioctl.h> header file.  */
+#undef HAVE_SYS_IOCTL_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
+/* Define if compiler has function prototypes */
+#undef PROTOTYPES
+
