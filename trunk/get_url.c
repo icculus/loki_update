@@ -19,6 +19,9 @@
 #define USE_SNARF
 
 #ifdef USE_SNARF
+#ifdef VERSION
+#undef VERSION
+#endif
 #include "config.h"
 #include "url.h"
 #include "options.h"
