@@ -40,13 +40,14 @@ static urlset *patch_urls = NULL;
 struct {
     const char *prefix;
     int optional;
+    int expandable;
     char **variable;
 } parse_table[] = {
-    {   "Component", 1, &component },
-    {   "Version", 0, &version },
-    {   "Architecture", 0, &arch },
-    {   "Applies", 0, &applies },
-    {   "Note", 1, &note }
+    {   "Component", 1, 0, &component },
+    {   "Version", 0, 0, &version },
+    {   "Architecture", 0, 1, &arch },
+    {   "Applies", 0, 1, &applies },
+    {   "Note", 1, 0, &note }
 };
 
 /* Verify all the parameters and add the current patch to the patchset */
@@ -144,12 +145,22 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
             for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                 if ( strcasecmp(parse_table[i].prefix, key) == 0 ) {
                     if ( *parse_table[i].variable ) {
-                        if ( check_and_add_patch(patchset) < 0 ) {
-                            /* Error, messages already output */
-                            goto done_parse;
+                        if ( parse_table[i].expandable ) {
+                            char tmp[1024];
+                            snprintf(tmp, sizeof(tmp), "%s, %s",
+                                     *parse_table[i].variable, val);
+                            free(*parse_table[i].variable);
+                            *parse_table[i].variable = strdup(tmp);
+                        } else {
+                            if ( check_and_add_patch(patchset) < 0 ) {
+                                /* Error, messages already output */
+                                goto done_parse;
+                            }
+                            *parse_table[i].variable = strdup(val);
                         }
+                    } else {
+                        *parse_table[i].variable = strdup(val);
                     }
-                    *parse_table[i].variable = strdup(val);
                     break;
                 }
             }
