@@ -33,6 +33,7 @@ int perform_update(const char *update_file,
     struct timeval tv;
 
     /* First create a pipe for communicating between child and parent */
+    signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
         log(LOG_ERROR, "Couldn't create IPC pipe\n");
         return(-1);
@@ -62,7 +63,7 @@ int perform_update(const char *update_file,
             args[argc] = NULL;
             execv(args[0], args);
             fprintf(stderr, "Couldn't exec %s\n", args[0]);
-            exit(-1);
+            _exit(-1);
         default:
             break;
     }

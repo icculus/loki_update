@@ -19,3 +19,8 @@ typedef enum {
 
 /* Verify the given signature */
 extern gpg_result gpg_verify(const char *file, char *sig, int maxsig);
+
+/* Get the given public key */
+int get_publickey(const char *key,
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata);
