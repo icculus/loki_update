@@ -1,11 +1,14 @@
 
+TARGET := loki_update
+VERSION := \"1.0b\"
+
 OS := $(shell uname -s)
 ARCH := $(shell sh print_arch)
 
 SETUPDB = ../setupdb
 SNARF = snarf-7.0
 CFLAGS = -g -O2 -Wall
-CFLAGS += -I$(SETUPDB) -I$(SNARF)
+CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=$(VERSION)
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
 LFLAGS += -L$(SETUPDB)/$(ARCH) -lsetupdb
@@ -30,16 +33,16 @@ OBJS = loki_update.o gtk_ui.o url_paths.o meta_url.o load_products.o \
 SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \
              $(SNARF)/file.o $(SNARF)/ftp.o $(SNARF)/gopher.o $(SNARF)/http.o
 
-all: loki_update
+all: $(TARGET)
 
-loki_update: $(SNARF)/snarf $(OBJS)
+$(TARGET): $(SNARF)/snarf $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LFLAGS)
 
 $(SNARF)/snarf:
 	(cd $(SNARF); test -f Makefile || ./configure; make)
 
 distclean: clean
-	rm -f loki_update
+	rm -f $(TARGET)
 	-$(MAKE) -C $(SNARF) $@
 
 clean:
