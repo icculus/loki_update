@@ -31,6 +31,7 @@
 #include <glade/glade.h>
 
 #include "update_ui.h"
+#include "prefpath.h"
 #include "patchset.h"
 #include "load_products.h"
 #include "load_patchset.h"
@@ -223,11 +224,7 @@ static void remove_update(void)
 
 static char *quickupdate_file(char *path, int maxlen)
 {
-    snprintf(path, maxlen, "%s/.loki", getenv("HOME"));
-    mkdir(path, 0700);
-    strncat(path, "/loki_update", maxlen-strlen(path));
-    mkdir(path, 0700);
-    strncat(path, "/quick-update.txt", maxlen-strlen(path));
+    preferences_path("quick-update.txt", path, maxlen);
     return(path);
 }
 
