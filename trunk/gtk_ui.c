@@ -981,7 +981,11 @@ void download_update_slot( GtkWidget* w, gpointer data )
         if ( widget ) {
             gtk_progress_set_percentage(GTK_PROGRESS(widget), 0.0);
         }
-        widget = glade_xml_get_widget(update_glade, "update_total_label");
+        widget = glade_xml_get_widget(update_glade, "update_rate_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), "");
+        }
+        widget = glade_xml_get_widget(update_glade, "update_eta_label");
         if ( widget ) {
             gtk_label_set_text(GTK_LABEL(widget), "");
         }
@@ -1341,7 +1345,11 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         if ( widget ) {
             gtk_progress_set_percentage(GTK_PROGRESS(widget), 0.0);
         }
-        widget = glade_xml_get_widget(update_glade, "list_total_label");
+        widget = glade_xml_get_widget(update_glade, "list_rate_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), "");
+        }
+        widget = glade_xml_get_widget(update_glade, "list_eta_label");
         if ( widget ) {
             gtk_label_set_text(GTK_LABEL(widget), "");
         }
