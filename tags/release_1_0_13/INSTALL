@@ -1,0 +1,27 @@
+
+NOTE:  This code is for educational purposes only.  Binaries built from
+       source and not released by Loki Software, Inc. are not supported.
+
+How to build the Loki Update Tool
+
+Step 1.
+Make sure you have up to date development libraries and headers for the
+following packages:
+ * GTk
+ * libXML
+ * libGlade
+ * Ares
+
+Tested versions of most of these libraries can be found in the "libs"
+subdirectory.
+
+Step 2.
+Download the setupdb package and unpack it in the directory immediately
+above this one.  Build it by running "./configure; make" in the setupdb
+directory.
+
+Step 3.
+Build the Loki Update Tool by typing "make"
+
+Step 4.
+Read the documentation in "README" thoroughly.  Browse the source code. :)
