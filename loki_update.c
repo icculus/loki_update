@@ -228,10 +228,6 @@ int main(int argc, char *argv[])
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
     load_product_list(product);
-    if ( product && ! is_valid_product(product) ) {
-        log(LOG_ERROR, _("%s has not been installed by you.\n"), product);
-        return(1);
-    }
     if ( product_path ) {
         if ( ! product ) {
             log(LOG_ERROR, _("Install path set, but no product specified\n"));
@@ -253,7 +249,7 @@ int main(int argc, char *argv[])
     }
 
     /* Stage 1: Update ourselves, if possible */
-    if ( self_check && (access(".", W_OK) == 0) ) {
+    if ( self_check && (access(".", W_OK) == 0) && is_valid_product(PRODUCT) ) {
         switch (ui->auto_update(PRODUCT)) {
             /* An error? return an error code */
             case -1:
@@ -278,6 +274,12 @@ int main(int argc, char *argv[])
         int status;
 
         if ( auto_update ) {
+            if ( product && ! is_valid_product(PRODUCT) ) {
+                log(LOG_ERROR,
+                    _("%s not found, are you the one who installed it?\n"),
+                    product);
+                return(1);
+            }
             status = ui->auto_update(product);
         } else {
             status = ui->perform_updates(product);

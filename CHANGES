@@ -1,4 +1,6 @@
 1.0d:
+Sam Lantinga - Sun Nov 19 16:08:40 PST 2000
+ * Added a UI message that shows up if a requested product is not installed
 Sam Lantinga - Sun Nov 19 15:38:49 PST 2000
  * Added nice mirror control buttons for the download dialogs
 Sam Lantinga - Sat Nov 18 16:56:40 PST 2000
