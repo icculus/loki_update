@@ -13,12 +13,33 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#include "safe_malloc.h"
 #include "log_output.h"
+#include "update.h"
+
+void update_message(int level, const char *message,
+                    update_callback update, void *udata)
+{
+    if ( update ) {
+        if ( level == LOG_STATUS ) {
+            update(level, message, 0.0f, 0, 0, udata);
+        } else {
+            char *text;
+
+            text = (char *)safe_malloc(strlen(message)+2);
+            sprintf(text, "%s\n", message);
+            update(level, text, 0.0f, 0, 0, udata);
+            free(text);
+        }
+    } else {
+        log(level, "%s\n", message);
+    }
+}
 
 int perform_update(const char *update_file, const char *install_path,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+                   update_callback update, void *udata)
 {
+    char text[PATH_MAX];
     int pipefd[2];
     int argc;
     const char *args[32];
@@ -28,6 +49,7 @@ int perform_update(const char *update_file, const char *install_path,
     int len, count;
     char line[1024];
     char *spot;
+    int status_updated;
     float percentage;
     fd_set fdset;
     struct timeval tv;
@@ -35,18 +57,22 @@ int perform_update(const char *update_file, const char *install_path,
     /* First create a pipe for communicating between child and parent */
     signal(SIGPIPE, SIG_IGN);
     if ( pipe(pipefd) < 0 ) {
-        log(LOG_ERROR, "Couldn't create IPC pipe\n");
+        update_message(LOG_ERROR, "Couldn't create IPC pipe", update, udata);
         return(-1);
     }
     chmod(update_file, 0700);
 
-    log(LOG_VERBOSE, "Performing update:\n%s\n", update_file);
+    /* Show what update file is being executed */
+    sprintf(text, "Update: %s", update_file);
+    update_message(LOG_VERBOSE, text, update, udata);
+    update_message(LOG_STATUS, "Unpacking archive", update, udata);
+    status_updated = 0;
 
     child = fork();
     switch (child) {
         case -1:
             /* Fork failed */
-            fprintf(stderr, "Couldn't fork process\n");
+            update_message(LOG_ERROR,"Couldn't fork process", update, udata);
             return(-1);
         case 0:
             /* Child process */
@@ -102,9 +128,20 @@ int perform_update(const char *update_file, const char *install_path,
                     --spot;
                 }
                 percentage = (float)atoi(spot);
+                if ( ! status_updated ) {
+                    update_message(LOG_STATUS, "Updating files", update, udata);
+                    status_updated = 1;
+                }
             } else {
                 /* Log the update output */
-                log(LOG_VERBOSE, "%s\n", line);
+                if ( strncmp(line, "ERROR: ", 7) == 0 ) {
+                    update_message(LOG_ERROR, line+7, update, udata);
+                } else
+                if ( strncmp(line, "WARNING: ", 8) == 0 ) {
+                    update_message(LOG_WARNING, line+8, update, udata);
+                } else {
+                    update_message(LOG_VERBOSE, line, update, udata);
+                }
             }
             len = 0;
         } else {
@@ -113,7 +150,7 @@ int perform_update(const char *update_file, const char *install_path,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(percentage, 0, 0, udata);
+            cancelled = update(0, NULL, percentage, 0, 0, udata);
         }
 
         /* Why doesn't the pipe close? */

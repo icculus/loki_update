@@ -189,7 +189,7 @@ dump_data(UrlResource *rsrc, int sock, FILE *out)
                 }
         }
 
-        progress_destroy(p);
+        progress_destroy(p, okay);
         return okay;
 }
 
@@ -348,7 +348,7 @@ progress_update(Progress *	p,
 
 		if( p->rsrc->progress ) {
                         p->rsrc->progress_percent = percent_done*100.0;
-			cancelled = p->rsrc->progress(
+			cancelled = p->rsrc->progress(0, NULL,
                                            p->rsrc->progress_percent,
 			                   p->current/1024, p->length/1024,
 			                   p->rsrc->progress_udata);
@@ -384,11 +384,24 @@ progress_update(Progress *	p,
 
 
 void 
-progress_destroy(Progress *p)
+progress_destroy(Progress *p, int okay)
 {
         double elapsed = 0;
         double kbytes;
+
         if( p && (!p->tty) ) {
+		if ( p->rsrc->progress ) {
+			const char *status;
+			if ( okay ) {
+				status = "Transfer complete";
+			} else {
+				status = "Transfer aborted";
+			}
+			p->rsrc->progress(STATUS, status,
+                                          p->rsrc->progress_percent,
+			                  p->current/1024, p->length/1024,
+			                  p->rsrc->progress_udata);
+		}
 		safe_free(p);
                 return;
 	}
@@ -565,7 +578,9 @@ static void snarf_host_callback(void *arg, int status, struct hostent *host)
 	
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
-                    int (*update)(float percentage, int size, int total, void *udata), void *udata)
+    int (*update)(int status_level, const char *status,
+                  float percentage, int size, int total,
+                  void *udata), void *udata)
 {
 	ares_channel channel;
 	int nfds;
@@ -599,7 +614,7 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 		tvp = ares_timeout(channel, &maxtv, &tv);
 		if ( select(nfds, &read_fds, &write_fds, NULL, tvp) == 0 ) {
 			/* No activity, run UI update */
-			cancelled = update(0.0f, 0, 0, udata);
+			cancelled = update(0, NULL, 0.0f, 0, 0, udata);
 		}
 		ares_process(channel, &read_fds, &write_fds);
 	}
@@ -615,7 +630,9 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 #else
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
-                    int (*update)(float percentage, int size, int total, void *udata), void *udata)
+    int (*update)(int status_level, const char *status,
+                  float percentage, int size, int total,
+                  void *udata), void *udata)
 {
         struct hostent *host;
 	int status;
@@ -653,9 +670,11 @@ static int set_blocking(int sock_fd, int blocking)
 
 int
 tcp_connect_async(char *remote_host, int port,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+    int (*update)(int status_level, const char *status,
+                  float percentage, int size, int total,
+                  void *udata), void *udata)
 {
+	char text[1024];
 	struct sockaddr_in sa;
 	int sock_fd;
 	fd_set fdset;
@@ -671,12 +690,14 @@ tcp_connect_async(char *remote_host, int port,
 	}
 
         /* Start off with zero percent complete (opening connection) */
-	cancelled = update(0.0f, 0, 0, udata);
+	cancelled = update(0, NULL, 0.0f, 0, 0, udata);
         if ( cancelled ) {
                 return(0);
         }
 
 	/* Look up the remote host address */
+	sprintf(text, "Looking up %s", remote_host);
+	update(STATUS, text, 0.0f, 0, 0, udata);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(port);
 	sa.sin_addr.s_addr = inet_addr(remote_host);
@@ -695,6 +716,8 @@ tcp_connect_async(char *remote_host, int port,
 	}
 
 	/* connect the socket asynchronously */
+	sprintf(text, "Connecting to %s", remote_host);
+	update(STATUS, text, 0.0f, 0, 0, udata);
 	if( set_blocking(sock_fd, 0) < 0 ) {
 		/* FIXME: Print an error message */
 		close(sock_fd);
@@ -720,7 +743,7 @@ tcp_connect_async(char *remote_host, int port,
 				break;
 			    case 0:
 				/* No activity, run UI update */
-				cancelled = update(0.0f, 0, 0, udata);
+				cancelled = update(0, NULL, 0.0f, 0, 0, udata);
 				break;
 			    default:
 				error_size = sizeof(was_error);
@@ -745,6 +768,7 @@ tcp_connect_async(char *remote_host, int port,
 		close(sock_fd);
 		return 0;
 	}
+	update(STATUS, "Connected", 0.0f, 0, 0, udata);
 	return sock_fd;
 }
 

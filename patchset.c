@@ -662,7 +662,7 @@ static patch_path *find_shortest_path(version_node *root,
         }
         if ( num_fringes > 0 ) {
             int mindist;
-            int shortest;
+            int shortest = 0;
 
             mindist = INT_MAX;
             for ( i=0; i<num_fringes; ++i ) {

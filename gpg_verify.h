@@ -1,6 +1,8 @@
 
 /* Verify that a file is not corrupt, and is signed correctly */
 
+#include "update.h"
+
 #define CHECKSUM_SIZE   32
 
 typedef enum {
@@ -22,6 +24,4 @@ typedef enum {
 extern gpg_result gpg_verify(const char *file, char *sig, int maxsig);
 
 /* Get the given public key */
-int get_publickey(const char *key,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata);
+int get_publickey(const char *key, update_callback update, void *udata);

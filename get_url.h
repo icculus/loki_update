@@ -3,6 +3,7 @@
    update directory.
 */
 
+#include "update.h"
+
 extern int get_url(const char *url, char *file, int maxpath,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata);
+                   update_callback update, void *udata);

@@ -27,6 +27,7 @@
 
 #include "mkdirhier.h"
 #include "log_output.h"
+#include "update.h"
 
 #define WGET            "wget"
 #define UPDATE_PATH     "%s/.loki/update"
@@ -37,13 +38,13 @@
    unwieldy because of the verboseness of the output.
 */
 static int wget_url(const char *url, char *file, int maxpath,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+                    update_callback update, void *udata)
 {
     const char *home;
     const char *base;
     int pipefd[2];
     char path[PATH_MAX];
+    char text[PATH_MAX];
     int argc;
     const char *args[32];
     pid_t child;
@@ -72,23 +73,26 @@ static int wget_url(const char *url, char *file, int maxpath,
         base = url;
     }
     if ( maxpath < (strlen(path)+1+strlen(base)+1) ) {
-        log(LOG_ERROR, "Path too long for internal buffer\n");
+        update_message(LOG_ERROR, "Path too long for internal buffer",
+                       update, udata);
         return(-1);
     }
 
     /* First create a pipe for communicating between child and parent */
     if ( pipe(pipefd) < 0 ) {
-        log(LOG_ERROR, "Couldn't create IPC pipe\n");
+        update_message(LOG_ERROR, "Couldn't create IPC pipe", update, udata);
         return(-1);
     }
 
-    log(LOG_VERBOSE, "Retrieving URL:\n%s\n", url);
+    /* Show what URL is being downloaded */
+    sprintf(text, "URL: %s", url);
+    update_message(LOG_VERBOSE, text, update, udata);
 
     child = fork();
     switch (child) {
         case -1:
             /* Fork failed */
-            fprintf(stderr, "Couldn't fork process\n");
+            update_message(LOG_ERROR, "Couldn't fork process", update, udata);
             return(-1);
         case 0:
             /* Child process */
@@ -145,7 +149,7 @@ static int wget_url(const char *url, char *file, int maxpath,
                 percentage = (float)atoi(spot);
             } else {
                 /* Log the download output */
-                log(LOG_VERBOSE, "%s\n", line);
+                log(LOG_DEBUG, "%s\n", line);
             }
             len = 0;
         } else {
@@ -154,7 +158,7 @@ static int wget_url(const char *url, char *file, int maxpath,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(percentage, udata);
+            cancelled = update(0, NULL, percentage, 0, 0, udata);
         }
 
         /* Why doesn't the pipe close? */
@@ -181,12 +185,12 @@ static int wget_url(const char *url, char *file, int maxpath,
 int default_opts = 0; /* For the snarf code */
 
 static int snarf_url(const char *url, char *file, int maxpath,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+                     update_callback update, void *udata)
 {
     const char *home;
     const char *base;
     char path[PATH_MAX];
+    char text[PATH_MAX];
     UrlResource *rsrc;
     int status;
 
@@ -205,18 +209,21 @@ static int snarf_url(const char *url, char *file, int maxpath,
         base = url;
     }
     if ( ! *base ) {
-        log(LOG_ERROR, "No file specified in URL\n");
+        update_message(LOG_ERROR, "No file specified in URL", update, udata);
         return(-1);
     }
     strcat(path, "/");
     strcat(path, base);
     if ( maxpath < (strlen(path)+1) ) {
-        log(LOG_ERROR, "Path too long for internal buffer\n");
+        update_message(LOG_ERROR, "Path too long for internal buffer",
+                       update, udata);
         return(-1);
     }
     mkdirhier(path);
 
-    log(LOG_VERBOSE, "URL: %s\n", url);
+    /* Show what URL is being downloaded */
+    sprintf(text, "URL: %s", url);
+    update_message(LOG_VERBOSE, text, update, udata);
 
     rsrc = url_resource_new();
     if ( ! rsrc ) {
@@ -230,7 +237,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
         return(-1);
     }
     if ( ! url_init(rsrc->url, url) ) {
-        log(LOG_ERROR, "Malformed URL, aborting\n");
+        update_message(LOG_ERROR, "Malformed URL, aborting", update, udata);
         url_resource_destroy(rsrc);
         return(-1);
     }
@@ -256,8 +263,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
 #endif /* USE_SNARF */
 
 int get_url(const char *url, char *file, int maxpath,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+                     update_callback update, void *udata)
 {
 #if defined(USE_WGET)
     return wget_url(url, file, maxpath, update, udata);
