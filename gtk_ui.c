@@ -147,6 +147,11 @@ void select_all_products_slot( GtkWidget* w, gpointer data )
     GtkWidget *button;
     const char *product_name;
 
+    /* Don't do anything if there aren't any products available */
+    if ( get_num_products() == 0 ) {
+        return;
+    }
+
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
     while ( list ) {
@@ -165,6 +170,11 @@ static void select_product(const char *product)
     GtkWidget *widget;
     GList *list;
     GtkWidget *button;
+
+    /* Don't do anything if there aren't any products available */
+    if ( get_num_products() == 0 ) {
+        return;
+    }
 
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
@@ -191,6 +201,11 @@ static void deselect_product(void)
     GList *list;
     GtkWidget *button;
 
+    /* Don't do anything if there aren't any products available */
+    if ( get_num_products() == 0 ) {
+        return;
+    }
+
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
     while ( list ) {
@@ -209,6 +224,11 @@ static const char *selected_product(void)
     GtkWidget *widget;
     GList *list;
     GtkWidget *button;
+
+    /* Don't do anything if there aren't any products available */
+    if ( get_num_products() == 0 ) {
+        return(NULL);
+    }
 
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
@@ -1477,6 +1497,7 @@ static int gtkui_init(int argc, char *argv[])
 {
     GtkWidget *widget;
     GtkWidget *button;
+    GtkWidget *label;
     const char *product_name;
     const char *description;
 
@@ -1509,6 +1530,12 @@ static int gtkui_init(int argc, char *argv[])
                     GTK_SIGNAL_FUNC(product_toggle_option), (gpointer)0);
                 gtk_widget_show(button);
             }
+        }
+        if ( get_num_products() == 0 ) {
+            label = gtk_label_new(
+_("No products found.\nAre you the one that installed the software?"));
+            gtk_box_pack_start(GTK_BOX(widget), label, FALSE, TRUE, 0);
+            gtk_widget_show(label);
         }
     } else {
         log(LOG_ERROR, _("No product_vbox in glade file!\n"));

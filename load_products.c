@@ -19,6 +19,7 @@ typedef struct product_entry {
     struct product_entry *next;
 } product_entry;
 
+static int num_products;
 static const char *override_update_url;
 static product_entry *product_list = NULL;
 static product_entry *current = NULL;
@@ -73,6 +74,7 @@ static void add_product(const char *product, const char *version,
             product_list = new_entry;
         }
     }
+    ++num_products;
 }
 
 static char *get_line(char *line, int maxlen, FILE *file)
@@ -148,6 +150,7 @@ void load_product_list(const char *wanted)
     printf("Searching for installed products... "); fflush(stdout);
 
     /* First load the "official" installed product list */
+    num_products = 0;
     for ( product_name = loki_getfirstproduct();
           product_name;
           product_name = loki_getnextproduct() ) {
@@ -178,6 +181,11 @@ void load_product_list(const char *wanted)
     }
 
     printf("done!\n");
+}
+
+int get_num_products(void)
+{
+    return(num_products);
 }
 
 const char *get_first_product(void)

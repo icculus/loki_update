@@ -1,6 +1,7 @@
 
 extern void load_product_list(const char *wanted);
 
+extern int get_num_products(void);
 extern const char *get_first_product(void);
 extern const char *get_next_product(void);
 
