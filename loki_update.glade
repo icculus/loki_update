@@ -6,11 +6,22 @@
   <program_name>project1</program_name>
   <directory></directory>
   <source_directory>src</source_directory>
-  <pixmaps_directory>pixmaps</pixmaps_directory>
+  <pixmaps_directory>.</pixmaps_directory>
   <language>C</language>
   <gnome_support>False</gnome_support>
   <gettext_support>True</gettext_support>
+  <use_widget_names>False</use_widget_names>
   <output_main_file>False</output_main_file>
+  <output_support_files>False</output_support_files>
+  <output_build_files>False</output_build_files>
+  <backup_source_files>False</backup_source_files>
+  <main_source_file>interface.c</main_source_file>
+  <main_header_file>interface.h</main_header_file>
+  <handler_source_file>callbacks.c</handler_source_file>
+  <handler_header_file>callbacks.h</handler_header_file>
+  <support_source_file>support.c</support_source_file>
+  <support_header_file>support.h</support_header_file>
+  <translatable_strings_file></translatable_strings_file>
 </project>
 
 <widget>
@@ -236,7 +247,6 @@
 	    <yalign>0.5</yalign>
 	    <xpad>4</xpad>
 	    <ypad>4</ypad>
-	    <build_insensitive>True</build_insensitive>
 	    <child>
 	      <left_attach>0</left_attach>
 	      <right_attach>1</right_attach>
@@ -434,6 +444,16 @@
       </widget>
 
       <widget>
+	<class>GtkHSeparator</class>
+	<name>hseparator6</name>
+	<child>
+	  <padding>0</padding>
+	  <expand>False</expand>
+	  <fill>False</fill>
+	</child>
+      </widget>
+
+      <widget>
 	<class>GtkHBox</class>
 	<name>hbox7</name>
 	<homogeneous>False</homogeneous>
@@ -445,14 +465,12 @@
 	</child>
 
 	<widget>
-	  <class>GtkLabel</class>
-	  <name>label53</name>
-	  <label>Status:</label>
-	  <justify>GTK_JUSTIFY_CENTER</justify>
-	  <wrap>False</wrap>
+	  <class>GtkPixmap</class>
+	  <name>list_status_arrow</name>
+	  <filename>gray_arrow.xpm</filename>
 	  <xalign>0.5</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>4</xpad>
+	  <xpad>0</xpad>
 	  <ypad>0</ypad>
 	  <child>
 	    <padding>0</padding>
@@ -469,8 +487,8 @@
 	  <wrap>False</wrap>
 	  <xalign>0</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>0</xpad>
-	  <ypad>0</ypad>
+	  <xpad>4</xpad>
+	  <ypad>4</ypad>
 	  <child>
 	    <padding>0</padding>
 	    <expand>True</expand>
@@ -814,9 +832,8 @@
 	    <filename>gray_ball.xpm</filename>
 	    <xalign>0.5</xalign>
 	    <yalign>0.5</yalign>
-	    <xpad>4</xpad>
-	    <ypad>4</ypad>
-	    <build_insensitive>True</build_insensitive>
+	    <xpad>0</xpad>
+	    <ypad>0</ypad>
 	    <child>
 	      <left_attach>0</left_attach>
 	      <right_attach>1</right_attach>
@@ -1026,9 +1043,8 @@
 	  <filename>gray_ball.xpm</filename>
 	  <xalign>0.5</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>4</xpad>
-	  <ypad>4</ypad>
-	  <build_insensitive>True</build_insensitive>
+	  <xpad>0</xpad>
+	  <ypad>0</ypad>
 	  <child>
 	    <left_attach>0</left_attach>
 	    <right_attach>1</right_attach>
@@ -1247,9 +1263,8 @@
 	  <filename>gray_ball.xpm</filename>
 	  <xalign>0.5</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>4</xpad>
-	  <ypad>4</ypad>
-	  <build_insensitive>True</build_insensitive>
+	  <xpad>0</xpad>
+	  <ypad>0</ypad>
 	  <child>
 	    <left_attach>0</left_attach>
 	    <right_attach>1</right_attach>
@@ -1370,14 +1385,12 @@
 	</child>
 
 	<widget>
-	  <class>GtkLabel</class>
-	  <name>label47</name>
-	  <label>Status:</label>
-	  <justify>GTK_JUSTIFY_CENTER</justify>
-	  <wrap>False</wrap>
+	  <class>GtkPixmap</class>
+	  <name>update_status_arrow</name>
+	  <filename>gray_arrow.xpm</filename>
 	  <xalign>0.5</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>4</xpad>
+	  <xpad>0</xpad>
 	  <ypad>0</ypad>
 	  <child>
 	    <padding>0</padding>
@@ -1394,8 +1407,8 @@
 	  <wrap>False</wrap>
 	  <xalign>0</xalign>
 	  <yalign>0.5</yalign>
-	  <xpad>0</xpad>
-	  <ypad>0</ypad>
+	  <xpad>4</xpad>
+	  <ypad>4</ypad>
 	  <child>
 	    <padding>0</padding>
 	    <expand>True</expand>
@@ -1538,6 +1551,28 @@
     <spacing>0</spacing>
 
     <widget>
+      <class>GtkScrolledWindow</class>
+      <name>scrolledwindow1</name>
+      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
+      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+
+      <widget>
+	<class>GtkText</class>
+	<name>readme_area</name>
+	<can_focus>True</can_focus>
+	<editable>False</editable>
+	<text></text>
+      </widget>
+    </widget>
+
+    <widget>
       <class>GtkHBox</class>
       <child_name>Dialog:action_area</child_name>
       <name>dialog-action_area1</name>
@@ -1567,28 +1602,6 @@
 	  <expand>False</expand>
 	  <fill>True</fill>
 	</child>
-      </widget>
-    </widget>
-
-    <widget>
-      <class>GtkScrolledWindow</class>
-      <name>scrolledwindow1</name>
-      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
-      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
-      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
-      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-
-      <widget>
-	<class>GtkText</class>
-	<name>readme_area</name>
-	<can_focus>True</can_focus>
-	<editable>False</editable>
-	<text></text>
       </widget>
     </widget>
   </widget>
@@ -1621,6 +1634,19 @@
     <spacing>0</spacing>
 
     <widget>
+      <class>GtkText</class>
+      <name>gpg_details_text</name>
+      <can_focus>True</can_focus>
+      <editable>False</editable>
+      <text>[GPG signature details]</text>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+    </widget>
+
+    <widget>
       <class>GtkHBox</class>
       <child_name>Dialog:action_area</child_name>
       <name>dialog-action_area2</name>
@@ -1651,19 +1677,6 @@
 	</child>
       </widget>
     </widget>
-
-    <widget>
-      <class>GtkText</class>
-      <name>gpg_details_text</name>
-      <can_focus>True</can_focus>
-      <editable>False</editable>
-      <text>[GPG signature details]</text>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-    </widget>
   </widget>
 </widget>
 
@@ -1692,6 +1705,28 @@
     <name>dialog-vbox3</name>
     <homogeneous>False</homogeneous>
     <spacing>0</spacing>
+
+    <widget>
+      <class>GtkScrolledWindow</class>
+      <name>scrolledwindow4</name>
+      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
+      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
+      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
+      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
+      <child>
+	<padding>0</padding>
+	<expand>True</expand>
+	<fill>True</fill>
+      </child>
+
+      <widget>
+	<class>GtkText</class>
+	<name>update_details_text</name>
+	<can_focus>True</can_focus>
+	<editable>False</editable>
+	<text>[Update status messages]</text>
+      </widget>
+    </widget>
 
     <widget>
       <class>GtkHBox</class>
@@ -1747,28 +1782,6 @@
 	  </signal>
 	  <label>Save</label>
 	</widget>
-      </widget>
-    </widget>
-
-    <widget>
-      <class>GtkScrolledWindow</class>
-      <name>scrolledwindow4</name>
-      <hscrollbar_policy>GTK_POLICY_AUTOMATIC</hscrollbar_policy>
-      <vscrollbar_policy>GTK_POLICY_AUTOMATIC</vscrollbar_policy>
-      <hupdate_policy>GTK_UPDATE_CONTINUOUS</hupdate_policy>
-      <vupdate_policy>GTK_UPDATE_CONTINUOUS</vupdate_policy>
-      <child>
-	<padding>0</padding>
-	<expand>True</expand>
-	<fill>True</fill>
-      </child>
-
-      <widget>
-	<class>GtkText</class>
-	<name>update_details_text</name>
-	<can_focus>True</can_focus>
-	<editable>False</editable>
-	<text>[Update status messages]</text>
       </widget>
     </widget>
   </widget>

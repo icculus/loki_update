@@ -89,6 +89,11 @@ struct download_update_info
 };
 #define MAX_RATE_CHANGE 50.0f
 
+/* Forward declarations for the meat of the operation */
+void download_update_slot( GtkWidget* w, gpointer data );
+void perform_update_slot( GtkWidget* w, gpointer data );
+void action_button_slot( GtkWidget* w, gpointer data );
+
 /* Extra GTk utility functions */
 
 void gtk_button_set_text(GtkButton *button, const char *text)
@@ -121,10 +126,66 @@ void gtk_button_set_sensitive(GtkWidget *button, gboolean sensitive)
     }
 }
 
-/* Forward declarations for the meat of the operation */
-void download_update_slot( GtkWidget* w, gpointer data );
-void perform_update_slot( GtkWidget* w, gpointer data );
-void action_button_slot( GtkWidget* w, gpointer data );
+struct image {
+    const char *file;
+    GdkPixmap *pixmap;
+    GdkBitmap *bitmap;
+};
+struct image balls[] = {
+    { "pixmaps/gray_ball.xpm",      NULL, NULL },
+    { "pixmaps/green_ball.xpm",     NULL, NULL },
+    { "pixmaps/check_ball.xpm",     NULL, NULL },
+    { "pixmaps/yellow_ball.xpm",    NULL, NULL },
+    { "pixmaps/red_ball.xpm",       NULL, NULL }
+};
+struct image arrows[] = {
+    { "pixmaps/gray_arrow.xpm",     NULL, NULL },
+    { "pixmaps/green_arrow.xpm",    NULL, NULL },
+    { "pixmaps/yellow_arrow.xpm",   NULL, NULL },
+    { "pixmaps/red_arrow.xpm",      NULL, NULL }
+};
+
+static void load_image(GtkWidget *window, struct image *image)
+{
+    if ( ! image->pixmap ) {
+        image->pixmap = gdk_pixmap_create_from_xpm(window->window,
+                                &image->bitmap, NULL, image->file);
+    }
+}
+static void load_images(GtkWidget *window)
+{
+    int i;
+
+    for ( i=0; i<(sizeof(balls)/sizeof(balls[0])); ++i ) {
+        load_image(window, &balls[i]);
+    }
+    for ( i=0; i<(sizeof(arrows)/sizeof(arrows[0])); ++i ) {
+        load_image(window, &arrows[i]);
+    }
+}
+
+static void free_image(struct image *image)
+{
+    if ( image->pixmap ) {
+        gdk_pixmap_unref(image->pixmap);
+        image->pixmap = NULL;
+    }
+    if ( image->bitmap ) {
+        gdk_bitmap_unref(image->bitmap);
+        image->bitmap = NULL;
+    }
+}
+static void free_images(void)
+{
+    int i;
+
+    for ( i=0; i<(sizeof(balls)/sizeof(balls[0])); ++i ) {
+        free_image(&balls[i]);
+    }
+    for ( i=0; i<(sizeof(arrows)/sizeof(arrows[0])); ++i ) {
+        free_image(&arrows[i]);
+    }
+}
 
 static void remove_readme(void)
 {
@@ -191,6 +252,7 @@ static int load_interactive(void)
 
 void main_cancel_slot( GtkWidget* w, gpointer data )
 {
+    download_cancelled = 1;
     gtk_main_quit();
 }
 
@@ -314,6 +376,7 @@ void choose_product_slot( GtkWidget* w, gpointer data )
     /* Make sure the window is visible */
     window = glade_xml_get_widget(update_glade, TOPLEVEL);
     gtk_widget_realize(window);
+    load_images(window);
 
     /* Clear selected products */
     select_product(NULL);
@@ -328,25 +391,71 @@ void main_menu_slot( GtkWidget* w, gpointer data )
     }
 }
 
+static void update_arrows(int which, int status)
+{
+    GtkWidget* image;
+    static const char *widgets[] = {
+        "list_status_arrow",
+        "update_status_arrow",
+    };
+    struct image *arrow;
+
+    /* Do one of the images */
+    arrow = &arrows[status];
+    image = glade_xml_get_widget(update_glade, widgets[which]);
+    if ( image && arrow->pixmap ) {
+        gtk_pixmap_set(GTK_PIXMAP(image), arrow->pixmap, arrow->bitmap);
+        gtk_widget_show(image);
+    }
+}
+
+static struct flash {
+    int id;
+    int which;
+    int color;
+    int colored;
+} flash_data;
+
+static gint flash_arrow(gpointer data)
+{
+    struct flash *flash = (struct flash *)data;
+
+    if ( flash->colored ) {
+        update_arrows(flash->which, flash->color);
+        flash->colored = 0;
+    } else {
+        update_arrows(flash->which, 0);
+        flash->colored = 1;
+    }
+    return flash->id;
+}
+
+static void start_flash(int which, int status)
+{
+    flash_data.which = which;
+    flash_data.color = status;
+    flash_data.colored = 0;
+    flash_data.id = gtk_timeout_add(500, flash_arrow, &flash_data);
+}
+
+static void stop_flash(void)
+{
+    if ( flash_data.id ) {
+        gtk_timeout_remove(flash_data.id);
+        flash_data.id = 0;
+    }
+}
+
 static void update_balls(int which, int status)
 {
-    GtkWidget* window;
     GtkWidget* image;
-    GdkPixmap* pixmap;
-    GdkBitmap* mask;
     static const char *widgets[] = {
         "list_download_pixmap",
         "update_download_pixmap",
         "update_verify_pixmap",
         "update_patch_pixmap"
     };
-    static const char *images[] = {
-        "pixmaps/gray_ball.xpm",
-        "pixmaps/green_ball.xpm",
-        "pixmaps/check_ball.xpm",
-        "pixmaps/yellow_ball.xpm",
-        "pixmaps/red_ball.xpm"
-    };
+    struct image *ball;
 
     /* Do them all? */
     if ( which < 0 ) {
@@ -357,16 +466,12 @@ static void update_balls(int which, int status)
     }
 
     /* Do one of the images */
+    ball = &balls[status];
     image = glade_xml_get_widget(update_glade, widgets[which]);
-    window = gtk_widget_get_toplevel(image);
-    pixmap = gdk_pixmap_create_from_xpm(window->window, &mask, NULL, images[status]);
-    if ( pixmap ) {
-        gtk_pixmap_set(GTK_PIXMAP(image), pixmap, mask);
-        gdk_pixmap_unref(pixmap);
-        gdk_bitmap_unref(mask);
+    if ( image && ball->pixmap ) {
+        gtk_pixmap_set(GTK_PIXMAP(image), ball->pixmap, ball->bitmap);
         gtk_widget_show(image);
     }
-    return;
 }
 
 static gboolean load_file( GtkText *widget, GdkFont *font, const char *file )
@@ -657,6 +762,9 @@ void cancel_download_slot( GtkWidget* w, gpointer data )
 
 void update_proceed_slot( GtkWidget* w, gpointer data )
 {
+    /* Stop any current flashing */
+    stop_flash();
+
     if ( update_proceeding ) {
         main_menu_slot(NULL, NULL);
     } else {
@@ -931,6 +1039,9 @@ static void cleanup_update(const char *status_msg, int update_obsolete)
 
 void action_button_slot(GtkWidget* w, gpointer data)
 {
+    /* Stop any current flashing */
+    stop_flash();
+
     /* If there's a valid patch file, run it! */
     if ( update_proceeding ) {
         perform_update_slot(NULL, NULL);
@@ -950,6 +1061,9 @@ void action_button_slot(GtkWidget* w, gpointer data)
 
 void cancel_button_slot(GtkWidget* w, gpointer data)
 {
+    /* Stop any current flashing */
+    stop_flash();
+
     if ( download_pending ) {
         cancel_download_slot(NULL, NULL);
     } else {
@@ -999,9 +1113,6 @@ void download_update_slot( GtkWidget* w, gpointer data )
 
     /* Show the initial status for this update */
     widget = glade_xml_get_widget(update_glade, "update_name_label");
-#if 0 // Request by Q/A - don't clear the details box on new updates
-    clear_details_text();
-#endif
     add_details_text(LOG_VERBOSE, "\n");
     snprintf(text, (sizeof text), "%s: %s",
              get_product_description(patch->patchset->product_name),
@@ -1009,6 +1120,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     set_status_message(widget, text);
 
     /* Download the update from the server */
+    update_arrows(1, 1);
     verified = DOWNLOAD_FAILED;
     download_pending = 1;
     do {
@@ -1104,6 +1216,9 @@ void download_update_slot( GtkWidget* w, gpointer data )
     
         /* Verify the update */
         update_balls(2, 1);
+        if ( verified != DOWNLOAD_FAILED ) {
+            set_status_message(status, _("Verifying update"));
+        }
         /* First check the GPG signature */
         if ( verified == VERIFY_UNKNOWN ) {
             set_status_message(verify, _("Verifying GPG signature"));
@@ -1189,18 +1304,22 @@ void download_update_slot( GtkWidget* w, gpointer data )
             set_status_message(verify, _("Verification failed"));
             update_balls(2, 4);
             update_status = -1;
+            start_flash(1, 3);
             cleanup_update(_("Update corrupted"), 1);
             return;
         case DOWNLOAD_FAILED:
             update_status = -1;
+            start_flash(1, 3);
             cleanup_update(_("Unable to retrieve update"), 0);
             return;
     }
+    start_flash(1, 1);
     set_status_message(status, _("Ready for update"));
     gtk_button_set_sensitive(action, TRUE);
 
     /* Wait for the user to confirm the update (unless auto-updating) */
     if ( interactive != FULLY_INTERACTIVE ) {
+        stop_flash();
         perform_update_slot(NULL, NULL);
     }
 }
@@ -1214,6 +1333,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *progress;
 
     /* Actually perform the update */
+    update_arrows(1, 1);
     update_balls(3, 1);
     action = glade_xml_get_widget(update_glade, "update_action_button");
     if ( action ) {
@@ -1232,12 +1352,14 @@ void perform_update_slot( GtkWidget* w, gpointer data )
                         download_update, &info) != 0 ) {
         update_balls(3, 4);
         update_status = -1;
+        start_flash(1, 3);
         cleanup_update(_("Update failed"), 0);
         return;
     }
     update_balls(3, 2);
 
     /* We're done!  A successful update! */
+    start_flash(1, 1);
     ++update_status;
     cleanup_update(_("Update complete"), 1);
 }
@@ -1358,6 +1480,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     /* Make sure the window is visible */
     window = glade_xml_get_widget(update_glade, TOPLEVEL);
     gtk_widget_realize(window);
+    load_images(window);
 
     /* Get the update option list widget */
     update_vbox = glade_xml_get_widget(update_glade, "update_vbox");
@@ -1414,6 +1537,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         }
     
         /* Download the patch list */
+        update_arrows(0, 1);
         update_balls(0, 1);
         strcpy(update_url, get_product_url(patchset->product_name));
         progress = glade_xml_get_widget(update_glade, "update_list_progress");
@@ -1442,6 +1566,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
                     gtk_button_set_sensitive(widget, TRUE);
                 }
                 update_proceeding = 0;
+                start_flash(0, 3);
                 do {
                     gtk_main_iteration();
                 } while ( ! update_proceeding );
@@ -1450,6 +1575,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
             continue;
         }
         set_status_message(status, _("Retrieved update list"));
+        update_arrows(0, 1);
         update_balls(0, 2);
         widget=glade_xml_get_widget(update_glade, "list_cancel_button");
         if ( widget ) {
@@ -1528,10 +1654,14 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         /* The continue button becomes a finished button, no updates */
         set_status_message(status, _("No new updates available"));
         update_proceeding = 1;
+        if ( interactive != FULLY_AUTOMATIC ) {
+            start_flash(0, 1);
+        }
         widget = glade_xml_get_widget(update_glade, "list_done_button");
         if ( widget ) {
             gtk_button_set_text(GTK_BUTTON(widget), _("Finished"));
         }
+        gtk_button_set_sensitive(widget, TRUE);
     } else {
         /* Switch the notebook to the appropriate page */
         gtk_notebook_set_page(GTK_NOTEBOOK(notebook), SELECT_PAGE);
@@ -1687,6 +1817,9 @@ static void gtkui_cleanup(void)
         free_patchset(product_patchset);
         product_patchset = NULL;
     }
+
+    /* Free images */
+    free_images();
 
     /* Clean up the Glade files */
     gtk_object_unref(GTK_OBJECT(update_glade));

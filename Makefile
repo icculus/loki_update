@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := \"1.0c\"
+VERSION := 1.0c
 IMAGE   := /loki/patch-tools/setup-image
 
 os := $(shell uname -s)
@@ -10,7 +10,7 @@ libc := $(shell sh print_libc)
 SETUPDB = ../setupdb
 SNARF = snarf-7.0
 CFLAGS = -g -O2 -Wall
-CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=$(VERSION)
+CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=\"$(VERSION)\"
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
 LFLAGS += -L$(SETUPDB)/$(arch) -lsetupdb
@@ -51,8 +51,16 @@ distclean: clean
 	-$(MAKE) -C $(SNARF) $@
 
 clean:
-	rm -f *.o core
+	rm -f *.o *.bak core
 	-$(MAKE) -C $(SNARF) $@
+
+dist:
+	@dist=$(TARGET)-$(VERSION); \
+	mkdir ../$$dist; \
+	cp -r . ../$$dist; \
+	(cd ../$$dist; make distclean; rm -r `find . -name CVS -print`); \
+	(cd ..; tar zcvf $$dist.tar.gz $$dist); \
+    rm -rf ../$$dist
 
 install-bin: $(TARGET)
 	@if [ -d $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/ ]; then \
