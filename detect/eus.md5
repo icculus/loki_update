@@ -1,0 +1,11 @@
+eus
+Eric's Ultimate Solitaire
+ftp://ftp.lokigames.com/pub/patches/eus/patchlist.txt
+02e4184d7cda16acac3c0fcfbc09a7ba    1.0 # alpha, static
+de52b100c499e39eac22e64d7dd8f000    1.0 # alpha, dynamic
+3190c0c7a79b7d9746d77dea6a888b35    1.0 # ppc, static
+52d652830b7ab9653b105b237549fa4d    1.0 # ppc, dynamic
+f0e8dfa3b21d729443016535923dc8f9    1.0 # sparc64, static
+f259860fcd82e63172cd58f8d8f514df    1.0 # sparc64, dynamic
+a341693813b48febede9e97975c4f8fc    1.0 # x86, static
+2e5bcef36fac130647b724f22aebecc2    1.0 # x86, dynamic
