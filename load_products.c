@@ -393,31 +393,17 @@ int is_product_path(const char *product)
     return status;
 }
 
-static int create_product_link(const char *manifest, const char *name)
-{
-    char home_manifest[MAXPATHLEN];
-    char full_manifest[MAXPATHLEN];
-    int status;
-
-    sprintf(home_manifest, "%s/.loki/installed/%s", detect_home(), name);
-    status = 0;
-    if ( realpath(manifest, full_manifest) != NULL ) {
-        mkdirhier(home_manifest);
-        unlink(home_manifest);
-        if ( symlink(full_manifest, home_manifest) == 0 ) {
-            status = 1;
-        }
-    }
-    return status;
-}
-
 /* Warning: This function returns a pointer to a static variable */
 const char *link_product_path(const char *path)
 {
     static char *product_name = NULL;
     char manifest[PATH_MAX];
+    char home_manifest[MAXPATHLEN];
+    char full_manifest[MAXPATHLEN];
     DIR *dir;
     struct dirent *entry;
+    int i;
+    char *spot;
 
     /* Reset the current product */
     if ( product_name ) {
@@ -448,8 +434,25 @@ const char *link_product_path(const char *path)
             product = loki_openproduct(manifest);
             if ( product ) {
                 info = loki_getinfo_product(product);
-                if ( create_product_link(manifest, entry->d_name) ) {
-                    product_name = safe_strdup(info->name);
+                sprintf(home_manifest, "%s/.loki/installed/%s",
+                                detect_home(), entry->d_name);
+                if ( realpath(manifest, full_manifest) != NULL ) {
+                    mkdirhier(home_manifest);
+                    unlink(home_manifest);
+                    if ( symlink(full_manifest, home_manifest) == 0 ) {
+                        /* Get the product install root */
+                        for ( i=0; i<2; ++i ) {
+                            spot = strrchr(full_manifest, '/');
+                            if ( spot ) {
+                                *spot = '\0';
+                            }
+                        }
+                        /* Set the product install root */
+                        loki_setroot_product(product, full_manifest);
+
+                        /* We're done, save the product name */
+                        product_name = safe_strdup(info->name);
+                    }
                 }
                 loki_closeproduct(product);
             }

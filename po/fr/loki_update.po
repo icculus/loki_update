@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: loki_update 1.0\n"
-"POT-Creation-Date: 2001-02-14 17:25-0800\n"
+"POT-Creation-Date: 2001-04-04 10:43-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Stéphane Peter <megastep@lokigames.com>\n"
 "Language-Team: French <fr@li.org>\n"
@@ -184,7 +184,7 @@ msgstr "[Etat de vérification]"
 #, fuzzy, c-format
 msgid ""
 "Loki Update Tool %s\n"
-"Usage: %s [options] [product]\n"
+"Usage: %s [options] [product or install directory]\n"
 "The options can be any of:\n"
 "    --verbose               Print verbose messages to standard output\n"
 "    --noselfcheck           Skip check for updates for the update tool\n"
@@ -205,25 +205,30 @@ msgstr ""
 msgid "Couldn't change to install directory\n"
 msgstr "Ne peut pas aller dans le répertoire d'installation\n"
 
-#: loki_update.c:235
+#: loki_update.c:237
+#, fuzzy, c-format
+msgid "Couldn't modify or link to %s\n"
+msgstr "Ne peut lancer le processus\n"
+
+#: loki_update.c:248
 msgid "Install path set, but no product specified\n"
 msgstr "Chemin d'installation donné, mais pas de produit spécifié\n"
 
-#: loki_update.c:259
+#: loki_update.c:273
 #, fuzzy
 msgid "No user interface modules available\n"
 msgstr "Aucun module d'interface utilisateur disponible\n"
 
-#: loki_update.c:278
+#: loki_update.c:292
 msgid "Couldn't exec ourselves!  Exiting\n"
 msgstr "Impossible de s'exécuter! Abandon\n"
 
-#: loki_update.c:291 tty_ui.c:415
+#: loki_update.c:304 tty_ui.c:415
 #, fuzzy, c-format
 msgid "%s not found, are you the one who installed it?\n"
 msgstr "%s non trouvé, êtes-vous l'utilisateur qui l'a installé?\n"
 
-#: loki_update.c:317
+#: loki_update.c:330
 #, c-format
 msgid "Couldn't exec %s!  Exiting\n"
 msgstr "Impossible d'exécuter %s! Abandon\n"
@@ -379,10 +384,16 @@ msgstr ""
 msgid "No product_vbox in glade file!\n"
 msgstr "Pas de product_vbox dans le fichier glade!\n"
 
-#: gtk_ui.c:2041
-#, fuzzy, c-format
-msgid "\"%s\" not found, are you the one who installed it?"
-msgstr "\"%s\" non trouvé, êtes-vous l'utilisateur qui l'a installé?"
+#: gtk_ui.c:2037
+#, c-format
+msgid ""
+"\n"
+"\"%s\"\n"
+"\n"
+"This is not recognized as either a product tag or a product\n"
+"installation directory.  If this is a product tag, are you running\n"
+"as the user who installed the product?"
+msgstr ""
 
 #: tty_ui.c:420
 msgid "Interactive updates require X11\n"
@@ -393,21 +404,21 @@ msgstr "Les mises à jour interactives nécessitent X11\n"
 msgid "Setting product url for '%s' to: %s\n"
 msgstr "URL du produit changée de '%s' à: %s\n"
 
-#: load_products.c:66
+#: load_products.c:75
 #, c-format
 msgid "Adding product entry for '%s'\n"
 msgstr "Ajout d'une entrée pour le produit '%s'\n"
 
-#: load_products.c:128
+#: load_products.c:137
 #, c-format
 msgid "Failed scan for product '%s'\n"
 msgstr "Recherche échouée pour le produit '%s'\n"
 
-#: load_products.c:171
+#: load_products.c:180
 msgid "Searching for installed products... "
 msgstr "Recherche des produits installés... "
 
-#: load_products.c:208
+#: load_products.c:217
 msgid "done!\n"
 msgstr "fini!\n"
 
@@ -545,6 +556,10 @@ msgstr "ERREUR: "
 #: log_output.c:50
 msgid "WARNING: "
 msgstr "AVERTISSEMENT: "
+
+#, fuzzy
+#~ msgid "\"%s\" not found, are you the one who installed it?"
+#~ msgstr "\"%s\" non trouvé, êtes-vous l'utilisateur qui l'a installé?"
 
 #~ msgid "%s has not been installed by you.\n"
 #~ msgstr "%s n'a pas été installé par vous.\n"

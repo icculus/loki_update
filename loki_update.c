@@ -41,7 +41,7 @@ static void print_usage(char *argv0)
 {
     fprintf(stderr,
 _("Loki Update Tool %s\n"
-  "Usage: %s [options] [product]\n"
+  "Usage: %s [options] [product or install directory]\n"
   "The options can be any of:\n"
   "    --verbose               Print verbose messages to standard output\n"
   "    --noselfcheck           Skip check for updates for the update tool\n"

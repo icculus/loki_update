@@ -2034,7 +2034,7 @@ static int gtkui_perform_updates(const char *product)
 
             widget = glade_xml_get_widget(update_glade, "product_vbox");
             snprintf(message, sizeof(message),
-                     _("\"%s\" not found, are you the one who installed it?"),
+                     _("\n\"%s\"\n\nThis is not recognized as either a product tag or a product\ninstallation directory.  If this is a product tag, are you running\nas the user who installed the product?"),
                      product);
             label = gtk_label_new(message);
             gtk_box_pack_start(GTK_BOX(widget), label, FALSE, TRUE, 0);
