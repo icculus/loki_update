@@ -438,14 +438,14 @@ void set_progress_url(GtkProgress *progress, const char *url)
 static void reset_selected_update(void)
 {
     update_patchset = product_patchset;
-    if ( update_patchset ) {
-        update_root = update_patchset->root;
-    } else {
-        update_root = NULL;
-    }
     update_path = NULL;
     update_patch = NULL;
     while ( ! update_path && update_patchset ) {
+        if ( update_patchset ) {
+            update_root = update_patchset->root;
+        } else {
+            update_root = NULL;
+        }
         while ( update_root && ! update_root->selected ) {
             update_root = update_root->sibling;
         }
@@ -466,17 +466,17 @@ static patch *skip_to_selected_update(void)
             if ( ! update_path ) {
                 do {
                     update_root = update_root->sibling;
-                } while ( update_root && ! update_root->selected );
-
-                if ( ! update_root ) {
-                    update_patchset = update_patchset->next;
-                    if ( ! update_patchset ) {
-                        /* End of the line.. */
-                        update_patch = NULL;
-                        return(NULL);
+                    if ( ! update_root ) {
+                        update_patchset = update_patchset->next;
+                        if ( ! update_patchset ) {
+                            /* End of the line.. */
+                            update_patch = NULL;
+                            return(NULL);
+                        }
+                        update_root = update_patchset->root;
                     }
-                    update_root = update_patchset->root;
-                }
+                } while ( ! update_root->selected );
+
                 update_path = update_root->selected->shortest_path;
             }
             update_patch = update_path->patch;
@@ -931,7 +931,6 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *progress;
     patchset *patchset;
     const char *product_name;
-    const char *description;
     char text[1024];
     version_node *node, *root, *trunk;
     int selected;
@@ -968,12 +967,12 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         if ( ! patchset ) {
             log(LOG_WARNING, "Unable to open product '%s'\n", product_name);
         }
-        description = get_product_description(product_name);
 
         /* Reset the panel */
         widget = glade_xml_get_widget(update_glade, "product_label");
         if ( widget ) {
-            gtk_label_set_text(GTK_LABEL(widget), description);
+            gtk_label_set_text(GTK_LABEL(widget),
+                               get_product_description(product_name));
         }
         widget = glade_xml_get_widget(update_glade, "update_list_progress");
         if ( widget ) {
@@ -1038,7 +1037,10 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         }
     
         /* Add a frame and label for this product */
-        frame = gtk_frame_new(description);
+        snprintf(text, sizeof(text), "%s %s",
+                 get_product_description(product_name),
+                 get_product_version(product_name));
+        frame = gtk_frame_new(text);
         gtk_container_set_border_width(GTK_CONTAINER(frame), 4);
         gtk_box_pack_start(GTK_BOX(update_vbox), frame, FALSE, TRUE, 0);
         gtk_widget_show(frame);

@@ -61,6 +61,7 @@ a set of entries in the form:
 Product:
 Version:
 Architecture:
+Libc:
 Applies:
 URL:
 
@@ -74,9 +75,14 @@ product will be after the patch is applied.  The patch is responsible for
 updating the installation database, which is done automatically by Loki's
 patchkit tools.
 
-The architecture is a comma separated list of architectures for which the
-patch is valid.
+The architecture is an optional comma separated list of architectures for
+which the patch is valid.  The default is to match any architecture.
 Recognized keywords are: x86, ppc, alpha, sparc64, arm, any
+New keywords may be added by modifying arch.c in the setupdb distribution.
+
+The libc is an optional comma separated list of versions of libc for
+which the patch is valid.  The default is to match any version of libc.
+Recognized keywords are: libc5, glibc-2.0, glibc-2.1
 New keywords may be added by modifying arch.c in the setupdb distribution.
 
 The applies field is a comma separated list of product versions to which
