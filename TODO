@@ -1,4 +1,5 @@
 
-Pretty much everything ..
-Add a UI
-Print out any special warnings when updating a patch
+Check how the updater handles out-of-diskspace errors
+Check how the updater handles errors in the updates
+Add support for old product auto-detection
+Add a console UI
