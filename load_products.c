@@ -5,6 +5,7 @@
 #include "setupdb.h"
 #include "safe_malloc.h"
 #include "log_output.h"
+#include "update_ui.h"
 #include "load_products.h"
 
 
@@ -151,7 +152,9 @@ void load_product_list(const char *wanted)
           product_name;
           product_name = loki_getnextproduct() ) {
         /* Skip unwanted entries, if we're looking for something */
-        if ( wanted && (strcasecmp(wanted, product_name) != 0) ) {
+        if ( wanted &&
+             (strcasecmp(wanted, product_name) != 0) &&
+             (strcasecmp(PRODUCT, product_name) != 0) ) {
             continue;
         }
         product = loki_openproduct(product_name);
