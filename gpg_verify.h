@@ -42,7 +42,8 @@ typedef enum {
 } verify_result;
 
 /* Verify the given signature */
-extern gpg_result gpg_verify(const char *file, char *sig, int maxsig);
+extern gpg_result gpg_verify(const char *file, char *sig, int maxsig,
+                             update_callback update, void *udata);
 
 /* Get the given public key */
 int get_publickey(const char *key, update_callback update, void *udata);

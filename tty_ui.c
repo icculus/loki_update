@@ -141,11 +141,11 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
     gpg_result gpg_code;
 
     set_status_message(_("Running GPG..."));
-    gpg_code = gpg_verify(file, sig, maxsig);
+    gpg_code = gpg_verify(file, sig, maxsig, NULL, NULL);
     if ( gpg_code == GPG_NOPUBKEY ) {
         set_status_message(_("Downloading public key"));
         get_publickey(sig, NULL, NULL);
-        gpg_code = gpg_verify(file, sig, maxsig);
+        gpg_code = gpg_verify(file, sig, maxsig, NULL, NULL);
     }
     return gpg_code;
 }

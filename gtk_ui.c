@@ -1064,13 +1064,13 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
     while( gtk_events_pending() ) {
         gtk_main_iteration();
     }
-    gpg_code = gpg_verify(file, sig, maxsig);
+    set_download_info(&info, status, NULL, NULL, NULL);
+    gpg_code = gpg_verify(file, sig, maxsig, download_update, &info);
     if ( gpg_code == GPG_NOPUBKEY ) {
         verify = glade_xml_get_widget(update_glade, "verify_status_label");
         set_status_message(verify, _("Downloading public key"));
-        set_download_info(&info, status, NULL, NULL, NULL);
         get_publickey(sig, download_update, &info);
-        gpg_code = gpg_verify(file, sig, maxsig);
+        gpg_code = gpg_verify(file, sig, maxsig, download_update, &info);
     }
     return gpg_code;
 }
