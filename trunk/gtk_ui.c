@@ -270,17 +270,12 @@ void select_all_products_slot( GtkWidget* w, gpointer data )
     GtkWidget *button;
     const char *product_name;
 
-    /* Don't do anything if there aren't any products available */
-    if ( get_num_products() == 0 ) {
-        return;
-    }
-
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
     while ( list ) {
         button = GTK_WIDGET(list->data);
         product_name = gtk_object_get_data(GTK_OBJECT(button), "data");
-        if ( strcasecmp(PRODUCT, product_name) != 0 ) {
+        if ( product_name && strcasecmp(PRODUCT, product_name) != 0 ) {
             gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
         }
         list = list->next;
@@ -294,11 +289,6 @@ static void select_product(const char *product)
     GList *list;
     GtkWidget *button;
 
-    /* Don't do anything if there aren't any products available */
-    if ( get_num_products() == 0 ) {
-        return;
-    }
-
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
     while ( list ) {
@@ -311,7 +301,9 @@ static void select_product(const char *product)
                 break;
             }
         } else {
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), FALSE);
+            if ( GTK_IS_TOGGLE_BUTTON(button) ) {
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), FALSE);
+            }
         }
         list = list->next;
     }
@@ -323,11 +315,6 @@ static void deselect_product(void)
     GtkWidget *widget;
     GList *list;
     GtkWidget *button;
-
-    /* Don't do anything if there aren't any products available */
-    if ( get_num_products() == 0 ) {
-        return;
-    }
 
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
@@ -347,11 +334,6 @@ static const char *selected_product(void)
     GtkWidget *widget;
     GList *list;
     GtkWidget *button;
-
-    /* Don't do anything if there aren't any products available */
-    if ( get_num_products() == 0 ) {
-        return(NULL);
-    }
 
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     list = gtk_container_children(GTK_CONTAINER(widget));
@@ -2025,9 +2007,24 @@ static int gtkui_perform_updates(const char *product)
     update_status = 0;
     interactive = load_interactive();
     if ( product ) {
-        select_product(product);
-        one_product = 1;
-        choose_update_slot(NULL, NULL);
+        if ( is_valid_product(product) ) {
+            select_product(product);
+            one_product = 1;
+            choose_update_slot(NULL, NULL);
+        } else {
+            GtkWidget *widget;
+            GtkWidget *label;
+            char message[PATH_MAX];
+
+            widget = glade_xml_get_widget(update_glade, "product_vbox");
+            snprintf(message, sizeof(message),
+                     _("\"%s\" not found, are you the one who installed it?"),
+                     product);
+            label = gtk_label_new(message);
+            gtk_box_pack_start(GTK_BOX(widget), label, FALSE, TRUE, 0);
+            gtk_widget_show(label);
+            choose_product_slot(NULL, NULL);
+        }
     } else {
         one_product = 0;
         choose_product_slot(NULL, NULL);
