@@ -8,7 +8,7 @@ os := $(shell uname -s)
 arch := $(shell sh print_arch)
 libc := $(shell sh print_libc)
 
-SETUPDB = ../setupdb
+SETUPDB = ../loki_setupdb
 SNARF = snarf-7.0
 CFLAGS = -g -O2 -Wall
 ifeq ($(arch),alpha)
