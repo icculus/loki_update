@@ -871,13 +871,18 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
 {
     gpg_result gpg_code;
     struct download_update_info info;
+    GtkWidget *status;
+    GtkWidget *verify;
 
+    status = glade_xml_get_widget(update_glade, "update_status_label");
+    set_status_message(status, _("Running GPG..."));
+    while( gtk_events_pending() ) {
+        gtk_main_iteration();
+    }
     gpg_code = gpg_verify(file, sig, maxsig);
     if ( gpg_code == GPG_NOPUBKEY ) {
-        GtkWidget *status;
-        status = glade_xml_get_widget(update_glade, "verify_status_label");
-        set_status_message(status, _("Downloading public key"));
-        status = glade_xml_get_widget(update_glade, "update_status_label");
+        verify = glade_xml_get_widget(update_glade, "verify_status_label");
+        set_status_message(verify, _("Downloading public key"));
         download_cancelled = 0;
         set_download_info(&info, status, NULL, NULL, NULL);
         get_publickey(sig, download_update, &info);
@@ -1097,6 +1102,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     /* Verify that we have an update to perform */
     patch = skip_to_selected_update();
     if ( ! patch ) {
+        start_flash(1, 1);
         return;
     }
     patch->installed = 1;
@@ -1220,9 +1226,6 @@ void download_update_slot( GtkWidget* w, gpointer data )
     
         /* Verify the update */
         update_balls(2, 1);
-        if ( verified != DOWNLOAD_FAILED ) {
-            set_status_message(status, _("Verifying update"));
-        }
         /* First check the GPG signature */
         if ( verified == VERIFY_UNKNOWN ) {
             set_status_message(verify, _("Verifying GPG signature"));
@@ -1279,6 +1282,11 @@ void download_update_slot( GtkWidget* w, gpointer data )
                 fp = fopen(sum_file, "r");
                 if ( fp ) {
                     if ( fgets(md5_calc, sizeof(md5_calc), fp) ) {
+                        set_status_message(status,
+                                _("Calculating MD5 checksum"));
+                        while( gtk_events_pending() ) {
+                            gtk_main_iteration();
+                        }
                         md5_compute(update_url, md5_real, 0);
                         if ( strcmp(md5_calc, md5_real) != 0 ) {
                             verified = VERIFY_FAILED;
