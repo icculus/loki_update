@@ -394,6 +394,12 @@ static int ttyui_init(int argc, char *argv[])
     if ( get_logging() <= LOG_NORMAL ) {
         putenv("PATCH_LOGGING=1");
     }
+
+    /* Tell the patches that we've already verified them, so don't
+       perform the checksum self-check.
+     */
+    putenv("SETUP_NOCHECK=1");
+
     return 0;
 }
 
