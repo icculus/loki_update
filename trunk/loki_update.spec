@@ -1,5 +1,5 @@
 %define name loki_update
-%define version 1.0.7
+%define version 1.0.8
 %define release 1
 
 Summary: Loki Update Tool

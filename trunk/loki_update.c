@@ -243,6 +243,7 @@ int main(int argc, char *argv[])
     if ( meta_url ) {
         load_meta_url(meta_url);
     }
+    set_override_url(update_url);
 
     /* Initialize the UI */
     ui = NULL;
@@ -279,7 +280,6 @@ int main(int argc, char *argv[])
                 return(255);
         }
     }
-    set_override_url(update_url);
 
     /* Stage 2: If we are being run automatically, update the product */
     if ( product ) {

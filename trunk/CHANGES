@@ -1,3 +1,8 @@
+1.0.8
+Sam Lantinga - Thu Feb 15 18:14:17 PST 2001
+ * Added a reminder to update setup.xml to the Makefile install rule
+ * The url specified with --update_url applies to updating loki_update
+
 1.0.7:
 Sam Lantinga - Tue Feb 13 18:55:03 PST 2001
  * Added terminal-mode auto-update capability.
