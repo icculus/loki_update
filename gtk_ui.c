@@ -89,6 +89,38 @@ struct download_update_info
 };
 #define MAX_RATE_CHANGE 50.0f
 
+/* Extra GTk utility functions */
+
+void gtk_button_set_text(GtkButton *button, const char *text)
+{
+    gtk_label_set_text(GTK_LABEL(GTK_BIN(button)->child), text);
+}
+
+void gtk_button_set_sensitive(GtkWidget *button, gboolean sensitive)
+{
+    gtk_widget_set_sensitive(button, sensitive);
+
+    /* Simulate a mouse crossing event, to enable button */
+    if ( sensitive ) {
+        int x, y;
+        gboolean retval;
+        GdkEventCrossing crossing;
+
+        gtk_widget_get_pointer(button, &x, &y);
+        if ( (x >= 0) && (y >= 0) &&
+             (x <= button->allocation.width) &&
+             (y <= button->allocation.height) ) {
+                memset(&crossing, 0, sizeof(crossing));
+                crossing.type = GDK_ENTER_NOTIFY;
+                crossing.window = button->window;
+                crossing.detail = GDK_NOTIFY_VIRTUAL;
+                gtk_signal_emit_by_name(GTK_OBJECT(button),
+                                        "enter_notify_event",
+                                        &crossing, &retval);
+        }
+    }
+}
+
 /* Forward declarations for the meat of the operation */
 void download_update_slot( GtkWidget* w, gpointer data );
 void perform_update_slot( GtkWidget* w, gpointer data );
@@ -104,7 +136,7 @@ static void remove_readme(void)
     }
     widget = glade_xml_get_widget(update_glade, "update_readme_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, FALSE);
+        gtk_button_set_sensitive(widget, FALSE);
     }
 }
 static void remove_update(void)
@@ -371,7 +403,7 @@ void view_readme_slot( GtkWidget* w, gpointer data )
         load_file(GTK_TEXT(widget), NULL, readme_file);
         gtk_widget_show(readme);
         widget = glade_xml_get_widget(update_glade, "update_readme_button");
-        gtk_widget_set_sensitive(widget, FALSE);
+        gtk_button_set_sensitive(widget, FALSE);
     }
 }
 
@@ -386,7 +418,7 @@ void close_readme_slot( GtkWidget* w, gpointer data )
         }
         widget = glade_xml_get_widget(update_glade, "update_readme_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
+            gtk_button_set_sensitive(widget, TRUE);
         }
         gtk_object_unref(GTK_OBJECT(readme_glade));
         readme_glade = NULL;
@@ -446,7 +478,7 @@ static void open_save_details(void)
 
         widget = glade_xml_get_widget(details_glade, "save_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
     }
 }
@@ -462,7 +494,7 @@ static void close_save_details(void)
         }
         widget = glade_xml_get_widget(details_glade, "save_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
+            gtk_button_set_sensitive(widget, TRUE);
         }
         gtk_object_unref(GTK_OBJECT(save_glade));
         save_glade = NULL;
@@ -526,11 +558,11 @@ void view_details_slot( GtkWidget* w, gpointer data )
         gtk_widget_show(widget);
         widget = glade_xml_get_widget(update_glade, "list_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
         widget = glade_xml_get_widget(update_glade, "update_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
     }
 }
@@ -545,11 +577,11 @@ void close_details_slot( GtkWidget* w, gpointer data )
     }
     widget = glade_xml_get_widget(update_glade, "list_details_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+        gtk_button_set_sensitive(widget, TRUE);
     }
     widget = glade_xml_get_widget(update_glade, "update_details_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+        gtk_button_set_sensitive(widget, TRUE);
     }
     close_save_details();
 }
@@ -563,7 +595,7 @@ void view_gpg_details_slot( GtkWidget* w, gpointer data )
         gtk_widget_show(widget);
         widget = glade_xml_get_widget(update_glade, "gpg_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
     }
 }
@@ -578,7 +610,7 @@ void close_gpg_details_slot( GtkWidget* w, gpointer data )
     }
     widget = glade_xml_get_widget(update_glade, "gpg_details_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+        gtk_button_set_sensitive(widget, TRUE);
     }
 }
 
@@ -614,7 +646,7 @@ static void enable_gpg_details(const char *url, char *sig)
     /* Enable the button to pop up the signature details */
     widget = glade_xml_get_widget(update_glade, "gpg_details_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, TRUE);
+        gtk_button_set_sensitive(widget, TRUE);
     }
 }
 
@@ -746,11 +778,6 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
     return gpg_code;
 }
 
-void gtk_button_set_text(GtkButton *button, const char *text)
-{
-    gtk_label_set_text(GTK_LABEL(GTK_BIN(button)->child), text);
-}
-
 void set_progress_url(GtkProgress *progress, const char *url)
 {
     char text[1024], *bufp;
@@ -874,16 +901,16 @@ static void cleanup_update(const char *status_msg, int update_obsolete)
     cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
     if ( (update_status >= 0) && skip_to_selected_update() ) {
         if ( cancel ) {
-            gtk_widget_set_sensitive(cancel, TRUE);
+            gtk_button_set_sensitive(cancel, TRUE);
         }
         gtk_button_set_text(GTK_BUTTON(action), _("Continue"));
     } else {
         if ( cancel ) {
-            gtk_widget_set_sensitive(cancel, FALSE);
+            gtk_button_set_sensitive(cancel, FALSE);
         }
         gtk_button_set_text(GTK_BUTTON(action), _("Finished"));
     }
-    gtk_widget_set_sensitive(action, TRUE);
+    gtk_button_set_sensitive(action, TRUE);
 
     if ( status_msg ) {
         status = glade_xml_get_widget(update_glade, "update_status_label");
@@ -968,7 +995,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     verify = glade_xml_get_widget(update_glade, "verify_status_label");
     action = glade_xml_get_widget(update_glade, "update_action_button");
     gtk_button_set_text(GTK_BUTTON(action), _("Update"));
-    gtk_widget_set_sensitive(action, FALSE);
+    gtk_button_set_sensitive(action, FALSE);
 
     /* Show the initial status for this update */
     widget = glade_xml_get_widget(update_glade, "update_name_label");
@@ -1021,15 +1048,15 @@ void download_update_slot( GtkWidget* w, gpointer data )
         }
         cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
         if ( cancel ) {
-            gtk_widget_set_sensitive(cancel, TRUE);
+            gtk_button_set_sensitive(cancel, TRUE);
         }
         widget = glade_xml_get_widget(update_glade, "update_readme_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
         widget = glade_xml_get_widget(update_glade, "gpg_details_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
         update_balls(-1, 0);
     
@@ -1047,7 +1074,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                          download_update, &info) == 0 ) {
                 widget = glade_xml_get_widget(update_glade, "update_readme_button");
                 if ( widget ) {
-                    gtk_widget_set_sensitive(widget, TRUE);
+                    gtk_button_set_sensitive(widget, TRUE);
                 }
             }
         }
@@ -1170,7 +1197,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             return;
     }
     set_status_message(status, _("Ready for update"));
-    gtk_widget_set_sensitive(action, TRUE);
+    gtk_button_set_sensitive(action, TRUE);
 
     /* Wait for the user to confirm the update (unless auto-updating) */
     if ( interactive != FULLY_INTERACTIVE ) {
@@ -1190,13 +1217,13 @@ void perform_update_slot( GtkWidget* w, gpointer data )
     update_balls(3, 1);
     action = glade_xml_get_widget(update_glade, "update_action_button");
     if ( action ) {
-        gtk_widget_set_sensitive(action, FALSE);
+        gtk_button_set_sensitive(action, FALSE);
     }
     status = glade_xml_get_widget(update_glade, "update_status_label");
     set_status_message(status, _("Performing update"));
     cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
     if ( cancel ) {
-        gtk_widget_set_sensitive(cancel, FALSE);
+        gtk_button_set_sensitive(cancel, FALSE);
     }
     progress = glade_xml_get_widget(update_glade, "update_patch_progress");
     set_download_info(&info, status, progress, NULL, NULL);
@@ -1259,7 +1286,7 @@ static void update_toggle_option( GtkWidget* widget, gpointer func_data)
         /* We can always enable the continue button */
         widget = glade_xml_get_widget(update_glade, "choose_continue_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
+            gtk_button_set_sensitive(widget, TRUE);
         }
     } else {
         /* Deselect this patch path */
@@ -1281,7 +1308,7 @@ static void update_toggle_option( GtkWidget* widget, gpointer func_data)
                     }
                 }
             }
-            gtk_widget_set_sensitive(widget, selected);
+            gtk_button_set_sensitive(widget, selected);
         }
     }
 
@@ -1378,11 +1405,11 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         }
         widget = glade_xml_get_widget(update_glade, "list_cancel_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
+            gtk_button_set_sensitive(widget, TRUE);
         }
         widget = glade_xml_get_widget(update_glade, "list_done_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
             gtk_button_set_text(GTK_BUTTON(widget), _("Continue"));
         }
     
@@ -1408,11 +1435,11 @@ void choose_update_slot( GtkWidget* w, gpointer data )
             if ( interactive != FULLY_AUTOMATIC ) {
                 widget=glade_xml_get_widget(update_glade, "list_cancel_button");
                 if ( widget ) {
-                    gtk_widget_set_sensitive(widget, FALSE);
+                    gtk_button_set_sensitive(widget, FALSE);
                 }
                 widget = glade_xml_get_widget(update_glade, "list_done_button");
                 if ( widget ) {
-                    gtk_widget_set_sensitive(widget, TRUE);
+                    gtk_button_set_sensitive(widget, TRUE);
                 }
                 update_proceeding = 0;
                 do {
@@ -1426,7 +1453,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         update_balls(0, 2);
         widget=glade_xml_get_widget(update_glade, "list_cancel_button");
         if ( widget ) {
-            gtk_widget_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, FALSE);
         }
         while( gtk_events_pending() ) {
             gtk_main_iteration();
@@ -1514,9 +1541,9 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         if ( widget ) {
             gtk_button_set_text(GTK_BUTTON(widget), _("Continue"));
             if ( selected ) {
-                gtk_widget_set_sensitive(widget, TRUE);
+                gtk_button_set_sensitive(widget, TRUE);
             } else {
-                gtk_widget_set_sensitive(widget, FALSE);
+                gtk_button_set_sensitive(widget, FALSE);
             }
         }
 
@@ -1552,7 +1579,7 @@ static void product_toggle_option( GtkWidget* widget, gpointer func_data)
     }
     widget = glade_xml_get_widget(update_glade, "product_continue_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, enabled);
+        gtk_button_set_sensitive(widget, enabled);
     }
 }
 
@@ -1611,7 +1638,7 @@ _("No products found.\nAre you the one that installed the software?"));
     }
     widget = glade_xml_get_widget(update_glade, "product_continue_button");
     if ( widget ) {
-        gtk_widget_set_sensitive(widget, FALSE);
+        gtk_button_set_sensitive(widget, FALSE);
     }
 
     /* Tell the patches we're applying that they should be verbose, without
