@@ -46,6 +46,7 @@ typedef struct patch_path {
 typedef struct patch {
     struct patchset *patchset;
     char *description;
+    int size;
     urlset *urls;
     struct version_node *node;
     int refcount;
@@ -88,6 +89,7 @@ extern int add_patch(const char *product,
                      const char *libc,
                      const char *applies,
                      const char *note,
+                     const char *size,
                      urlset *urls,
                      struct patchset *patchset);
 
@@ -95,7 +97,10 @@ extern int add_patch(const char *product,
 extern void calculate_paths(patchset *patchset);
 
 /* Select a particular version node and set toggled state */
-void select_node(version_node *selected_node, int selected);
+extern void select_node(version_node *selected_node, int selected);
+
+/* Find out how much bandwidth all selected updates will take */
+extern int selected_size(patchset *patchset);
 
 /* Select the main branch of patches for the installed components */
 extern void autoselect_patches(patchset *patchset);

@@ -543,6 +543,27 @@ void set_progress_url(GtkProgress *progress, const char *url)
     gtk_progress_set_format_string(GTK_PROGRESS(progress), text);
 }
 
+static void calculate_update_size(void)
+{
+    GtkWidget *widget;
+    int size;
+    patchset *patchset;
+    char text[1024];
+
+    /* First find out how many MB we're talking about */
+    size = 0;
+    for ( patchset = product_patchset; patchset; patchset = patchset->next ) {
+        size += (selected_size(patchset) + 1023) / 1024;
+    }
+
+    /* Now calculate the size label */
+    sprintf(text, _("(%d MB)"), size);
+    widget = glade_xml_get_widget(update_glade, "estimated_size_label");
+    if ( widget ) {
+        gtk_label_set_text(GTK_LABEL(widget), text);
+    }
+}
+
 static void reset_selected_update(void)
 {
     update_patchset = product_patchset;
@@ -564,6 +585,7 @@ static void reset_selected_update(void)
             update_patchset = update_patchset->next;
         }
     }
+    calculate_update_size();
 }
 
 static patch *skip_to_selected_update(void)
@@ -1201,7 +1223,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     /* Switch the notebook to the appropriate page */
     if ( product_patchset ) {
         gtk_notebook_set_page(GTK_NOTEBOOK(notebook), SELECT_PAGE);
-    
+
         /* Disable the continue button until an option is selected */
         widget = glade_xml_get_widget(update_glade, "choose_continue_button");
         if ( widget ) {
@@ -1292,11 +1314,6 @@ static int gtkui_init(int argc, char *argv[])
         gtk_widget_set_sensitive(widget, FALSE);
     }
 
-    /* All errors go through our details window, don't print extra output */
-    if ( get_logging() >= LOG_NORMAL ) {
-        set_logging(LOG_NONE);
-    }
-
     /* Tell the patches we're applying that they should be verbose, without
        resorting to command-line hackery.
     */
@@ -1319,6 +1336,11 @@ static int gtkui_update_product(const char *product)
 
 static int gtkui_perform_updates(void)
 {
+    /* All errors go through our details window, don't print extra output */
+    if ( get_logging() >= LOG_NORMAL ) {
+        set_logging(LOG_NONE);
+    }
+
     update_status = 0;
     choose_product_slot(NULL, NULL);
     auto_update = 0;

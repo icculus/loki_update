@@ -37,6 +37,7 @@ static char *arch = NULL;
 static char *libc = NULL;
 static char *applies = NULL;
 static char *note = NULL;
+static char *size = NULL;
 static urlset *patch_urls = NULL;
 struct {
     const char *prefix;
@@ -49,7 +50,8 @@ struct {
     {   "Architecture", 1, 1, &arch },
     {   "Libc", 1, 1, &libc },
     {   "Applies", 0, 1, &applies },
-    {   "Note", 1, 0, &note }
+    {   "Note", 1, 0, &note },
+    {   "Size", 1, 0, &size }
 };
 
 /* Verify all the parameters and add the current patch to the patchset */
@@ -94,7 +96,7 @@ static int check_and_add_patch(patchset *patchset)
     /* Add the patch to our patchset */
     if ( status == 0 ) {
         add_patch(patchset->product_name, component, version,
-                  arch, libc, applies, note, patch_urls, patchset);
+                  arch, libc, applies, note, size, patch_urls, patchset);
     } else {
         free_urlset(patch_urls);
     }
