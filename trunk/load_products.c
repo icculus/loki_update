@@ -22,11 +22,20 @@
 #include <stdio.h>
 #include <string.h>
 
+/* For product path stuff */
+#include <sys/param.h>
+#include <unistd.h>
+#include <limits.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
+#include "arch.h"
 #include "setupdb.h"
 #include "safe_malloc.h"
 #include "log_output.h"
 #include "update_ui.h"
 #include "load_products.h"
+#include "mkdirhier.h"
 
 
 typedef struct product_entry {
@@ -367,4 +376,85 @@ void free_product_list(void)
         free(entry->default_component);
         free(entry);
     }
+}
+
+int is_product_path(const char *product)
+{
+    char manifest[PATH_MAX];
+    struct stat sb;
+    int status;
+
+    sprintf(manifest, "%s/.manifest", product);
+    if ( (stat(manifest, &sb) == 0) && S_ISDIR(sb.st_mode) ) {
+        status = 1;
+    } else {
+        status = 0;
+    }
+    return status;
+}
+
+static int create_product_link(const char *manifest, const char *name)
+{
+    char home_manifest[MAXPATHLEN];
+    char full_manifest[MAXPATHLEN];
+    int status;
+
+    sprintf(home_manifest, "%s/.loki/installed/%s", detect_home(), name);
+    status = 0;
+    if ( realpath(manifest, full_manifest) != NULL ) {
+        mkdirhier(home_manifest);
+        unlink(home_manifest);
+        if ( symlink(full_manifest, home_manifest) == 0 ) {
+            status = 1;
+        }
+    }
+    return status;
+}
+
+/* Warning: This function returns a pointer to a static variable */
+const char *link_product_path(const char *path)
+{
+    static char *product_name = NULL;
+    char manifest[PATH_MAX];
+    DIR *dir;
+    struct dirent *entry;
+
+    /* Reset the current product */
+    if ( product_name ) {
+        free(product_name);
+        product_name = NULL;
+    }
+
+    /* Look for a product description file */
+    sprintf(manifest, "%s/.manifest", path);
+    dir = opendir(manifest);
+    if ( dir ) {
+        while ( !product_name && ((entry=readdir(dir)) != NULL) ) {
+            product_t *product;
+            product_info_t *info;
+
+            /* Only open .xml (product description) files */
+            if (strcmp(&entry->d_name[strlen(entry->d_name)-4], ".xml") != 0) {
+                continue;
+            }
+
+            /* Make sure we can write to the manifest file */
+            sprintf(manifest, "%s/.manifest/%s", path, entry->d_name);
+            if ( access(manifest, W_OK) != 0 ) {
+                continue;
+            }
+
+            /* Open the product, and create the link */
+            product = loki_openproduct(manifest);
+            if ( product ) {
+                info = loki_getinfo_product(product);
+                if ( create_product_link(manifest, entry->d_name) ) {
+                    product_name = safe_strdup(info->name);
+                }
+                loki_closeproduct(product);
+            }
+        }
+        closedir(dir);
+    }
+    return product_name;
 }
