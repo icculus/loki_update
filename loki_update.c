@@ -135,6 +135,7 @@ static void goto_installpath(char *argv0)
 
 int main(int argc, char *argv[])
 {
+    static update_UI *ui_list[] = { &gtk_ui, &tty_ui, NULL };
     int self_check;
     int auto_update;
     const char *product;
@@ -244,9 +245,19 @@ int main(int argc, char *argv[])
     }
 
     /* Initialize the UI */
-    ui = &gtk_ui;
-    if ( ui->init(argc, argv) < 0 ) {
-        return(3);
+    ui = NULL;
+    for ( i=0; ui_list[i] && !ui; ++i ) {
+        if ( ui_list[i]->detect() ) {
+            ui = ui_list[i];
+        }
+    }
+    if ( ui ) {
+        if ( ui->init(argc, argv) < 0 ) {
+            return(3);
+        }
+    } else {
+        log(LOG_ERROR, _("No user interface modules available\n"));
+        return(2);
     }
 
     /* Stage 1: Update ourselves, if possible */
