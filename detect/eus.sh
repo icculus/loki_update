@@ -10,8 +10,14 @@ fi
 product_desc=`tail +2 "$product.md5" | head -n 1`
 product_url=`tail +3 "$product.md5" | head -n 1`
 for path in "$UPDATE_CWD" /opt /opt/games /usr/games /usr/local/games "$HOME/games" "$HOME"
-do for product_bin in EricsSolitaire EricsSolitaire.dynamic
-   do binary=`ls "$path/$product_bin" "$path"/*/"$product_bin" 2>/dev/null`
+do if [ ! -d "$path" ]; then
+       continue
+   fi
+   for product_bin in EricsSolitaire EricsSolitaire.dynamic
+   do binary=`ls -d "$path/$product_bin" 2>/dev/null | head -n 1`
+      if [ ! -f "$binary" ]; then
+          binary=`ls -d "$path/*/$product_bin" 2>/dev/null | head -n 1`
+      fi 
       if [ -f "$binary" ]; then
           product_path=`dirname $binary`
           if [ -w "$product_path" ]; then
