@@ -2,6 +2,8 @@
 #ifndef _patchset_h
 #define _patchset_h
 
+#include "urlset.h"
+
 /* Forward declarations */
 struct patchset;
 struct patch;
@@ -43,7 +45,7 @@ typedef struct patch_path {
 typedef struct patch {
     struct patchset *patchset;
     char *description;
-    char *url;
+    urlset *urls;
     struct version_node *node;
     int refcount;
     int installed;
@@ -83,7 +85,7 @@ extern int add_patch(const char *product,
                      const char *version,
                      const char *arch,
                      const char *applies,
-                     const char *url,
+                     urlset *urls,
                      struct patchset *patchset);
 
 /* Generate valid patch paths, trimming out versions that don't apply */

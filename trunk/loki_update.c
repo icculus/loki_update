@@ -11,7 +11,8 @@
 
 static void print_usage(char *argv0)
 {
-    fprintf(stderr, "Usage: %s [product]\n", argv0);
+    fprintf(stderr,
+"Usage: %s [--noselfcheck] [--update_url <url>] [product]\n", argv0);
 }
 
 static void goto_installpath(char *argv0)
@@ -83,11 +84,78 @@ static void goto_installpath(char *argv0)
 
 int main(int argc, char *argv[])
 {
+    int self_check;
+    const char *product;
+    const char *product_path;
+    const char *update_url;
+    int i;
     update_UI *ui;
+
+    /* Parse the command line */
+    self_check = 1;
+    product = NULL;
+    product_path = NULL;
+    update_url = NULL;
+    for ( i=1; argv[i] && (argv[i][0] == '-'); ++i ) {
+        if ( strcmp(argv[i], "--") == 0 ) {
+            break;
+        }
+        if ( (strcmp(argv[i], "--help") == 0) ||
+             (strcmp(argv[i], "-h") == 0) ) {
+            print_usage(argv[0]);
+            return(0);
+        } else
+        if ( (strcmp(argv[i], "--debug") == 0) ||
+             (strcmp(argv[i], "-d") == 0) ) {
+            set_logging(LOG_DEBUG);
+        } else
+        if ( (strcmp(argv[i], "--verbose") == 0) ||
+             (strcmp(argv[i], "-v") == 0) ) {
+            set_logging(LOG_VERBOSE);
+        } else
+        if ( strcmp(argv[i], "--noselfcheck") == 0 ) {
+            self_check = 0;
+        } else
+        if ( strcmp(argv[i], "--update_url") == 0 ) {
+            if ( ! argv[i+1] ) {
+                print_usage(argv[0]);
+                return(1);
+            }
+            update_url = argv[++i];
+        } else
+        if ( strcmp(argv[i], "--product_name") == 0 ) {
+            if ( ! argv[i+1] ) {
+                print_usage(argv[0]);
+                return(1);
+            }
+            product = argv[++i];
+        } else
+        if ( strcmp(argv[i], "--product_path") == 0 ) {
+            if ( ! argv[i+1] ) {
+                print_usage(argv[0]);
+                return(1);
+            }
+            product_path = argv[++i];
+        }
+    }
+    if ( !product && argv[i] && (argv[i][0] != '-') ) {
+        product = argv[i];
+    }
 
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
     load_product_list();
+    if ( product && ! is_valid_product(product) ) {
+        log(LOG_ERROR, "%s is not installed, aborting\n", product);
+        return(1);
+    }
+    if ( product_path ) {
+        if ( ! product ) {
+            log(LOG_ERROR, "Install path set, but no product specified\n");
+            return(1);
+        }
+        set_product_root(product, product_path);
+    }
 
     /* Initialize the UI */
     ui = &gtk_ui;
@@ -96,7 +164,8 @@ int main(int argc, char *argv[])
     }
 
     /* Stage 1: Update ourselves, if possible */
-    if ( access(".", W_OK) == 0 ) {
+    if ( self_check && (access(".", W_OK) == 0) ) {
+log(LOG_WARNING, "FIXME: Check to make sure self check properly restarts\n");
         switch (ui->auto_update(PRODUCT)) {
             /* An error? return an error code */
             case -1:
@@ -113,33 +182,20 @@ int main(int argc, char *argv[])
                 return(255);
         }
     }
+    set_override_url(update_url);
 
     /* Stage 2: If we are being run automatically, update the product */
-    if ( argv[1] ) {
-        int i, status;
+    if ( product ) {
+        int status;
 
-        i = 0;
-        if ( argv[1][0] == '-' ) {
-            for ( i=1; argv[i]; ++i ) {
-                if ( (strcmp(argv[i], "--product_name") == 0) ||
-                     (strcmp(argv[i], "--") == 0) ) {
-                    break;
-                }
-            }
-        }
-        if ( ! argv[i+1] ) {
-            ui->cleanup();
-            print_usage(argv[0]);
-            return(1);
-        }
-        status = 0;
-        switch (ui->auto_update(argv[i+1])) {
+        switch (ui->auto_update(product)) {
             /* An error? return an error code */
             case -1:
                 status = 3;
                 break;
             /* Succeeded, or no patch needed */
             default:
+                status = 0;
                 break;
         }
         ui->cleanup();

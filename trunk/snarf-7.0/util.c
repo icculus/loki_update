@@ -656,8 +656,8 @@ tcp_connect_async(char *remote_host, int port,
     int (*update)(float percentage, int size, int total, void *udata),
                                                 void *udata)
 {
-        struct sockaddr_in sa;
-        int sock_fd;
+	struct sockaddr_in sa;
+	int sock_fd;
 	fd_set fdset;
 	struct timeval tv;
 	int was_error;
@@ -670,9 +670,15 @@ tcp_connect_async(char *remote_host, int port,
 		return tcp_connect(remote_host, port);
 	}
 
+        /* Start off with zero percent complete (opening connection) */
+	cancelled = update(0.0f, 0, 0, udata);
+        if ( cancelled ) {
+                return(0);
+        }
+
 	/* Look up the remote host address */
-        sa.sin_family = AF_INET;
-        sa.sin_port = htons(port);
+	sa.sin_family = AF_INET;
+	sa.sin_port = htons(port);
 	sa.sin_addr.s_addr = inet_addr(remote_host);
 	if ( sa.sin_addr.s_addr == INADDR_NONE ) {
 		if( gethostbyname_async(remote_host, &sa, update, udata) < 0 ) {
@@ -681,24 +687,24 @@ tcp_connect_async(char *remote_host, int port,
 		}
 	}
 	
-        /* create the socket */
+	/* create the socket */
 	sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-        if( sock_fd < 0 ) {
+	if( sock_fd < 0 ) {
 		/* FIXME: Print an error message */
-                return 0;
-        }
+		return 0;
+	}
 
-        /* connect the socket asynchronously */
+	/* connect the socket asynchronously */
 	if( set_blocking(sock_fd, 0) < 0 ) {
 		/* FIXME: Print an error message */
 		close(sock_fd);
-                return 0;
-        }
-        if( connect(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0 ) {
+		return 0;
+	}
+	if( connect(sock_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0 ) {
 		if ( errno != EINPROGRESS ) {
 			/* FIXME: Print an error message */
 			close(sock_fd);
-                	return 0;
+			return 0;
 		}
 		cancelled = 0;
 		connected = 0;
@@ -719,7 +725,7 @@ tcp_connect_async(char *remote_host, int port,
 			    default:
 				error_size = sizeof(was_error);
 				getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
-				           &was_error, &error_size);
+					   &was_error, &error_size);
 				if ( was_error ) {
 					/* FIXME: Print an error message */
 					cancelled = 1;
@@ -731,15 +737,15 @@ tcp_connect_async(char *remote_host, int port,
 		}
 		if ( cancelled ) {
 			close(sock_fd);
-                	return 0;
-        	}
-        }
+			return 0;
+		}
+	}
 	if( set_blocking(sock_fd, 1) < 0 ) {
 		/* FIXME: Print an error message */
 		close(sock_fd);
-                return 0;
-        }
-        return sock_fd;
+		return 0;
+	}
+	return sock_fd;
 }
 
 #ifndef HAVE_STRDUP

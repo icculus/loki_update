@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "text_parse.h"
 #include "patchset.h"
@@ -11,7 +12,6 @@
 void print_patchset(patchset *patchset)
 {
     version_node *node, *root, *trunk;
-    int i;
 
     for ( root = patchset->root; root; root = root->sibling ) {
         for ( trunk = root; trunk; trunk = trunk->child ) {
@@ -21,13 +21,87 @@ void print_patchset(patchset *patchset)
                 } else {
                     printf("[ ] ");
                 }
-                for ( i=0; i<node->depth; ++i ) {
-                    printf(" ");
-                }
                 printf("%s\n", node->description);
             }
         }
     }
+}
+
+/* Variables used to store patch information during parsing */
+static char parsed_name[1024];
+static char *component = NULL;
+static char *version = NULL;
+static char *arch = NULL;
+static char *applies = NULL;
+static urlset *patch_urls = NULL;
+struct {
+    const char *prefix;
+    int optional;
+    char **variable;
+} parse_table[] = {
+    {   "Component", 1, &component },
+    {   "Version", 0, &version },
+    {   "Architecture", 0, &arch },
+    {   "Applies", 0, &applies }
+};
+
+/* Verify all the parameters and add the current patch to the patchset */
+static int check_and_add_patch(patchset *patchset)
+{
+    int i;
+    int status;
+
+    /* If there are no tags at all, that's fine, successful end of parse */
+    status = 0;
+    for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
+        if ( *parse_table[i].variable ) {
+            ++status;
+        }
+    }
+    if ( status == 0 ) {
+        return(0);
+    }
+
+    /* Check for missing tags */
+    status = 0;
+    for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
+        if ( ! *parse_table[i].variable && ! parse_table[i].optional ) {
+            log(LOG_ERROR, "Missing in parse: %s\n", parse_table[i].prefix);
+            status = -1;
+        }
+    }
+    if ( ! patch_urls->urls ) {
+        log(LOG_ERROR, "No update URL defined for this update\n");
+        status = -1;
+    }
+    if ( status != 0 ) {
+        log(LOG_ERROR, "Parsed so far in this update for %s:\n", parsed_name);
+        for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
+            if ( *parse_table[i].variable ) {
+                log(LOG_ERROR, "%s: %s\n",
+                    parse_table[i].prefix, *parse_table[i].variable);
+            }
+        }
+    }
+
+    /* Add the patch to our patchset */
+    if ( status == 0 ) {
+        add_patch(patchset->product_name,
+                  component, version, arch, applies, patch_urls, patchset);
+    } else {
+        free_urlset(patch_urls);
+    }
+
+    /* Clean up for the next patch */
+    for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
+        if ( *parse_table[i].variable ) {
+            free(*parse_table[i].variable);
+            *parse_table[i].variable = NULL;
+        }
+    }
+    patch_urls = create_urlset();
+
+    return(status);
 }
 
 patchset *load_patchset(patchset *patchset, const char *patchlist)
@@ -36,22 +110,6 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
 
     file = text_open(patchlist);
     if ( file ) {
-        char parsed_name[1024];
-        char *component = NULL;
-        char *version = NULL;
-        char *arch = NULL;
-        char *applies = NULL;
-        char *url = NULL;
-        struct {
-            const char *prefix;
-            char **variable;
-        } parse_table[] = {
-            {   "Component", &component },
-            {   "Version", &version },
-            {   "Architecture", &arch },
-            {   "Applies", &applies },
-            {   "URL", &url },
-        };
         int i;
         char key[1024], val[1024];
 
@@ -67,6 +125,7 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
         }
 
         /* Parse patches for this product */
+        patch_urls = create_urlset();
         while ( strcasecmp(parsed_name, patchset->product_name) == 0 ) {
             if ( ! text_parsefield(file, key, sizeof(key), val, sizeof(val)) ) {
                 break;
@@ -80,48 +139,24 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
             for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                 if ( strcasecmp(parse_table[i].prefix, key) == 0 ) {
                     if ( *parse_table[i].variable ) {
-                        log(LOG_ERROR,
-"Parse error in update list, %s appears twice in one update:\n",
-                            parse_table[i].prefix);
-                        log(LOG_ERROR, "First occurrence: %s\n",
-                            *parse_table[i].variable);
-                        log(LOG_ERROR, "Second occurrence: %s\n", val);
-                        log(LOG_ERROR, "Parsed so far in this update:\n");
-                        for ( i=0;
-                              i<sizeof(parse_table)/sizeof(parse_table[0]);
-                              ++i ) {
-                            if ( *parse_table[i].variable ) {
-                                log(LOG_ERROR, "%s: %s\n",
-                                    parse_table[i].prefix,
-                                    *parse_table[i].variable);
-                            }
+                        if ( check_and_add_patch(patchset) < 0 ) {
+                            /* Error, messages already output */
+                            goto done_parse;
                         }
-                        for ( i=0;
-                              i<sizeof(parse_table)/sizeof(parse_table[0]);
-                              ++i ) {
-                            if ( ! *parse_table[i].variable ) {
-                                log(LOG_ERROR, "Missing in parse: %s\n",
-                                    parse_table[i].prefix);
-                            }
-                        }
-                        goto done_parse;
                     } else {
                         *parse_table[i].variable = strdup(val);
                     }
                     break;
                 }
             }
-            if ( version && arch && applies && url ) {
-                add_patch(patchset->product_name, component, version, arch, applies, url, patchset);
-                for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
-                    if ( *parse_table[i].variable ) {
-                        free(*parse_table[i].variable);
-                        *parse_table[i].variable = NULL;
-                    }
-                }
+            if ( (strncasecmp("URL", key, 3) == 0) &&
+                 (!key[3] || isdigit(key[3])) ) {
+                add_url(patch_urls, val, atoi(&key[3]));
             }
         }
+        check_and_add_patch(patchset);
 done_parse:
+        free_urlset(patch_urls);
         text_close(file);
     }
 

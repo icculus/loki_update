@@ -239,6 +239,9 @@ static int snarf_url(const char *url, char *file, int maxpath,
     if ( rsrc->outfile_offset ) {
         rsrc->options |= OPT_RESUME;
     }
+    if ( get_logging() == LOG_DEBUG ) {
+        rsrc->options |= OPT_VERBOSE;
+    }
     rsrc->progress = update;
     rsrc->progress_udata = udata;
     if ( transfer(rsrc) ) {

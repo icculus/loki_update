@@ -18,6 +18,7 @@ typedef struct product_entry {
     struct product_entry *next;
 } product_entry;
 
+static const char *override_update_url;
 static product_entry *product_list = NULL;
 static product_entry *current = NULL;
 
@@ -177,6 +178,34 @@ const char *get_next_product(void)
     return(product);
 }
 
+int is_valid_product(const char *product)
+{
+    int valid;
+
+    if ( find_product(product) ) {
+        valid = 1;
+    } else {
+        valid = 0;
+    }
+    return(valid);
+}
+
+void set_override_url(const char *update_url)
+{
+    override_update_url = update_url;
+}
+
+void set_product_root(const char *product, const char *root)
+{
+    product_entry *entry;
+
+    entry = find_product(product);
+    if ( entry ) {
+        free(entry->root);
+        entry->root = safe_strdup(root);
+    }
+}
+
 const char *get_product_version(const char *product)
 {
     product_entry *entry;
@@ -226,7 +255,11 @@ const char *get_product_url(const char *product)
 
     entry = find_product(product);
     if ( entry ) {
-        url = entry->update_url;
+        if ( override_update_url ) {
+            url = override_update_url;
+        } else {
+            url = entry->update_url;
+        }
     } else {
         url = NULL;
     }

@@ -23,8 +23,8 @@ LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -ldl
 LFLAGS += -lares
 
 OBJS = loki_update.o gtk_ui.o load_products.o load_patchset.o \
-       patchset.o update.o gpg_verify.o get_url.o mkdirhier.o \
-       text_parse.o log_output.o safe_malloc.o \
+       patchset.o urlset.o update.o gpg_verify.o get_url.o \
+       mkdirhier.o text_parse.o log_output.o safe_malloc.o \
        $(SNARF_OBJS)
 
 SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \

@@ -12,6 +12,7 @@ typedef enum {
 } gpg_result;
 
 typedef enum {
+    DOWNLOAD_FAILED,            /* Download failed */
     VERIFY_OK,                  /* Completely verified */
     VERIFY_UNKNOWN,             /* No GPG available */
     VERIFY_FAILED               /* Failed checksum */

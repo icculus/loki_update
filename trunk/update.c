@@ -15,7 +15,7 @@
 
 #include "log_output.h"
 
-int perform_update(const char *update_file,
+int perform_update(const char *update_file, const char *install_path,
     int (*update)(float percentage, int size, int total, void *udata),
                                                 void *udata)
 {
@@ -60,6 +60,7 @@ int perform_update(const char *update_file,
             args[argc++] = update_file;
             args[argc++] = "--nox11";
             args[argc++] = "--noreadme";
+            args[argc++] = install_path;
             args[argc] = NULL;
             execv(args[0], args);
             fprintf(stderr, "Couldn't exec %s\n", args[0]);
