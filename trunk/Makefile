@@ -91,7 +91,7 @@ dist:
 	(cd ..; tar zcvf $$dist.tar.gz $$dist); \
 	rm -rf ../$$dist
 
-install-bin: $(TARGET)
+install-bin: all
 	@if [ -d $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/ ]; then \
 		cp -v $(TARGET) *.so $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/; \
 		strip $(IMAGE)/$(TARGET)/bin/$(arch)/$(libc)/*; \
