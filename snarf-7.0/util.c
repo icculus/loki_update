@@ -8,14 +8,16 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <errno.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <fcntl.h>
+#include <arpa/inet.h>
 
 #ifdef USE_SOCKS5
 #define SOCKS
@@ -39,6 +41,10 @@
 #include <time.h>
 #include "url.h"
 #include "options.h"
+#include "file.h"
+#include "http.h"
+#include "ftp.h"
+#include "gopher.h"
 
 
 char output_buf[BUFSIZ];
@@ -185,7 +191,7 @@ dump_data(UrlResource *rsrc, int sock, FILE *out)
 		}
                 written = write(out_fd, buf, bytes_read);
                 if( written == -1 ) {
-                        perror("write");
+                        report(rsrc, ERR, "write failed: %s", strerror(errno));
                         okay = 0;
                 }
         }
@@ -574,8 +580,6 @@ tcp_connect(char *remote_host, int port)
 }
 
 #if defined(HAVE_ARES_H)
-static struct hostent *hostentry;
-
 static void snarf_host_callback(void *arg, int status, struct hostent *host)
 {
 	struct sockaddr_in *sa = (struct sockaddr_in *)arg;
@@ -819,6 +823,7 @@ transfer(UrlResource *rsrc)
                 break;
         default:
                 report(rsrc, ERR, "bad url: %s", rsrc->url->full_url);
+                i = 0;
         }
 
         return i;
