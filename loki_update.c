@@ -56,7 +56,7 @@ _("Loki Update Tool %s\n"
 static void init_locale(void)
 {
 	setlocale (LC_ALL, "");
-	bindtextdomain (PACKAGE, "locale");
+	bindtextdomain (PACKAGE, LOCALEDIR);
 	textdomain (PACKAGE);
 }
 
@@ -140,10 +140,10 @@ int main(int argc, char *argv[])
 {
 #ifdef DYNAMIC_UI
     static char *ui_list[] = {
-        "./default_ui.so",
-        "./gtk_sh_ui.so",
-        "./gtk_st_ui.so",
-        "./tty_ui.so"
+        UI_LIBDIR "/default_ui.so",
+        UI_LIBDIR "/gtk_sh_ui.so",
+        UI_LIBDIR "/gtk_st_ui.so",
+        UI_LIBDIR "/tty_ui.so"
     };
     void *handle;
 #else
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     init_locale();
 
     /* Parse the command line */
-    self_check = 1;
+    self_check = 0;
     auto_update = 0;
     product = NULL;
     product_path = NULL;
@@ -194,6 +194,9 @@ int main(int argc, char *argv[])
         if ( (strcmp(argv[i], "--verbose") == 0) ||
              (strcmp(argv[i], "-v") == 0) ) {
             set_logging(LOG_VERBOSE);
+        } else
+        if ( strcmp(argv[i], "--selfcheck") == 0 ) {
+            self_check = 1;
         } else
         if ( strcmp(argv[i], "--noselfcheck") == 0 ) {
             self_check = 0;

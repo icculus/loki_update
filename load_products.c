@@ -28,6 +28,7 @@
 #include <limits.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 
 #include "arch.h"
 #include "setupdb.h"
@@ -124,7 +125,11 @@ static void detect_product(const char *product_name)
     char root[1024];
     char update_url[1024];
 
-    sprintf(command, "sh ./detect/detect.sh %s", product_name);
+#ifdef MD5SUM
+   setenv("DETECT_MD5SUM", MD5SUM, 1);
+#endif
+
+    sprintf(command, "sh " DATADIR "/detect/detect.sh %s", product_name);
     detect = popen(command, "r");
     if ( detect ) {
         if ( get_line(version, sizeof(version), detect) &&
@@ -152,7 +157,7 @@ static void load_detected_products(const char *wanted)
     }
 
     /* Otherwise scan for all known legacy products */
-    list = fopen("detect/products.txt", "r");
+    list = fopen(DATADIR "/detect/products.txt", "r");
     if ( ! list ) {
         /* No worries, I guess there's nothing to detect */
         return;

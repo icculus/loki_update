@@ -62,7 +62,7 @@ int perform_update(const char *update_file, const char *install_path,
     char text[PATH_MAX];
     int pipefd[2];
     int argc;
-    const char *args[32];
+    char *args[32];
     pid_t child;
     int status;
     int cancelled;
@@ -103,9 +103,9 @@ int perform_update(const char *update_file, const char *install_path,
             close(0);
             dup(pipefd[1]);
             argc = 0;
-            args[argc++] = update_file;
+            args[argc++] = strdup(update_file);
             args[argc++] = "--nox11";
-            args[argc++] = install_path;
+            args[argc++] = strdup(install_path);
             args[argc] = NULL;
             execv(args[0], args);
             fprintf(stderr, _("Couldn't exec %s\n"), args[0]);

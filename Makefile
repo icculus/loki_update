@@ -3,6 +3,9 @@ TARGET := loki_update
 VERSION := 1.0.13
 IMAGE   := /loki/patch-tools/setup-image
 UPDATES := /loki/updates/loki_update
+UI_LIBDIR := .
+DATADIR := .
+LOCALEDIR := $(DATADIR)/locale
 
 os := $(shell uname -s)
 arch := $(shell sh print_arch)
@@ -10,20 +13,26 @@ libc := $(shell sh print_libc)
 
 SETUPDB = ../loki_setupdb
 SNARF = snarf-7.0
-CFLAGS = -g -O2 -Wall
+OPTFLAGS = -g -O2 -Wall
+CFLAGS = $(OPTFLAGS)
 ifeq ($(arch),alpha)
 CFLAGS += -mcpu=ev4 -Wa,-mall
 endif
+ifdef MD5SUM
+CFLAGS += -DMD5SUM=\"$(MD5SUM)\"
+endif
 CFLAGS += -I$(SETUPDB) -I$(SNARF) -DVERSION=\"$(VERSION)\" -DDYNAMIC_UI
+CFLAGS += -DPROTOTYPES # for snarf
+CFLAGS += -DUI_LIBDIR=\"$(UI_LIBDIR)\" -DDATADIR=\"$(DATADIR)\" -DLOCALEDIR=\"$(LOCALEDIR)\"
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
 LFLAGS = -rdynamic
 LFLAGS += -Wl,-Bstatic
 # Used for non-blocking gethostbyname
 # You can find Ares at: ftp://athena-dist.mit.edu/pub/ATHENA/ares
-LFLAGS += -lares
+LFLAGS += -L./libs/ares-1.1.0 -lares
 LFLAGS += -L$(SETUPDB)/$(arch) -lsetupdb
-LFLAGS += -L$(shell xml-config --prefix)
+LFLAGS += $(shell xml-config --libs)
 LFLAGS += -lxml -lz
 LFLAGS += -Wl,-Bdynamic
 LFLAGS += -lm -ldl
@@ -31,20 +40,14 @@ LFLAGS += -lm -ldl
 TTY_LFLAGS =
 
 GTK_ST_LFLAGS = -Wl,-Bstatic
-GTK_ST_LFLAGS += -L$(shell libglade-config --prefix)
-GTK_ST_LFLAGS +=  -lglade
-GTK_ST_LFLAGS += -L$(shell gtk-config --prefix)
-GTK_ST_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
+GTK_ST_LFLAGS += $(shell libglade-config --libs)
+GTK_ST_LFLAGS += $(shell gtk-config --libs)
 GTK_ST_LFLAGS += -Wl,-Bdynamic
-GTK_ST_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
 
 GTK_SH_LFLAGS = -Wl,-Bstatic
-GTK_SH_LFLAGS += -L$(shell libglade-config --prefix)
-GTK_SH_LFLAGS +=  -lglade
+GTK_SH_LFLAGS += $(shell libglade-config --libs)
 GTK_SH_LFLAGS += -Wl,-Bdynamic
-GTK_SH_LFLAGS += -L$(shell gtk-config --prefix)
-GTK_SH_LFLAGS +=  -lgtk -lgdk -rdynamic -lgmodule -lglib 
-GTK_SH_LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11
+GTK_SH_LFLAGS += $(shell gtk-config --libs)
 
 CORE_OBJS = loki_update.o prefpath.o url_paths.o meta_url.o \
             load_products.o load_patchset.o patchset.o urlset.o \
