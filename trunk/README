@@ -184,6 +184,10 @@ those as the update URLs for the listed products.  URL's may be relative
 filenames as well as normal internet style URLs.  This makes it easy to
 create patch update disks.
 
+The list of keyservers used by the update tool to retrieve GPG keys is
+stored in ~/.loki/loki_update/keyservers.txt.  You can add new servers
+to this file, one per line.
+
 
 Author
 ======
