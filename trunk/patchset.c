@@ -434,6 +434,33 @@ static int is_new_component_root(version_node *root, version_node *node)
     return(is_new);
 }
 
+static int sizeK_from_string(const char *string)
+{
+    const char *bufp;
+    int size;
+
+    size = atoi(string);
+    for ( bufp = string; *bufp && isdigit(*bufp) && isspace(*bufp); ++bufp ) {
+        /* Skip to a non-digit character */ ;
+    }
+    switch (*bufp) {
+        case 'b':
+        case 'B':
+            size /= 1024;
+            break;
+        case 'k':
+        case 'K':
+            break;
+        case 'm':
+        case 'M':
+            size *= 1024;
+            break;
+        default:
+            break;
+    }
+    return(size);
+}
+
 /*
     Version:
     Architecture:
@@ -448,6 +475,7 @@ int add_patch(const char *product,
               const char *libc,
               const char *applies,
               const char *note,
+              const char *size,
               urlset *urls,
               struct patchset *patchset)
 {
@@ -535,6 +563,11 @@ int add_patch(const char *product,
     patch = (struct patch *)safe_malloc(sizeof *patch);
     patch->patchset = patchset;
     patch->description = safe_strdup(description);
+    if ( size ) {
+        patch->size = sizeK_from_string(size);
+    } else {
+        patch->size = 0;
+    }
     patch->urls = urls;
     patch->node = node;
     patch->refcount = 0;
@@ -593,26 +626,29 @@ int add_patch(const char *product,
 static patch *find_linking_patch(patchset *patchset,
                                  version_node *src, version_node *dst)
 {
-    patch *patch;
+    patch *patch, *smallest;
     int i;
 
+    /* Search for all patches that match this link, choose the smallest */
+    smallest = NULL;
     for ( patch = patchset->patches; patch; patch = patch->next ) {
         if ( patch->node == dst ) {
             for ( i = patch->num_apply-1; i >= 0; --i ) {
                 if ( src == patch->apply[i] ) {
+                    if ( !smallest ||
+                         (patch->size < smallest->size) ) {
+                        smallest = patch;
+                    }
                     break;
                 }
             }
-            if ( i >= 0 ) {
-                break;
-            }
         }
     }
-    if ( patch ) {
+    if ( smallest ) {
         /* Woohoo, this patch is being used */
-        ++patch->refcount;
+        ++smallest->refcount;
     }
-    return(patch);
+    return(smallest);
 }
 
 /* Find the shortest path from root to leaf, using Dijkstra's algorithm */
@@ -910,6 +946,26 @@ void select_node(version_node *selected_node, int selected)
         }
         select_node(next, 1);
     }
+}
+
+/* Find out how much bandwidth all selected updates will take */
+int selected_size(patchset *patchset)
+{
+    int size;
+    version_node *root;
+    patch_path *path;
+
+    size = 0;
+    for ( root = patchset->root; root; root = root->sibling ) {
+        if ( root->selected ) {
+            path = root->selected->shortest_path;
+            while ( path ) {
+                size += path->patch->size;
+                path = path->next;
+            }
+        }
+    }
+    return(size);
 }
 
 /* Select the main branch of patches for the installed components */
