@@ -769,6 +769,17 @@
       <spacing>0</spacing>
 
       <widget>
+	<class>GtkHBox</class>
+	<name>hbox12</name>
+	<homogeneous>False</homogeneous>
+	<spacing>0</spacing>
+	<child>
+	  <padding>0</padding>
+	  <expand>False</expand>
+	  <fill>False</fill>
+	</child>
+
+      <widget>
 	<class>GtkLabel</class>
 	<name>update_name_label</name>
 	<label>[Update]</label>
@@ -780,10 +791,28 @@
 	<ypad>4</ypad>
 	<child>
 	  <padding>0</padding>
-	  <expand>False</expand>
-	  <fill>False</fill>
+	  <expand>True</expand>
+	  <fill>True</fill>
 	</child>
       </widget>
+
+	  <widget>
+	    <class>GtkLabel</class>
+	    <name>update_size_label</name>
+	    <label>(0 MB)</label>
+	    <justify>GTK_JUSTIFY_CENTER</justify>
+	    <wrap>False</wrap>
+	    <xalign>0.5</xalign>
+	    <yalign>0.5</yalign>
+	    <xpad>4</xpad>
+	    <ypad>4</ypad>
+	    <child>
+	      <padding>0</padding>
+	      <expand>False</expand>
+	      <fill>False</fill>
+	    </child>
+	  </widget>
+    </widget>
 
       <widget>
 	<class>GtkHSeparator</class>

@@ -1311,6 +1311,13 @@ void download_update_slot( GtkWidget* w, gpointer data )
              patch->description);
     set_status_message(widget, text);
 
+    /* Show the update size label */
+    sprintf(text, _("(%d MB)"), (patch->size + 1023) / 1024);
+    widget = glade_xml_get_widget(update_glade, "update_size_label");
+    if ( widget ) {
+        gtk_label_set_text(GTK_LABEL(widget), text);
+    }
+
     /* Download the update from the server */
     update_arrows(1, 1);
     have_readme = FALSE;
@@ -1401,7 +1408,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
         /* Download the update */
         update_balls(1, 1);
         set_status_message(status, _("Downloading update"));
-        widget = glade_xml_get_widget(update_glade,"update_download_label");
+        widget = glade_xml_get_widget(update_glade, "update_download_label");
         if ( widget ) {
             gtk_label_set_text(GTK_LABEL(widget), _("Downloading update"));
         }
