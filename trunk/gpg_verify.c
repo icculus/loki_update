@@ -6,12 +6,18 @@
 #include <ctype.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <sys/time.h>
 
 #include "log_output.h"
 #include "gpg_verify.h"
 
 #define GPG         "gpg"
-#define KEYSERVER   "certserver.pgp.com"
+static char *keyservers[] = {
+    "wwwkeys.pgp.net",
+    "www.keyserver.net",
+    "certserver.pgp.com",
+    NULL
+};
 
 gpg_result gpg_verify(const char *file, char *sig, int maxsig)
 {
@@ -144,47 +150,152 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
     return(result);
 }
 
-int get_publickey(const char *key, update_callback update, void *udata)
+static int get_publickey_from(const char *key, const char *keyserver,
+                              update_callback update, void *udata)
 {
-    char text[1024];
     int argc;
-    const char *args[6];
+    const char *args[9];
     pid_t child;
-    int status = -1;
+    int cancelled;
+    int pipefd[2];
+    char *prefix;
+    int len, count;
+    char line[1024];
+    fd_set fdset;
+    struct timeval tv;
+    gpg_result result;
 
-    sprintf(text, "Downloading public key %s from %s", key, KEYSERVER);
-    update_message(LOG_VERBOSE, text, update, udata);
+    /* First create a pipe for communicating between child and parent */
+    signal(SIGPIPE, SIG_IGN);
+    if ( pipe(pipefd) < 0 ) {
+        log(LOG_ERROR, "Couldn't create IPC pipe\n");
+        return(GPG_CANCELLED);
+    }
 
     child = fork();
     switch (child) {
         case -1:
             /* Fork failed */
             update_message(LOG_ERROR, "Couldn't fork process", update, udata);
-            return(-1);
+            return(GPG_CANCELLED);
         case 0:
             /* Child process */
-            close(0);
             close(2);
+            dup(pipefd[1]);     /* Copy the pipe to file descriptor 2 */
+            close(1);
+            close(0);
+            close(pipefd[0]);
+            close(pipefd[1]);
             argc = 0;
             args[argc++] = GPG;
+            args[argc++] = "--batch";
+            args[argc++] = "--logger-fd";
+            args[argc++] = "1";
+            args[argc++] = "--status-fd";
+            args[argc++] = "2";
             args[argc++] = "--keyserver";
-            args[argc++] = KEYSERVER;
+            args[argc++] = keyserver;
             args[argc++] = "--recv-key";
             args[argc++] = key;
             args[argc] = NULL;
             execvp(args[0], args);
+            /* Uh oh, we couldn't run GPG */
+            prefix = "[GNUPG:] NOTINSTALLED\n";
+            write(2, prefix, strlen(prefix));
             _exit(-1);
         default:
             /* Parent, wait for child */
             break;
     }
-    while ( waitpid(child, &status, WNOHANG) == 0 ) {
-        if ( update(0, NULL, 0.0f, 0, 0, udata) ) {
+
+    /* Parent, read from child output (slow, but hey..) */
+    result = GPG_CANCELLED;
+    cancelled = 0;
+    close(pipefd[1]);
+    len = 0;
+    while ( !cancelled ) {
+        count = 0;
+
+        /* See if there is data to read */
+        FD_ZERO(&fdset);
+        FD_SET(pipefd[0], &fdset);
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;
+        if ( select(pipefd[0]+1, &fdset, NULL, NULL, &tv) ) {
+            count = read(pipefd[0], &line[len], 1);
+            if ( count <= 0 ) {
+                break;
+            }
+        }
+
+        /* Parse output lines */
+        if ( (len == (sizeof(line)-1)) ||
+             (line[len] == '\r') || (line[len] == '\n') ) {
+            line[len] = '\0';
+
+            /* Check for GPG not installed */
+            prefix = "[GNUPG:] NOTINSTALLED";
+            if ( strncmp(line, prefix, strlen(prefix)) == 0 ) {
+                result = GPG_NOTINSTALLED;
+                break;
+            }
+
+            /* Check for needing a public key */
+            prefix = "[GNUPG:] IMPORT_RES ";
+            if ( strncmp(line, prefix, strlen(prefix)) == 0 ) {
+                if ( line[strlen(prefix)] == '0' ) {
+                    result = GPG_NOPUBKEY;
+                } else {
+                    result = GPG_IMPORTED;
+                }
+                break;
+            }
+
+            len = 0;
+        } else {
+            len += count;
+        }
+
+        /* Update the UI */
+        if ( update ) {
+            cancelled = update(0, NULL, 0.0f, 0, 0, udata);
+        }
+
+        /* Why doesn't the pipe close? */
+        if ( (count == 0) && (waitpid(child, NULL, WNOHANG) == child) ) {
             break;
         }
-        usleep(1000000);
     }
-    kill(child, SIGTERM);
-    waitpid(child, &status, 0);
+    if ( cancelled ) {
+        kill(child, SIGTERM);
+    }
+    waitpid(child, NULL, 0);
+    close(pipefd[0]);
+    return(result);
+}
+
+int get_publickey(const char *key, update_callback update, void *udata)
+{
+    char text[1024];
+    int i;
+    gpg_result status;
+
+    /* Search the keyservers for the key */
+    status = GPG_CANCELLED;
+    for ( i=0; keyservers[i] && (status != GPG_IMPORTED); ++i ) {
+        sprintf(text, "Downloading public key %s from %s", key, keyservers[i]);
+        update_message(LOG_VERBOSE, text, update, udata);
+        status = get_publickey_from(key, keyservers[i], update, udata);
+        switch (status) {
+            case GPG_NOPUBKEY:
+                update_message(LOG_VERBOSE, "Key not found", update, udata);
+                break;
+            case GPG_IMPORTED:
+                update_message(LOG_VERBOSE, "Key downloaded", update, udata);
+                break;
+            default:
+                break;
+        }
+    }
     return(status);
 }

@@ -9,6 +9,7 @@ typedef enum {
     GPG_NOTINSTALLED,
     GPG_CANCELLED,
     GPG_NOPUBKEY,
+    GPG_IMPORTED,
     GPG_VERIFYFAIL,
     GPG_VERIFYOK
 } gpg_result;
