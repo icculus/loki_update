@@ -31,7 +31,7 @@ struct _UrlResource {
 	unsigned char options;
         off_t outfile_size;
         off_t outfile_offset;
-        int (*progress)(float percentage, void *udata);
+        int (*progress)(float percentage, int size, int total, void *udata);
 	float progress_percent;
         void *progress_udata;
 };

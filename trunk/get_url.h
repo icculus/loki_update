@@ -4,4 +4,5 @@
 */
 
 extern int get_url(const char *url, char *file, int maxpath,
-                   int (*update)(float percentage, void *udata), void *udata);
+    int (*update)(float percentage, int size, int total, void *udata),
+                                                void *udata);
