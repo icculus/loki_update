@@ -3,3 +3,7 @@ Check how the updater handles out-of-diskspace errors
 Check how the updater handles errors in the updates
 Add support for old product auto-detection
 Add a console UI
+Implement command line option to disable self auto-updating
+Implement command line option to change log verbosity
+Add internationalization support
+Implement multiple URL support, with random choosing of the URL
