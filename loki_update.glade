@@ -6,6 +6,7 @@
   <program_name>project1</program_name>
   <directory></directory>
   <source_directory>src</source_directory>
+  <pixmaps_directory>.</pixmaps_directory>
   <language>C</language>
   <gnome_support>False</gnome_support>
   <gettext_support>True</gettext_support>
