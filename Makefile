@@ -36,7 +36,7 @@ loki_update: $(SNARF)/snarf $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LFLAGS)
 
 $(SNARF)/snarf:
-	(cd $(SNARF); ./configure && make)
+	(cd $(SNARF); test -f Makefile || ./configure; make)
 
 distclean: clean
 	rm -f loki_update
