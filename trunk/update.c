@@ -85,7 +85,6 @@ int perform_update(const char *update_file, const char *install_path,
             argc = 0;
             args[argc++] = update_file;
             args[argc++] = "--nox11";
-            args[argc++] = "--noreadme";
             args[argc++] = install_path;
             args[argc] = NULL;
             execv(args[0], args);
