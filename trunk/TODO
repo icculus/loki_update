@@ -1,4 +1,5 @@
 
 Check how the updater handles out-of-diskspace errors
 Add a console UI
+Add an optional "Note:" tag to the update description
 Add internationalization support
