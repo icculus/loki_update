@@ -51,9 +51,10 @@
 #include "prefpath.h"
 #include "log_output.h"
 #include "update.h"
+#include "setupdb.h"
 
 #define WGET            "wget"
-#define UPDATE_PATH     "%s/.loki/loki_update"
+#define UPDATE_PATH     "%s/" LOKI_DIRNAME "/loki_update"
 
 static const char *tmppath = "tmp";
 
