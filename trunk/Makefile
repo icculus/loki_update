@@ -32,8 +32,8 @@ $(SNARF)/snarf:
 
 distclean: clean
 	rm -f loki_update
-	$(MAKE) -C $(SNARF) $@
+	-$(MAKE) -C $(SNARF) $@
 
 clean:
 	rm -f *.o core
-	$(MAKE) -C $(SNARF) $@
+	-$(MAKE) -C $(SNARF) $@
