@@ -13,6 +13,7 @@
 #include "patchset.h"
 #include "load_products.h"
 #include "load_patchset.h"
+#include "url_paths.h"
 #include "get_url.h"
 #include "md5.h"
 #include "gpg_verify.h"
@@ -29,7 +30,8 @@
 static GladeXML *update_glade;
 static GladeXML *readme_glade;
 static GladeXML *gpg_glade;
-static GladeXML *details_glade;
+static GladeXML *details_glade = NULL;
+static GladeXML *save_glade = NULL;
 static patchset *update_patchset;
 static version_node *update_root;
 static patch_path *update_path;
@@ -385,6 +387,94 @@ static void add_details_text(int level, const char *text)
     log(level, "%s", text);
 }
 
+static void open_save_details(void)
+{
+    GtkWidget *widget;
+    
+    save_glade = glade_xml_new(UPDATE_GLADE, "save_details_dialog");
+    glade_xml_signal_autoconnect(save_glade);
+    widget = glade_xml_get_widget(save_glade, "save_details_dialog");
+    if ( widget ) {
+        char path[PATH_MAX];
+
+        /* Set the initial working directory and show the dialog */
+        sprintf(path, "%s/", get_working_path());
+        gtk_file_selection_set_filename(GTK_FILE_SELECTION(widget), path);
+        gtk_widget_show(widget);
+
+        widget = glade_xml_get_widget(details_glade, "save_details_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+    }
+}
+
+static void close_save_details(void)
+{
+    GtkWidget *widget;
+
+    if ( save_glade ) {
+        widget = glade_xml_get_widget(save_glade, "save_details_dialog");
+        if ( widget ) {
+            gtk_widget_hide(widget);
+        }
+        widget = glade_xml_get_widget(details_glade, "save_details_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, TRUE);
+        }
+        gtk_object_unref(GTK_OBJECT(save_glade));
+        save_glade = NULL;
+    }
+}
+
+void save_details_slot( GtkWidget* w, gpointer data )
+{
+    open_save_details();
+}
+
+void perform_save_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    struct stat sb;
+    FILE *fp;
+    gchar *path;
+    gchar *text;
+
+    widget = glade_xml_get_widget(save_glade, "save_details_dialog");
+    if ( widget ) {
+        path = gtk_file_selection_get_filename(GTK_FILE_SELECTION(widget));
+        if ( *path ) {
+            /* Handle the setting of a directory */
+            if ( stat(path, &sb) == 0 ) {
+                if ( S_ISDIR(sb.st_mode) ) {
+                    gtk_file_selection_set_filename(GTK_FILE_SELECTION(widget),
+                                                    path);
+                    return;
+                }
+            }
+            widget = glade_xml_get_widget(details_glade, "update_details_text");
+            fp = fopen(path, "w");
+            if ( fp ) {
+                text = gtk_editable_get_chars(GTK_EDITABLE(widget), 0, -1);
+                fputs(text, fp);
+                g_free(text);
+                fclose(fp);
+            } else {
+                char message[PATH_MAX];
+                snprintf(message, sizeof(message),
+                         "Unable to write to %s\n", path);
+                add_details_text(LOG_WARNING, message);
+            }
+        }
+    }
+    close_save_details();
+}
+
+void cancel_save_slot( GtkWidget* w, gpointer data )
+{
+    close_save_details();
+}
+
 void view_details_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *widget;
@@ -419,6 +509,7 @@ void close_details_slot( GtkWidget* w, gpointer data )
     if ( widget ) {
         gtk_widget_set_sensitive(widget, TRUE);
     }
+    close_save_details();
 }
 
 void view_gpg_details_slot( GtkWidget* w, gpointer data )
