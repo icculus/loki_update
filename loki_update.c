@@ -227,6 +227,19 @@ int main(int argc, char *argv[])
         product = argv[i];
     }
 
+    /* If the product is a directory, see if it contains a .manifest
+       that we can write to, and if so, add it to our list of products.
+     */
+    if ( is_product_path(product) ) {
+        const char *new_product;
+        new_product = link_product_path(product);
+        if ( ! new_product ) {
+            fprintf(stderr, _("Couldn't modify or link to %s\n"), product);
+            exit(1);
+        }
+        product = new_product;
+    }
+
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
     load_product_list(product);
