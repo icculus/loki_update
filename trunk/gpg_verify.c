@@ -144,22 +144,22 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig)
     return(result);
 }
 
-int get_publickey(const char *key,
-    int (*update)(float percentage, int size, int total, void *udata),
-                                                void *udata)
+int get_publickey(const char *key, update_callback update, void *udata)
 {
+    char text[1024];
     int argc;
     const char *args[6];
     pid_t child;
     int status = -1;
 
-    log(LOG_VERBOSE, "Downloading public key %s from %s\n", key, KEYSERVER);
+    sprintf(text, "Downloading public key %s from %s", key, KEYSERVER);
+    update_message(LOG_VERBOSE, text, update, udata);
 
     child = fork();
     switch (child) {
         case -1:
             /* Fork failed */
-            log(LOG_ERROR, "Couldn't fork process\n");
+            update_message(LOG_ERROR, "Couldn't fork process", update, udata);
             return(-1);
         case 0:
             /* Child process */
@@ -179,7 +179,7 @@ int get_publickey(const char *key,
             break;
     }
     while ( waitpid(child, &status, WNOHANG) == 0 ) {
-        if ( update(0.0f, 0, 0, udata) ) {
+        if ( update(0, NULL, 0.0f, 0, 0, udata) ) {
             break;
         }
         usleep(1000000);

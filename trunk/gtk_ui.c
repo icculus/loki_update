@@ -18,6 +18,7 @@
 #include "gpg_verify.h"
 #include "update.h"
 #include "log_output.h"
+#include "safe_malloc.h"
 
 // FIXME: Add real gnu gettext() support
 #define _(X)    X
@@ -28,6 +29,7 @@
 static GladeXML *update_glade;
 static GladeXML *readme_glade;
 static GladeXML *gpg_glade;
+static GladeXML *details_glade;
 static patchset *update_patchset;
 static version_node *update_root;
 static patch_path *update_path;
@@ -50,6 +52,13 @@ static patchset *product_patchset = NULL;
 static int update_proceeding = 0;
 static int download_pending = 0;
 static int download_cancelled = 0;
+
+struct download_update_info
+{
+    GtkWidget *status;
+    GtkWidget *progress;
+    GtkWidget *total_label;
+};
 
 /* Forward declarations for the meat of the operation */
 void download_update_slot( GtkWidget* w, gpointer data );
@@ -273,6 +282,78 @@ void close_readme_slot( GtkWidget* w, gpointer data )
     gtk_object_unref(GTK_OBJECT(readme_glade));
 }
 
+static void clear_details_text(void)
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget(details_glade, "update_details_text");
+    if ( widget ) {
+        gtk_editable_delete_text(GTK_EDITABLE(widget), 0, -1);
+    }
+}
+
+static void add_details_text(int level, const char *text)
+{
+    GtkWidget *widget;
+
+    widget = glade_xml_get_widget(details_glade, "update_details_text");
+    if ( widget ) {
+        switch (level) {
+            case LOG_ERROR:
+                gtk_text_insert(GTK_TEXT(widget), NULL, NULL, NULL,
+                                "ERROR: ", strlen("ERROR: "));
+                break;
+            case LOG_WARNING:
+                gtk_text_insert(GTK_TEXT(widget), NULL, NULL, NULL,
+                                "WARNING: ", strlen("WARNING: "));
+                break;
+            default:
+                break;
+        }
+        if ( level > LOG_DEBUG ) {
+            gtk_text_insert(GTK_TEXT(widget), NULL, NULL, NULL,
+                            text, strlen(text));
+        }
+    }
+    log(level, "%s", text);
+}
+
+void view_details_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    
+    widget = glade_xml_get_widget(details_glade, "details_dialog");
+    if ( widget ) {
+        gtk_widget_show(widget);
+        widget = glade_xml_get_widget(update_glade, "list_details_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+        widget = glade_xml_get_widget(update_glade, "update_details_button");
+        if ( widget ) {
+            gtk_widget_set_sensitive(widget, FALSE);
+        }
+    }
+}
+
+void close_details_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    
+    widget = glade_xml_get_widget(details_glade, "details_dialog");
+    if ( widget ) {
+        gtk_widget_hide(widget);
+    }
+    widget = glade_xml_get_widget(update_glade, "list_details_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, TRUE);
+    }
+    widget = glade_xml_get_widget(update_glade, "update_details_button");
+    if ( widget ) {
+        gtk_widget_set_sensitive(widget, TRUE);
+    }
+}
+
 void view_gpg_details_slot( GtkWidget* w, gpointer data )
 {
     GtkWidget *widget;
@@ -310,7 +391,7 @@ static void enable_gpg_details(const char *url, char *sig)
     char text[1024];
 
     /* Fill in the information for this signature */
-    widget = glade_xml_get_widget(gpg_glade, "gpg_details_text");
+    widget = glade_xml_get_widget(gpg_glade, "update_details_text");
     if ( ! widget ) {
         /* Hum, not much we can do.. */
         return;
@@ -347,16 +428,52 @@ void update_proceed_slot( GtkWidget* w, gpointer data )
     update_proceeding = 1;
 }
 
-static int download_update(float percentage, int size, int total, void *udata)
+static void set_download_info(struct download_update_info *info,
+                              GtkWidget *status,
+                              GtkWidget *progress, GtkWidget *total_label)
 {
-    GtkWidget *progress = (GtkWidget *)udata;
+    info->status = status;
+    info->progress = progress;
+    info->total_label = total_label;
+}
 
-    if ( progress ) {
-        gtk_progress_set_percentage(GTK_PROGRESS(progress), percentage/100.0);
+static void set_status_message(GtkWidget *status_label, const char *text)
+{
+    char *text_buf;
+
+    if ( status_label ) {
+        gtk_label_set_text(GTK_LABEL(status_label), text);
     }
-    if ( total ) {
-        GtkWidget *widget;
-        char text[32], *metric;
+    text_buf = (char *)safe_malloc(strlen(text)+2);
+    sprintf(text_buf, "%s\n", text);
+    add_details_text(LOG_STATUS, text_buf);
+    free(text_buf);
+}
+
+static int download_update(int status_level, const char *status,
+                           float percentage,
+                           int size, int total, void *udata)
+{
+    struct download_update_info *info = (struct download_update_info *)udata;
+
+    /* First show any status updates */
+    if ( status ) {
+        if ( status_level == LOG_STATUS ) {
+            set_status_message(info->status, status);
+        } else {
+            add_details_text(status_level, status);
+        }
+    }
+
+    /* Now update the progress bar */
+    if ( info->progress ) {
+        gtk_progress_set_percentage(GTK_PROGRESS(info->progress),
+                                    percentage/100.0);
+    }
+
+    /* If we have actual download progress, show that too */
+    if ( total && info->total_label ) {
+        char text[64], *metric;
 
         metric = "K";
         if ( total >= 4192 ) {
@@ -364,18 +481,8 @@ static int download_update(float percentage, int size, int total, void *udata)
             total /= 1024;
             size /= 1024;
         }
-        widget = glade_xml_get_widget(update_glade, "size_download_label");
-        if ( widget ) {
-            sprintf(text, "%d %s", size, metric);
-            /* Set it! */
-            gtk_label_set_text(GTK_LABEL(widget), text);
-        }
-        widget = glade_xml_get_widget(update_glade, "total_download_label");
-        if ( widget ) {
-            sprintf(text, "%d %s", total, metric);
-            /* Set it! */
-            gtk_label_set_text(GTK_LABEL(widget), text);
-        }
+        sprintf(text, "%d / %d %s", size, total, metric);
+        gtk_label_set_text(GTK_LABEL(info->total_label), text);
     }
 
     while( gtk_events_pending() ) {
@@ -387,15 +494,16 @@ static int download_update(float percentage, int size, int total, void *udata)
 static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
 {
     gpg_result gpg_code;
+    struct download_update_info info;
 
     gpg_code = gpg_verify(file, sig, maxsig);
     if ( gpg_code == GPG_NOPUBKEY ) {
-        GtkWidget *widget;
-        widget = glade_xml_get_widget(update_glade, "verify_status_label");
-        if ( widget ) {
-            gtk_label_set_text(GTK_LABEL(widget), _("Downloading public key"));
-        }
-        get_publickey(sig, download_update, NULL);
+        GtkWidget *status;
+        status = glade_xml_get_widget(update_glade, "verify_status_label");
+        set_status_message(status, _("Downloading public key"));
+        status = glade_xml_get_widget(update_glade, "update_status_label");
+        set_download_info(&info, status, NULL, NULL);
+        get_publickey(sig, download_update, &info);
         gpg_code = gpg_verify(file, sig, maxsig);
     }
     return gpg_code;
@@ -527,9 +635,7 @@ static void cleanup_update(const char *status_msg)
 
     if ( status_msg ) {
         status = glade_xml_get_widget(update_glade, "update_status_label");
-        if ( status ) {
-            gtk_label_set_text(GTK_LABEL(status), status_msg);
-        }
+        set_status_message(status, status_msg);
     } else {
         /* User cancelled the update */
         choose_product_slot(NULL, NULL);
@@ -568,6 +674,7 @@ void cancel_button_slot(GtkWidget* w, gpointer data)
 
 void download_update_slot( GtkWidget* w, gpointer data )
 {
+    struct download_update_info info;
     GtkWidget *notebook;
     GtkWidget *widget;
     GtkWidget *status;
@@ -575,8 +682,9 @@ void download_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *action;
     GtkWidget *cancel;
     GtkWidget *progress;
-    GtkWidget *verify_status;
+    GtkWidget *gpg_status;
     patch *patch;
+    char text[1024];
     const char *url;
     char sig[1024];
     char sum_file[PATH_MAX];
@@ -597,11 +705,23 @@ void download_update_slot( GtkWidget* w, gpointer data )
     gtk_notebook_set_page(GTK_NOTEBOOK(notebook), UPDATE_PAGE);
 
     /* Set the action button to "Update" and disable it for now */
+    status = glade_xml_get_widget(update_glade, "update_status_label");
+    verify = glade_xml_get_widget(update_glade, "verify_status_label");
     action = glade_xml_get_widget(update_glade, "update_action_button");
     gtk_button_set_text(GTK_BUTTON(action), _("Update"));
     gtk_widget_set_sensitive(action, FALSE);
 
+    /* Show the initial status for this update */
+    widget = glade_xml_get_widget(update_glade, "update_name_label");
+    clear_details_text();
+    add_details_text(LOG_VERBOSE, "\n");
+    snprintf(text, (sizeof text), _("%s: %s"),
+             get_product_description(patch->patchset->product_name),
+             patch->description);
+    set_status_message(widget, text);
+
     /* Download the update from the server */
+    verified = DOWNLOAD_FAILED;
     download_pending = 1;
     do {
         /* Grab the next URL to try */
@@ -620,27 +740,19 @@ void download_update_slot( GtkWidget* w, gpointer data )
         if ( widget ) {
             gtk_progress_set_percentage(GTK_PROGRESS(widget), 0.0);
         }
-        widget = glade_xml_get_widget(update_glade, "update_name_label");
+        widget = glade_xml_get_widget(update_glade, "update_total_label");
         if ( widget ) {
-            char text[1024];
-            strcpy(text, get_product_description(patch->patchset->product_name));
-            strncat(text, ": ",
-                ((sizeof(text)/sizeof(text[0])) - strlen(text)));
-            strncat(text, patch->description,
-                ((sizeof(text)/sizeof(text[0])) - strlen(text)));
-            gtk_label_set_text(GTK_LABEL(widget), text);
+            gtk_label_set_text(GTK_LABEL(widget), "");
         }
-        status = glade_xml_get_widget(update_glade, "update_status_label");
         if ( status ) {
             gtk_label_set_text(GTK_LABEL(status), "");
         }
-        verify = glade_xml_get_widget(update_glade, "verify_status_label");
         if ( verify ) {
             gtk_label_set_text(GTK_LABEL(verify), "");
         }
-        verify_status = glade_xml_get_widget(update_glade, "gpg_status_label");
-        if ( verify ) {
-            gtk_label_set_text(GTK_LABEL(verify_status), "");
+        gpg_status = glade_xml_get_widget(update_glade, "gpg_status_label");
+        if ( gpg_status ) {
+            gtk_label_set_text(GTK_LABEL(gpg_status), "");
         }
         cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
         if ( cancel ) {
@@ -660,13 +772,16 @@ void download_update_slot( GtkWidget* w, gpointer data )
     
         /* Download the README and enable the button if we have a README */
         if ( ! auto_update ) {
-            if ( status ) {
-                gtk_label_set_text(GTK_LABEL(status), _("Downloading README"));
+            set_status_message(status, _("Downloading README"));
+            widget = glade_xml_get_widget(update_glade,"update_download_label");
+            if ( widget ) {
+                gtk_label_set_text(GTK_LABEL(widget), _("Downloading README"));
             }
             sprintf(readme_file, "%s.txt", url);
             download_cancelled = 0;
+            set_download_info(&info, status, NULL, NULL);
             if ( get_url(readme_file, readme_file, sizeof(readme_file),
-                         download_update, NULL) == 0 ) {
+                         download_update, &info) == 0 ) {
                 widget = glade_xml_get_widget(update_glade, "update_readme_button");
                 if ( widget ) {
                     gtk_widget_set_sensitive(widget, TRUE);
@@ -676,15 +791,19 @@ void download_update_slot( GtkWidget* w, gpointer data )
     
         /* Download the update */
         update_balls(1, 1);
-        if ( status ) {
-            gtk_label_set_text(GTK_LABEL(status), _("Downloading update"));
+        set_status_message(status, _("Downloading update"));
+        widget = glade_xml_get_widget(update_glade,"update_download_label");
+        if ( widget ) {
+            gtk_label_set_text(GTK_LABEL(widget), _("Downloading update"));
         }
         strcpy(update_url, url);
         progress = glade_xml_get_widget(update_glade, "update_download_progress");
         set_progress_url(GTK_PROGRESS(progress), update_url);
         download_cancelled = 0;
+        set_download_info(&info, status, progress,
+            glade_xml_get_widget(update_glade, "update_total_label"));
         if ( get_url(update_url, update_url, sizeof(update_url),
-                      download_update, progress) != 0 ) {
+                      download_update, &info) != 0 ) {
             update_balls(1, 4);
             verified = DOWNLOAD_FAILED;
         } else {
@@ -693,76 +812,56 @@ void download_update_slot( GtkWidget* w, gpointer data )
         }
     
         /* Verify the update */
-        if ( status && (verified != DOWNLOAD_FAILED) ) {
-            gtk_label_set_text(GTK_LABEL(status), _("Verifying update"));
-        }
-    
         /* First check the GPG signature */
         if ( verified == VERIFY_UNKNOWN ) {
-            if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify),
-                                   _("Downloading GPG signature"));
-            }
+            set_status_message(verify, _("Verifying GPG signature"));
             sprintf(sum_file, "%s.sig", url);
             download_cancelled = 0;
+            set_download_info(&info, status, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
-                         download_update, NULL) == 0 ) {
+                         download_update, &info) == 0 ) {
                 switch (do_gpg_verify(sum_file, sig, sizeof(sig))) {
                     case GPG_NOTINSTALLED:
-                        if ( verify_status ) {
-                            gtk_label_set_text(GTK_LABEL(verify_status),
-                                   _("GPG not installed"));
-                        }
+                        set_status_message(gpg_status,
+                                           _("GPG not installed"));
                         verified = VERIFY_UNKNOWN;
                         break;
                     case GPG_CANCELLED:
-                        if ( verify_status ) {
-                            gtk_label_set_text(GTK_LABEL(verify_status),
-                                   _("GPG was cancelled"));
-                        }
+                        set_status_message(gpg_status,
+                                           _("GPG was cancelled"));
                         verified = VERIFY_UNKNOWN;
                         break;
                     case GPG_NOPUBKEY:
-                        if ( verify_status ) {
-                            gtk_label_set_text(GTK_LABEL(verify_status),
-                                   _("GPG key not available"));
-                        }
+                        set_status_message(gpg_status,
+                                           _("GPG key not available"));
                         verified = VERIFY_UNKNOWN;
                         break;
                     case GPG_VERIFYFAIL:
-                        if ( verify_status ) {
-                            gtk_label_set_text(GTK_LABEL(verify_status),
-                                   _("GPG verify failed"));
-                        }
+                        set_status_message(gpg_status,
+                                           _("GPG verify failed"));
                         verified = VERIFY_FAILED;
                         break;
                     case GPG_VERIFYOK:
-                        if ( verify_status ) {
-                            gtk_label_set_text(GTK_LABEL(verify_status),
-                                   _("GPG verify succeeded"));
-                        }
+                        set_status_message(gpg_status,
+                                           _("GPG verify succeeded"));
                         enable_gpg_details(update_url, sig);
                         verified = VERIFY_OK;
                         break;
                 }
             } else {
-                if ( verify_status ) {
-                    gtk_label_set_text(GTK_LABEL(verify_status),
+                set_status_message(gpg_status,
                                    _("GPG signature not available"));
-                }
             }
             unlink(sum_file);
         }
         /* Now download the MD5 checksum file */
         if ( verified == VERIFY_UNKNOWN ) {
-            if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify),
-                                   _("Downloading MD5 checksum"));
-            }
+            set_status_message(verify, _("Verifying MD5 checksum"));
             sprintf(sum_file, "%s.md5", url);
             download_cancelled = 0;
+            set_download_info(&info, status, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
-                         download_update, NULL) == 0 ) {
+                         download_update, &info) == 0 ) {
                 fp = fopen(sum_file, "r");
                 if ( fp ) {
                     if ( fgets(md5_calc, sizeof(md5_calc), fp) ) {
@@ -773,6 +872,8 @@ void download_update_slot( GtkWidget* w, gpointer data )
                     }
                     fclose(fp);
                 }
+            } else {
+                set_status_message(verify, _("MD5 checksum not available"));
             }
             unlink(sum_file);
         }
@@ -782,21 +883,15 @@ void download_update_slot( GtkWidget* w, gpointer data )
     /* We either ran out of update URLs or we downloaded a valid update */
     switch (verified) {
         case VERIFY_UNKNOWN:
-            if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify), _("Update okay"));
-            }
+            set_status_message(verify, _("Update okay"));
             update_balls(2, 3);
             break;
         case VERIFY_OK:
-            if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify), _("Update okay"));
-            }
+            set_status_message(verify, _("Update okay"));
             update_balls(2, 2);
             break;
         case VERIFY_FAILED:
-            if ( verify ) {
-                gtk_label_set_text(GTK_LABEL(verify), _("Update corrupted"));
-            }
+            set_status_message(verify, _("Update corrupted"));
             update_balls(2, 4);
             update_status = -1;
             cleanup_update(_("Verification failed"));
@@ -806,9 +901,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             cleanup_update(_("Unable to retrieve update"));
             return;
     }
-    if ( status ) {
-        gtk_label_set_text(GTK_LABEL(status), _("Verification succeeded"));
-    }
+    set_status_message(status, _("Verification succeeded"));
     gtk_widget_set_sensitive(action, TRUE);
 
     /* Wait for the user to confirm the update (unless auto-updating) */
@@ -819,6 +912,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
 
 void perform_update_slot( GtkWidget* w, gpointer data )
 {
+    struct download_update_info info;
     GtkWidget *action;
     GtkWidget *status;
     GtkWidget *cancel;
@@ -831,17 +925,16 @@ void perform_update_slot( GtkWidget* w, gpointer data )
         gtk_widget_set_sensitive(action, FALSE);
     }
     status = glade_xml_get_widget(update_glade, "update_status_label");
-    if ( status ) {
-        gtk_label_set_text(GTK_LABEL(status), _("Performing update"));
-    }
+    set_status_message(status, _("Performing update"));
     cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
     if ( cancel ) {
         gtk_widget_set_sensitive(cancel, FALSE);
     }
     progress = glade_xml_get_widget(update_glade, "update_patch_progress");
+    set_download_info(&info, status, progress, NULL);
     if ( perform_update(update_url,
                         get_product_root(update_patchset->product_name),
-                        download_update, progress) != 0 ) {
+                        download_update, &info) != 0 ) {
         update_balls(3, 4);
         unlink(update_url);
         update_status = -1;
@@ -921,9 +1014,11 @@ void toggle_auto_update_slot( GtkWidget* w, gpointer data )
 
 void choose_update_slot( GtkWidget* w, gpointer data )
 {
+    struct download_update_info info;
     GtkWidget *window;
     GtkWidget *notebook;
     GtkWidget *widget;
+    GtkWidget *status;
     GtkWidget *update_vbox;
     GtkWidget *frame;
     GtkWidget *vbox;
@@ -955,6 +1050,12 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     /* Clear any previous list of updates */
     gtk_container_foreach(GTK_CONTAINER(update_vbox), empty_container, update_vbox);
 
+    /* Show the initial status for this operation */
+    status = glade_xml_get_widget(update_glade, "list_status_label");
+    clear_details_text();
+    add_details_text(LOG_VERBOSE, "\n");
+    set_status_message(status, _("Listing product updates"));
+
     /* Build the list of updates for all selected products */
     selected = 0;
     while ( (product_name = selected_product()) != NULL ) {
@@ -969,18 +1070,19 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         }
 
         /* Reset the panel */
+        add_details_text(LOG_VERBOSE, "\n");
         widget = glade_xml_get_widget(update_glade, "product_label");
-        if ( widget ) {
-            gtk_label_set_text(GTK_LABEL(widget),
-                               get_product_description(product_name));
-        }
+        set_status_message(widget, get_product_description(product_name));
         widget = glade_xml_get_widget(update_glade, "update_list_progress");
         if ( widget ) {
             gtk_progress_set_percentage(GTK_PROGRESS(widget), 0.0);
         }
-        widget = glade_xml_get_widget(update_glade, "list_status_label");
+        widget = glade_xml_get_widget(update_glade, "list_total_label");
         if ( widget ) {
             gtk_label_set_text(GTK_LABEL(widget), "");
+        }
+        if ( status ) {
+            gtk_label_set_text(GTK_LABEL(status), "");
         }
         widget = glade_xml_get_widget(update_glade, "list_cancel_button");
         if ( widget ) {
@@ -997,18 +1099,16 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         progress = glade_xml_get_widget(update_glade, "update_list_progress");
         set_progress_url(GTK_PROGRESS(progress), update_url);
         download_cancelled = 0;
+        set_download_info(&info, status, progress,
+            glade_xml_get_widget(update_glade, "list_total_label"));
         if ( get_url(update_url, update_url, sizeof(update_url),
-                      download_update, progress) != 0 ) {
+                      download_update, &info) != 0 ) {
             remove_update();
             update_balls(0, 4);
             if ( ! download_cancelled ) {
                 /* Tell the user what happened, and wait before continuing */
                 update_proceeding = 0;
-                widget=glade_xml_get_widget(update_glade, "list_status_label");
-                if ( widget ) {
-                    gtk_label_set_text(GTK_LABEL(widget),
-                                       _("Unable to retrieve update list"));
-                }
+                set_status_message(status, _("Unable to retrieve update list"));
                 widget=glade_xml_get_widget(update_glade, "list_cancel_button");
                 if ( widget ) {
                     gtk_widget_set_sensitive(widget, FALSE);
@@ -1024,6 +1124,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
             free_patchset(patchset);
             continue;
         }
+        set_status_message(status, _("Retrieved update list"));
         update_balls(0, 2);
     
         /* Turn the patch list into a set of patches */
@@ -1111,6 +1212,8 @@ void choose_update_slot( GtkWidget* w, gpointer data )
             }
         }
     } else {
+        add_details_text(LOG_VERBOSE, "\n");
+        set_status_message(status, _("No new updates available"));
         choose_product_slot(NULL, NULL);
     }
 
@@ -1156,10 +1259,12 @@ static int gtkui_init(int argc, char *argv[])
     glade_init();
     update_glade = glade_xml_new(UPDATE_GLADE, TOPLEVEL); 
     gpg_glade = glade_xml_new(UPDATE_GLADE, "gpg_dialog");
+    details_glade = glade_xml_new(UPDATE_GLADE, "details_dialog");
 
     /* Add all signal handlers defined in glade file */
     glade_xml_signal_autoconnect(update_glade);
     glade_xml_signal_autoconnect(gpg_glade);
+    glade_xml_signal_autoconnect(details_glade);
 
     /* Fill in the list of products */
     widget = glade_xml_get_widget(update_glade, "product_vbox");
@@ -1186,6 +1291,17 @@ static int gtkui_init(int argc, char *argv[])
     if ( widget ) {
         gtk_widget_set_sensitive(widget, FALSE);
     }
+
+    /* All errors go through our details window, don't print extra output */
+    if ( get_logging() >= LOG_NORMAL ) {
+        set_logging(LOG_NONE);
+    }
+
+    /* Tell the patches we're applying that they should be verbose, without
+       resorting to command-line hackery.
+    */
+    putenv("PATCH_LOGGING=1");
+
     return 0;
 }
 
@@ -1225,6 +1341,7 @@ static void gtkui_cleanup(void)
     /* Clean up the Glade files */
     gtk_object_unref(GTK_OBJECT(update_glade));
     gtk_object_unref(GTK_OBJECT(gpg_glade));
+    gtk_object_unref(GTK_OBJECT(details_glade));
 }
 
 update_UI gtk_ui = {

@@ -110,7 +110,8 @@ get_line(UrlResource *rsrc, int control)
 		    case -1:
 			return(NULL);
 		    case 0:
-			if ( rsrc->progress(rsrc->progress_percent,
+			if ( rsrc->progress(0, NULL,
+			                    rsrc->progress_percent,
 			                    0, 0,
 			                    rsrc->progress_udata) ) {
 				return(NULL);
@@ -122,18 +123,33 @@ get_line(UrlResource *rsrc, int control)
 				return(NULL);
 			}
 		}
-                if( rsrc->options & OPT_VERBOSE )
-                        fwrite(buf, 1, bytes_read, stderr);
 
-                if( (buf[0] == '4' || buf[0] == '5') && 
-                    !((rsrc->options & (OPT_VERBOSE | OPT_QUIET))) ) {
-                        fwrite(buf, 1, bytes_read, stderr);
-                        return NULL;
-                }
+		/* Only print to stderr if there is no UI callback */
+                buf[bytes_read] = '\0';
+		if ( rsrc->progress ) {
+			if ( (buf[0] == '4') || (buf[0] == '5') ) {
+				rsrc->progress(ERROR, buf+4,
+				               rsrc->progress_percent,
+				               0, 0,
+				               rsrc->progress_udata);
+				return(NULL);
+			}
+			rsrc->progress(0, buf,
+			               rsrc->progress_percent,
+			               0, 0,
+			               rsrc->progress_udata);
+		} else {
+                	if( rsrc->options & OPT_VERBOSE )
+                        	fwrite(buf, 1, bytes_read, stderr);
+
+                	if( (buf[0] == '4' || buf[0] == '5') && 
+	                    !((rsrc->options & (OPT_VERBOSE | OPT_QUIET))) ) {
+	                        fwrite(buf, 1, bytes_read, stderr);
+	                        return NULL;
+	                }
+		}
 
                 /* in case there's a partial read */
-                buf[bytes_read] = '\0';
-
                 if( buf[bytes_read - 1] == '\n' )
                         buf[bytes_read - 1] = '\0';
 

@@ -22,6 +22,10 @@ struct _Url {
 	char *file;
 };
 
+/* These are used by the progress update callback */
+#define STATUS	2
+#define ERROR	5
+
 struct _UrlResource {
 	Url *url;
 	char *outfile;
@@ -31,7 +35,8 @@ struct _UrlResource {
 	unsigned char options;
         off_t outfile_size;
         off_t outfile_offset;
-        int (*progress)(float percentage, int size, int total, void *udata);
+        int (*progress)(int status_level, const char *status,
+			float percentage, int size, int total, void *udata);
 	float progress_percent;
         void *progress_udata;
 };

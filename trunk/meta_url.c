@@ -11,8 +11,12 @@
 #include "load_products.h"
 #include "meta_url.h"
 
-static int download_progress(float progress, int size, int total, void *udata)
+static int download_progress(int status_level, const char *status,
+                             float progress, int size, int total, void *udata)
 {
+    if ( status ) {
+        log(status_level, "%s\n", status);
+    }
     return(0);
 }
 

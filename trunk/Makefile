@@ -4,7 +4,7 @@ ARCH := $(shell sh print_arch)
 
 SETUPDB = ../setupdb
 SNARF = snarf-7.0
-CFLAGS = -g -Wall
+CFLAGS = -g -O2 -Wall
 CFLAGS += -I$(SETUPDB) -I$(SNARF)
 CFLAGS += $(shell gtk-config --cflags) $(shell libglade-config --cflags)
 CFLAGS += $(shell xml-config --cflags)
