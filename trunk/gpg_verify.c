@@ -46,7 +46,7 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig,
                       update_callback update, void *udata)
 {
     int argc;
-    const char *args[9];
+    char *args[9];
     pid_t child;
     int cancelled;
     int pipefd[2];
@@ -88,7 +88,7 @@ gpg_result gpg_verify(const char *file, char *sig, int maxsig,
             args[argc++] = "--status-fd";
             args[argc++] = "2";
             args[argc++] = "--verify";
-            args[argc++] = file;
+            args[argc++] = strdup(file);
             args[argc] = NULL;
             execvp(args[0], args);
             /* Uh oh, we couldn't run GPG */
@@ -207,7 +207,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
                               update_callback update, void *udata)
 {
     int argc;
-    const char *args[16];
+    char *args[16];
     pid_t child;
     int cancelled;
     int pipefd[2];
@@ -248,9 +248,9 @@ static int get_publickey_from(const char *key, const char *keyserver,
             args[argc++] = "2";
             args[argc++] = "--honor-http-proxy";
             args[argc++] = "--keyserver";
-            args[argc++] = keyserver;
+            args[argc++] = strdup(keyserver);
             args[argc++] = "--recv-key";
-            args[argc++] = key;
+            args[argc++] = strdup(key);
             args[argc] = NULL;
             execvp(args[0], args);
             /* Uh oh, we couldn't run GPG */

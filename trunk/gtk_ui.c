@@ -44,7 +44,7 @@
 #include "safe_malloc.h"
 
 #define TOPLEVEL        "loki_update"
-#define UPDATE_GLADE    TOPLEVEL".glade"
+#define UPDATE_GLADE    DATADIR "/" TOPLEVEL".glade"
 
 static GladeXML *update_glade;
 static GladeXML *readme_glade = NULL;
@@ -141,17 +141,17 @@ struct image {
     GdkBitmap *bitmap;
 };
 struct image balls[] = {
-    { "pixmaps/gray_ball.xpm",      NULL, NULL },
-    { "pixmaps/green_ball.xpm",     NULL, NULL },
-    { "pixmaps/check_ball.xpm",     NULL, NULL },
-    { "pixmaps/yellow_ball.xpm",    NULL, NULL },
-    { "pixmaps/red_ball.xpm",       NULL, NULL }
+    { DATADIR "/pixmaps/gray_ball.xpm",      NULL, NULL },
+    { DATADIR "/pixmaps/green_ball.xpm",     NULL, NULL },
+    { DATADIR "/pixmaps/check_ball.xpm",     NULL, NULL },
+    { DATADIR "/pixmaps/yellow_ball.xpm",    NULL, NULL },
+    { DATADIR "/pixmaps/red_ball.xpm",       NULL, NULL }
 };
 struct image arrows[] = {
-    { "pixmaps/gray_arrow.xpm",     NULL, NULL },
-    { "pixmaps/green_arrow.xpm",    NULL, NULL },
-    { "pixmaps/yellow_arrow.xpm",   NULL, NULL },
-    { "pixmaps/red_arrow.xpm",      NULL, NULL }
+    { DATADIR "/pixmaps/gray_arrow.xpm",     NULL, NULL },
+    { DATADIR "/pixmaps/green_arrow.xpm",    NULL, NULL },
+    { DATADIR "/pixmaps/yellow_arrow.xpm",   NULL, NULL },
+    { DATADIR "/pixmaps/red_arrow.xpm",      NULL, NULL }
 };
 
 static void load_image(GtkWidget *window, struct image *image)

@@ -2,9 +2,14 @@
 #
 # This scripts scans for installed versions of Loki games, for setupdb
 
+LC_ALL=POSIX
+export LC_ALL
+
 # Find where the md5sum program is
-cwd=`pwd`
-md5="$cwd/md5sum"
+md5="$DETECT_MD5SUM"
+if [ "x$DETECT_MD5SUM" = x ]; then
+	md5="`pwd`/md5sum"
+fi
 
 # Get to the correct data directory
 cd "`dirname $0`"

@@ -1,3 +1,14 @@
+Current:
+Ludwig Nussel - Sat Feb  7 21:44:57 PST 2004
+ * Various bugfixes:
+   - allow regular unix installation outside ./
+   - allow to override CFLAGS via OPTFLAGS
+   - fix call of various ...-config scripts
+   - fix warnings about const
+   - set LC_ALL to posix for defined ls output
+   - allow to specify MD5SUM program at compile time for
+     installation outside ./
+
 1.0.13:
 Sam Lantinga - Mon Apr 30 16:13:47 PDT 2001
  * Fixed error when updating a product in the current directory
