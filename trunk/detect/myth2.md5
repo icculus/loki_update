@@ -1,6 +1,6 @@
 myth2_x11 myth2_glide
 Myth II: Soulblighter
-ftp://ftp.lokigames.com/pub/updates/myth2/updates.txt
+http://updates.lokigames.com/myth2/updates.txt
 60b2d5bbe3fd6424676ec16f918af19f    1.3     # myth2_x11, ppc, glibc-2.1
 12fbee939f1cd186533868861fbb2b3b    1.3     # myth2_x11, x86, glibc-2.1
 e8611224b28c4a4c18af0dec4debc33b    1.3     # myth2_glide, x86, glibc-2.1
