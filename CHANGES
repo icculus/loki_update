@@ -1,3 +1,9 @@
+1.0e:
+Sam Lantinga - Mon Nov 20 15:25:39 PST 2000
+ * Added the Loki GPG keyserver to gpg_verify.c
+Sam Lantinga - Mon Nov 20 14:12:01 PST 2000
+ * Fixed infinite loop when update is corrupted.
+
 1.0d:
 Sam Lantinga - Sun Nov 19 16:08:40 PST 2000
  * Added a UI message that shows up if a requested product is not installed

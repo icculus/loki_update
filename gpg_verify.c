@@ -35,8 +35,9 @@
 
 #define GPG         "gpg"
 static char *keyservers[] = {
-    "wwwkeys.pgp.net",
+    "keyserver.lokigames.com",
     "www.keyserver.net",
+    "wwwkeys.pgp.net",
     "certserver.pgp.com",
     NULL
 };
