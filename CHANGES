@@ -1,4 +1,6 @@
 1.0.13:
+Sam Lantinga - Mon Apr 30 16:13:47 PDT 2001
+ * Fixed error when updating a product in the current directory
 Sam Lantinga - Sat Apr 28 16:39:45 PDT 2001
  * Allow the GPG signature verification to be cancelled
 Sam Lantinga - Sat Apr 28 16:19:07 PDT 2001
