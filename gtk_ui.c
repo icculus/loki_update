@@ -994,12 +994,12 @@ static void cleanup_update(const char *status_msg, int update_obsolete)
     GtkWidget *cancel;
 
     /* Remove the update patch file */
+    close_readme_slot(NULL, NULL);
     if ( update_obsolete ) {
         remove_update();
+        remove_readme();
     }
     update_proceeding = 0;
-    close_readme_slot(NULL, NULL);
-    remove_readme();
 
     /* Deselect the current patch path */
     select_node(update_patch->node, 0);
@@ -1032,6 +1032,7 @@ static void cleanup_update(const char *status_msg, int update_obsolete)
     /* Handle auto-update of the next set of patches, if any */
     if ( interactive != FULLY_INTERACTIVE ) {
         if ( update_status >= 0 ) {
+            stop_flash();
             download_update_slot(NULL, NULL);
         }
     }
@@ -1090,6 +1091,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     char md5_real[CHECKSUM_SIZE+1];
     char md5_calc[CHECKSUM_SIZE+1];
     FILE *fp;
+    gboolean have_readme;
     verify_result verified;
 
     /* Verify that we have an update to perform */
@@ -1121,6 +1123,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
 
     /* Download the update from the server */
     update_arrows(1, 1);
+    have_readme = FALSE;
     verified = DOWNLOAD_FAILED;
     download_pending = 1;
     do {
@@ -1164,7 +1167,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
         }
         widget = glade_xml_get_widget(update_glade, "update_readme_button");
         if ( widget ) {
-            gtk_button_set_sensitive(widget, FALSE);
+            gtk_button_set_sensitive(widget, have_readme);
         }
         widget = glade_xml_get_widget(update_glade, "gpg_details_button");
         if ( widget ) {
@@ -1173,7 +1176,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
         update_balls(-1, 0);
     
         /* Download the README and enable the button if we have a README */
-        if ( interactive != FULLY_AUTOMATIC ) {
+        if ( ! have_readme && (interactive != FULLY_AUTOMATIC) ) {
             set_status_message(status, _("Downloading README"));
             widget = glade_xml_get_widget(update_glade,"update_download_label");
             if ( widget ) {
@@ -1188,6 +1191,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
                 if ( widget ) {
                     gtk_button_set_sensitive(widget, TRUE);
                 }
+                have_readme = TRUE;
             }
         }
     
