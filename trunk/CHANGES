@@ -1,4 +1,6 @@
 1.0.7:
+Sam Lantinga - Tue Feb 13 18:55:03 PST 2001
+ * Added terminal-mode auto-update capability.
 Sam Lantinga - Tue Feb 13 16:01:57 PST 2001
  * Write the home directory of the effective uid, so sudo works correctly.
 Sam Lantinga - Tue Feb 13 15:47:20 PST 2001

@@ -162,6 +162,7 @@ static void load_detected_products(const char *wanted)
 
 void load_product_list(const char *wanted)
 {
+    int found;
     const char *product_name;
     product_t *product;
     product_component_t *component;
@@ -171,6 +172,7 @@ void load_product_list(const char *wanted)
 
     /* First load the "official" installed product list */
     num_products = 0;
+    found = 0;
     for ( product_name = loki_getfirstproduct();
           product_name;
           product_name = loki_getnextproduct() ) {
@@ -190,13 +192,16 @@ void load_product_list(const char *wanted)
                             loki_getversion_component(component),
                             info->description, info->root, info->url,
                             loki_getname_component(component));
+                if ( wanted && (strcasecmp(wanted, product_name) == 0) ) {
+                    found = 1;
+                }
             }
             loki_closeproduct(product);
         }
     }
 
     /* Now see what non-official products we should scan for */
-    if ( ! wanted || ! product_list ) {
+    if ( ! found ) {
         load_detected_products(wanted);
     }
 
