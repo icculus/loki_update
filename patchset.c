@@ -493,7 +493,8 @@ int add_patch(const char *product,
     for ( next=copy_word(arch, word, sizeof(word));
           next; 
           next=copy_word(next, word, sizeof(word)) ) {
-        if ( strcasecmp(word, detect_arch()) == 0 ) {
+        if ( (strcasecmp(word, "any") == 0) ||
+             (strcasecmp(word, detect_arch()) == 0) ) {
             matched_arch = 1;
             break;
         }
