@@ -6,6 +6,7 @@ heroes3
 heretic2
 quake3
 hg2
+descent3
 sof
 smac
 sc3u
