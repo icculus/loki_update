@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2000-11-16 12:39-0800\n"
+"POT-Creation-Date: 2000-11-16 16:05-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,7 +40,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: gtk_ui.c:879 gtk_ui.c:1386 gtk_ui.c:1515 loki_update.glade:154
+#: gtk_ui.c:906 gtk_ui.c:1413 gtk_ui.c:1542 loki_update.glade:154
 #: loki_update.glade:555 loki_update.glade:734
 msgid "Continue"
 msgstr ""
@@ -169,166 +169,161 @@ msgid ""
 "    --update_url URL        Use URL as the list of product updates\n"
 msgstr ""
 
-#: loki_update.c:142
+#: loki_update.c:130
 msgid "Couldn't change to install directory\n"
 msgstr ""
 
-#: loki_update.c:244
+#: loki_update.c:232
 #, c-format
 msgid "%s has not been installed by you.\n"
 msgstr ""
 
-#: loki_update.c:249
+#: loki_update.c:237
 msgid "Install path set, but no product specified\n"
 msgstr ""
 
-#: loki_update.c:282
+#: loki_update.c:270
 msgid "Couldn't exec ourselves!  Exiting\n"
 msgstr ""
 
-#: loki_update.c:315
+#: loki_update.c:303
 #, c-format
 msgid "Couldn't exec %s!  Exiting\n"
 msgstr ""
 
-#: gtk_ui.c:709
+#: gtk_ui.c:741
 #, c-format
 msgid "ETA: %ld:"
 msgstr ""
 
-#: gtk_ui.c:712
+#: gtk_ui.c:744
 msgid "ETA: "
 msgstr ""
 
-#: gtk_ui.c:714
-#, c-format
-msgid "%2.2ld:%2.2ld"
-msgstr ""
-
-#: gtk_ui.c:717
+#: gtk_ui.c:749
 msgid "unknown"
 msgstr ""
 
-#: gtk_ui.c:739
+#: gtk_ui.c:771
 msgid "Downloading public key"
 msgstr ""
 
-#: gtk_ui.c:797
+#: gtk_ui.c:824
 #, c-format
 msgid "(%d MB)"
 msgstr ""
 
-#: gtk_ui.c:884 gtk_ui.c:1506
+#: gtk_ui.c:911 gtk_ui.c:1533
 msgid "Finished"
 msgstr ""
 
-#: gtk_ui.c:970
+#: gtk_ui.c:997
 msgid "Update"
 msgstr ""
 
-#: gtk_ui.c:1038 gtk_ui.c:1041
+#: gtk_ui.c:1065 gtk_ui.c:1068
 msgid "Downloading README"
 msgstr ""
 
-#: gtk_ui.c:1057 gtk_ui.c:1060
+#: gtk_ui.c:1084 gtk_ui.c:1087
 msgid "Downloading update"
 msgstr ""
 
-#: gtk_ui.c:1082
+#: gtk_ui.c:1109
 msgid "Verifying GPG signature"
 msgstr ""
 
-#: gtk_ui.c:1091
+#: gtk_ui.c:1118
 msgid "GPG not installed"
 msgstr ""
 
-#: gtk_ui.c:1096
+#: gtk_ui.c:1123
 msgid "GPG was cancelled"
 msgstr ""
 
-#: gtk_ui.c:1101
+#: gtk_ui.c:1128
 msgid "GPG key not available"
 msgstr ""
 
-#: gtk_ui.c:1109
+#: gtk_ui.c:1136
 msgid "GPG verify failed"
 msgstr ""
 
-#: gtk_ui.c:1114
+#: gtk_ui.c:1141
 msgid "GPG verify succeeded"
 msgstr ""
 
-#: gtk_ui.c:1121
+#: gtk_ui.c:1148
 msgid "GPG signature not available"
 msgstr ""
 
-#: gtk_ui.c:1127
+#: gtk_ui.c:1154
 msgid "Verifying MD5 checksum"
 msgstr ""
 
-#: gtk_ui.c:1144
+#: gtk_ui.c:1171
 msgid "MD5 checksum not available"
 msgstr ""
 
-#: gtk_ui.c:1154 gtk_ui.c:1158
+#: gtk_ui.c:1181 gtk_ui.c:1185
 msgid "Verification succeeded"
 msgstr ""
 
-#: gtk_ui.c:1162
+#: gtk_ui.c:1189
 msgid "Verification failed"
 msgstr ""
 
-#: gtk_ui.c:1165
+#: gtk_ui.c:1192
 msgid "Update corrupted"
 msgstr ""
 
-#: gtk_ui.c:1169
+#: gtk_ui.c:1196
 msgid "Unable to retrieve update"
 msgstr ""
 
-#: gtk_ui.c:1172
+#: gtk_ui.c:1199
 msgid "Ready for update"
 msgstr ""
 
-#: gtk_ui.c:1196
+#: gtk_ui.c:1223
 msgid "Performing update"
 msgstr ""
 
-#: gtk_ui.c:1208
+#: gtk_ui.c:1235
 msgid "Update failed"
 msgstr ""
 
-#: gtk_ui.c:1215
+#: gtk_ui.c:1242
 msgid "Update complete"
 msgstr ""
 
-#: gtk_ui.c:1345
+#: gtk_ui.c:1372
 msgid "Listing product updates"
 msgstr ""
 
-#: gtk_ui.c:1404
+#: gtk_ui.c:1431
 msgid "Download cancelled"
 msgstr ""
 
-#: gtk_ui.c:1406
+#: gtk_ui.c:1433
 msgid "Unable to retrieve update list"
 msgstr ""
 
-#: gtk_ui.c:1425
+#: gtk_ui.c:1452
 msgid "Retrieved update list"
 msgstr ""
 
-#: gtk_ui.c:1502
+#: gtk_ui.c:1529
 msgid "No new updates available"
 msgstr ""
 
-#: gtk_ui.c:1604
+#: gtk_ui.c:1631
 msgid ""
 "No products found.\n"
 "Are you the one that installed the software?"
 msgstr ""
 
-#: gtk_ui.c:1609
+#: gtk_ui.c:1636
 msgid "No product_vbox in glade file!\n"
 msgstr ""
 
@@ -345,6 +340,14 @@ msgstr ""
 #: load_products.c:128
 #, c-format
 msgid "Failed scan for product '%s'\n"
+msgstr ""
+
+#: load_products.c:170
+msgid "Searching for installed products... "
+msgstr ""
+
+#: load_products.c:203
+msgid "done!\n"
 msgstr ""
 
 #: patchset.c:96

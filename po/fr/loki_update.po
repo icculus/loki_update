@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: loki_update 1.0\n"
-"POT-Creation-Date: 2000-11-16 12:39-0800\n"
+"POT-Creation-Date: 2000-11-16 16:05-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Stéphane Peter <megastep@lokigames.com>\n"
 "Language-Team: French <fr@li.org>\n"
@@ -40,7 +40,7 @@ msgstr "Annuler"
 msgid "Close"
 msgstr "Fermer"
 
-#: gtk_ui.c:879 gtk_ui.c:1386 gtk_ui.c:1515 loki_update.glade:154
+#: gtk_ui.c:906 gtk_ui.c:1413 gtk_ui.c:1542 loki_update.glade:154
 #: loki_update.glade:555 loki_update.glade:734
 msgid "Continue"
 msgstr "Continuer"
@@ -169,160 +169,155 @@ msgid ""
 "    --update_url URL        Use URL as the list of product updates\n"
 msgstr ""
 
-#: loki_update.c:142
+#: loki_update.c:130
 msgid "Couldn't change to install directory\n"
 msgstr "Ne peut pas aller dans le répertoire d'installation\n"
 
-#: loki_update.c:244
+#: loki_update.c:232
 #, c-format
 msgid "%s has not been installed by you.\n"
 msgstr "%s n'a pas été installé par vous.\n"
 
-#: loki_update.c:249
+#: loki_update.c:237
 msgid "Install path set, but no product specified\n"
 msgstr "Chemin d'installation donné, mais pas de produit spécifié\n"
 
-#: loki_update.c:282
+#: loki_update.c:270
 msgid "Couldn't exec ourselves!  Exiting\n"
 msgstr "Impossible de s'exécuter! Abandon\n"
 
-#: loki_update.c:315
+#: loki_update.c:303
 #, c-format
 msgid "Couldn't exec %s!  Exiting\n"
 msgstr "Impossible d'exécuter %s! Abandon\n"
 
-#: gtk_ui.c:709
+#: gtk_ui.c:741
 #, c-format
 msgid "ETA: %ld:"
 msgstr "Temps Restant: %ld:"
 
-#: gtk_ui.c:712
+#: gtk_ui.c:744
 msgid "ETA: "
 msgstr "Temps Restant: "
 
-#: gtk_ui.c:714
-#, c-format
-msgid "%2.2ld:%2.2ld"
-msgstr ""
-
-#: gtk_ui.c:717
+#: gtk_ui.c:749
 msgid "unknown"
 msgstr "inconnu"
 
-#: gtk_ui.c:739
+#: gtk_ui.c:771
 msgid "Downloading public key"
 msgstr "Téléchargement de la clé publique"
 
-#: gtk_ui.c:797
+#: gtk_ui.c:824
 #, c-format
 msgid "(%d MB)"
 msgstr "(%d Mo)"
 
-#: gtk_ui.c:884 gtk_ui.c:1506
+#: gtk_ui.c:911 gtk_ui.c:1533
 msgid "Finished"
 msgstr "Terminé"
 
-#: gtk_ui.c:970
+#: gtk_ui.c:997
 msgid "Update"
 msgstr "Mise à jour"
 
-#: gtk_ui.c:1038 gtk_ui.c:1041
+#: gtk_ui.c:1065 gtk_ui.c:1068
 msgid "Downloading README"
 msgstr "Téléchargement du README"
 
-#: gtk_ui.c:1057 gtk_ui.c:1060
+#: gtk_ui.c:1084 gtk_ui.c:1087
 msgid "Downloading update"
 msgstr "Téléchargement de la mise à jour"
 
-#: gtk_ui.c:1082
+#: gtk_ui.c:1109
 msgid "Verifying GPG signature"
 msgstr "Vérification de la signature GPG"
 
-#: gtk_ui.c:1091
+#: gtk_ui.c:1118
 msgid "GPG not installed"
 msgstr "GPG n'est pas installé"
 
-#: gtk_ui.c:1096
+#: gtk_ui.c:1123
 msgid "GPG was cancelled"
 msgstr "GPG a été annulé"
 
-#: gtk_ui.c:1101
+#: gtk_ui.c:1128
 msgid "GPG key not available"
 msgstr "La clé GPG n'est pas disponible"
 
-#: gtk_ui.c:1109
+#: gtk_ui.c:1136
 msgid "GPG verify failed"
 msgstr "La vérification GPG a échoué"
 
-#: gtk_ui.c:1114
+#: gtk_ui.c:1141
 msgid "GPG verify succeeded"
 msgstr "Vérification GPG réussie"
 
-#: gtk_ui.c:1121
+#: gtk_ui.c:1148
 msgid "GPG signature not available"
 msgstr "Signature GPG non disponible"
 
-#: gtk_ui.c:1127
+#: gtk_ui.c:1154
 msgid "Verifying MD5 checksum"
 msgstr "Vérification de la somme de contrôle MD5"
 
-#: gtk_ui.c:1144
+#: gtk_ui.c:1171
 msgid "MD5 checksum not available"
 msgstr "Somme de contrôle MD5 non disponible"
 
-#: gtk_ui.c:1154 gtk_ui.c:1158
+#: gtk_ui.c:1181 gtk_ui.c:1185
 msgid "Verification succeeded"
 msgstr "Vérification réussie"
 
-#: gtk_ui.c:1162
+#: gtk_ui.c:1189
 msgid "Verification failed"
 msgstr "Vérification échouée"
 
-#: gtk_ui.c:1165
+#: gtk_ui.c:1192
 msgid "Update corrupted"
 msgstr "Mise à jour corrompue"
 
-#: gtk_ui.c:1169
+#: gtk_ui.c:1196
 msgid "Unable to retrieve update"
 msgstr "Incapable de récupérer la mise à jour"
 
-#: gtk_ui.c:1172
+#: gtk_ui.c:1199
 msgid "Ready for update"
 msgstr "Prêt pour la mise à jour"
 
-#: gtk_ui.c:1196
+#: gtk_ui.c:1223
 msgid "Performing update"
 msgstr "Mise à jour"
 
-#: gtk_ui.c:1208
+#: gtk_ui.c:1235
 msgid "Update failed"
 msgstr "Mise à jour échouée"
 
-#: gtk_ui.c:1215
+#: gtk_ui.c:1242
 msgid "Update complete"
 msgstr "Mise à jour achevée"
 
-#: gtk_ui.c:1345
+#: gtk_ui.c:1372
 msgid "Listing product updates"
 msgstr "Liste des mises à jour pour les produits"
 
-#: gtk_ui.c:1404
+#: gtk_ui.c:1431
 msgid "Download cancelled"
 msgstr "Téléchargement annulé"
 
-#: gtk_ui.c:1406
+#: gtk_ui.c:1433
 msgid "Unable to retrieve update list"
 msgstr "Incapable de récupérer la liste des mises à jour"
 
-#: gtk_ui.c:1425
+#: gtk_ui.c:1452
 msgid "Retrieved update list"
 msgstr "Liste des mises à jour récupérée"
 
-#: gtk_ui.c:1502
+#: gtk_ui.c:1529
 msgid "No new updates available"
 msgstr "Pas de nouvelle mise à jour"
 
-#: gtk_ui.c:1604
+#: gtk_ui.c:1631
 msgid ""
 "No products found.\n"
 "Are you the one that installed the software?"
@@ -330,7 +325,7 @@ msgstr ""
 "Aucun produit trouvé.\n"
 "Etes-vous l'utilisateur qui a installé le logiciel?"
 
-#: gtk_ui.c:1609
+#: gtk_ui.c:1636
 msgid "No product_vbox in glade file!\n"
 msgstr "Pas de product_vbox dans le fichier glade!\n"
 
@@ -348,6 +343,14 @@ msgstr "Ajout d'une entrée pour le produit '%s'\n"
 #, c-format
 msgid "Failed scan for product '%s'\n"
 msgstr "Recherche échouée pour le produit '%s'\n"
+
+#: load_products.c:170
+msgid "Searching for installed products... "
+msgstr "Recherche des produits installés... "
+
+#: load_products.c:203
+msgid "done!\n"
+msgstr "fini!\n"
 
 #: patchset.c:96
 #, c-format
@@ -393,7 +396,7 @@ msgstr "Ne peut pas créer de tube IPC"
 #: update.c:86
 #, fuzzy, c-format
 msgid "Update: %s"
-msgstr "Mise à jour"
+msgstr "Mise à jour: %s"
 
 #: update.c:88
 msgid "Unpacking archive"

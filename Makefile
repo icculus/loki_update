@@ -36,6 +36,8 @@ SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \
 
 OBJS = $(CORE_OBJS) $(SNARF_OBJS)
 
+CORE_SRCS = $(CORE_OBJS:.o=.c)
+
 all: $(TARGET)
 
 $(TARGET): $(SNARF)/snarf $(OBJS)
@@ -74,9 +76,9 @@ install-data:
 # This is the list of supported locales
 LOCALES = fr
 
-po/$(TARGET).po: $(SRCS) loki_update.glade
+po/$(TARGET).po: $(CORE_SRCS) loki_update.glade
 	libglade-xgettext loki_update.glade > po/$(TARGET).po
-	xgettext -p po -j -d $(TARGET) --keyword=_ $(CORE_OBJS:.o=.c)
+	xgettext -p po -j -d $(TARGET) --keyword=_ $(CORE_SRCS)
 
 update-po: po/$(TARGET).po
 	for lang in $(LOCALES); do \
