@@ -1,3 +1,9 @@
+1.0.7:
+Sam Lantinga - Tue Feb 13 13:34:28 PST 2001
+ * Show the size of each update as a tooltip message.
+ * Correct the --tmppath command line usage message.
+ * Pass --honor-http-proxy to gpg when downloading GPG keys.
+
 1.0.6:
 Sam Lantinga - Thu Dec  7 18:30:19 PST 2000
  * Added Railroad Tycoon II on PowerPC detection.
