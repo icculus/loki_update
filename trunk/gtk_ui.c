@@ -180,6 +180,15 @@ void choose_product_slot( GtkWidget* w, gpointer data )
         product_patchset = NULL;
     }
 
+    /* If we've hit here during a real auto-update, something happened,
+       so we had better quit.
+     */
+    if ( auto_update > 1 ) {
+        main_cancel_slot(NULL, NULL);
+        return;
+    }
+    auto_update = 0;
+
     /* Set the current page to the main product list page */
     notebook = glade_xml_get_widget(update_glade, "update_notebook");
     gtk_notebook_set_page(GTK_NOTEBOOK(notebook), PRODUCT_PAGE);
@@ -189,6 +198,7 @@ void choose_product_slot( GtkWidget* w, gpointer data )
     gtk_widget_realize(window);
 
     /* Clear selected products */
+    auto_update = 0;
     select_product(NULL);
 }
 
@@ -206,8 +216,8 @@ static void update_balls(int which, int status)
     };
     static const char *images[] = {
         "pixmaps/gray_ball.xpm",
-        "pixmaps/check_ball.xpm",
         "pixmaps/green_ball.xpm",
+        "pixmaps/check_ball.xpm",
         "pixmaps/yellow_ball.xpm",
         "pixmaps/red_ball.xpm"
     };
@@ -466,7 +476,7 @@ static int download_update(int status_level, const char *status,
     }
 
     /* Now update the progress bar */
-    if ( info->progress ) {
+    if ( info->progress && percentage ) {
         gtk_progress_set_percentage(GTK_PROGRESS(info->progress),
                                     percentage/100.0);
     }
@@ -627,18 +637,6 @@ static void cleanup_update(const char *status_msg)
     /* Deselect the current patch path */
     select_node(update_patch->node, 0);
 
-    /* Handle auto-update of the next set of patches, if any */
-    if ( auto_update ) {
-        if ( update_status >= 0 ) {
-            download_update_slot(NULL, NULL);
-        }
-
-        /* If we're really auto-updating, break out, otherwise finish UI */
-        if ( auto_update > 1 ) {
-            return;
-        }
-    }
-
     /* We succeeded, enable the action button, and update the status */
     action = glade_xml_get_widget(update_glade, "update_action_button");
     cancel = glade_xml_get_widget(update_glade, "update_cancel_button");
@@ -659,8 +657,16 @@ static void cleanup_update(const char *status_msg)
         status = glade_xml_get_widget(update_glade, "update_status_label");
         set_status_message(status, status_msg);
     } else {
-        /* User cancelled the update */
+        /* User cancelled the update? */
         choose_product_slot(NULL, NULL);
+        return;
+    }
+
+    /* Handle auto-update of the next set of patches, if any */
+    if ( auto_update ) {
+        if ( update_status >= 0 ) {
+            download_update_slot(NULL, NULL);
+        }
     }
 }
 
@@ -735,7 +741,9 @@ void download_update_slot( GtkWidget* w, gpointer data )
 
     /* Show the initial status for this update */
     widget = glade_xml_get_widget(update_glade, "update_name_label");
+#if 0 // Request by Q/A - don't clear the details box on new updates
     clear_details_text();
+#endif
     add_details_text(LOG_VERBOSE, "\n");
     snprintf(text, (sizeof text), _("%s: %s"),
              get_product_description(patch->patchset->product_name),
@@ -834,6 +842,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
         }
     
         /* Verify the update */
+        update_balls(2, 1);
         /* First check the GPG signature */
         if ( verified == VERIFY_UNKNOWN ) {
             set_status_message(verify, _("Verifying GPG signature"));
@@ -973,6 +982,28 @@ void perform_update_slot( GtkWidget* w, gpointer data )
 static void empty_container(GtkWidget *widget, gpointer data)
 {
     gtk_container_remove(GTK_CONTAINER(data), widget);
+}
+
+void select_all_updates_slot( GtkWidget* w, gpointer data )
+{
+    GtkWidget *widget;
+    GList *list, *poopy, *update_list;
+    GtkWidget *button;
+
+    widget = glade_xml_get_widget(update_glade, "update_vbox");
+    list = gtk_container_children(GTK_CONTAINER(widget));
+    while ( list ) {
+        widget = GTK_WIDGET(list->data);
+        poopy = gtk_container_children(GTK_CONTAINER(widget));
+        widget = GTK_WIDGET(poopy->data);
+        update_list = gtk_container_children(GTK_CONTAINER(widget));
+        while ( update_list ) {
+            button = GTK_WIDGET(update_list->data);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
+            update_list = update_list->next;
+        }
+        list = list->next;
+    }
 }
 
 static void update_toggle_option( GtkWidget* widget, gpointer func_data)
@@ -1334,7 +1365,7 @@ static int gtkui_update_product(const char *product)
     return update_status;
 }
 
-static int gtkui_perform_updates(void)
+static int gtkui_perform_updates(const char *product)
 {
     /* All errors go through our details window, don't print extra output */
     if ( get_logging() >= LOG_NORMAL ) {
@@ -1342,8 +1373,18 @@ static int gtkui_perform_updates(void)
     }
 
     update_status = 0;
-    choose_product_slot(NULL, NULL);
     auto_update = 0;
+    if ( product ) {
+        select_product(product);
+        choose_update_slot(NULL, NULL);
+        if ( ! product_patchset ) {
+            printf(_("No new updates available"));
+            printf("\n");
+            return(0);
+        }
+    } else {
+        choose_product_slot(NULL, NULL);
+    }
     gtk_main();
     return update_status;
 }

@@ -7,7 +7,7 @@ typedef struct {
     int (*detect)(void);
     int (*init)(int argc, char *argv[]);
     int (*auto_update)(const char *product);
-    int (*perform_updates)(void);
+    int (*perform_updates)(const char *product);
     void (*cleanup)(void);
 } update_UI;
 

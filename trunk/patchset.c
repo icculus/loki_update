@@ -26,71 +26,6 @@ static const char *get_version_extension(version_node *node)
     return(ext);
 }
 
-static void get_word(const char **string, char *word, int maxlen)
-{
-    while ( (maxlen > 0) && **string && isalpha(**string) ) {
-        *word = **string;
-        ++word;
-        ++*string;
-        --maxlen;
-    }
-    *word = '\0';
-}
-
-static int get_num(const char **string)
-{
-    int num;
-
-    num = atoi(*string);
-    while ( isdigit(**string) ) {
-        ++*string;
-    }
-    return(num);
-}
-
-static int newer_version(const char *version1, const char *version2)
-{
-    int newer;
-    int num1, num2;
-    char base1[128], ext1[128];
-    char base2[128], ext2[128];
-    char word1[32], word2[32];
-
-    /* Compare sequences of numbers and letters in the base versions */
-    newer = 0;
-    loki_split_version(version1, base1, sizeof(base1), ext1, sizeof(ext1));
-    version1 = base1;
-    loki_split_version(version2, base2, sizeof(base2), ext2, sizeof(ext2));
-    version2 = base2;
-    while ( !newer && (*version1 && *version2) &&
-            ((isdigit(*version1) && isdigit(*version2)) ||
-             (isalpha(*version1) && isalpha(*version2))) ) {
-        if ( isdigit(*version1) ) {
-            num1 = get_num(&version1);
-            num2 = get_num(&version2);
-            if ( num1 != num2 ) {
-                return(num1 > num2);
-            }
-        } else {
-            get_word(&version1, word1, sizeof(word1));
-            get_word(&version2, word2, sizeof(word2));
-            if ( strcasecmp(word1, word2) != 0 ) {
-                return (strcasecmp(word1, word2) > 0);
-            }
-        }
-        if ( *version1 == '.' ) {
-            ++version1;
-        }
-        if ( *version2 == '.' ) {
-            ++version2;
-        }
-    }
-    if ( isalpha(*version1) && !isalpha(*version2) ) {
-        newer = 1;
-    }
-    return(newer);
-}
-
 static void free_patch_path(patch_path *path)
 {
     if ( path ) {
@@ -136,15 +71,19 @@ static version_node *create_version_node(version_node *root,
     if ( root ) {
         if ( strcasecmp(get_version_extension(root),
                         get_version_extension(node)) == 0 ) {
-            snprintf(description, sizeof(description),
-                     "Upgrade to %s", version);
+            if ( root->top_root ) {
+                snprintf(description, sizeof(description),
+                         "Upgrade to %s", version);
+            } else {
+                snprintf(description, sizeof(description),
+                         "Upgrade to %s %s", component, version);
+            }
         } else {
             snprintf(description, sizeof(description),
                      "Convert to %s", version);
         }
     } else {
-        snprintf(description, sizeof(description), "Install %s %s",
-                 component, version);
+        snprintf(description, sizeof(description), "Install %s", component);
     }
     node->description = safe_strdup(description);
     node->note = NULL;
@@ -152,6 +91,7 @@ static version_node *create_version_node(version_node *root,
     node->toggled = 0;
     node->invisible = 0;
     node->depth = 0;
+    node->top_root = 0;
     if ( root ) {
         node->root = root;
     } else {
@@ -207,7 +147,7 @@ static version_node *get_version_node(version_node *root,
     }
 
     /* If this is older than the installed root version, don't use it */
-    if ( newer_version(root->version, version) ) {
+    if ( loki_newer_version(root->version, version) ) {
         if ( root->invisible ) {
             return(NULL);
         } else { /* Hmm, this must be the real component root */
@@ -235,13 +175,13 @@ static version_node *get_version_node(version_node *root,
         }
 
         /* If the current node is newer than us, add us as parent */
-        if ( newer_version(node->version, version) ) {
+        if ( loki_newer_version(node->version, version) ) {
             node = NULL;
             break;
         }
 
         /* If we are not newer than the current node, we are a sibling */
-        if ( !newer_version(version, node->version) && (node != root) ) {
+        if ( !loki_newer_version(version, node->version) && (node != root) ) {
             branch = node;
             while ( node ) {
                 /* If this is the exact node we're looking for.. */
@@ -343,6 +283,7 @@ patchset *create_patchset(const char *product)
     root = create_version_node(NULL, get_default_component(product),
                                      get_product_version(product));
     root->invisible = 1;
+    root->top_root = 1;
     patchset->root = root;
     loki_product = loki_openproduct(product);
     if ( loki_product ) {
@@ -580,7 +521,7 @@ int add_patch(const char *product,
        the minimum required version of the installed product
     */
     if ( is_new_component_root(patchset->root, node) ) {
-        if ( ! newer_version(applies, patchset->root->version) ) {
+        if ( ! loki_newer_version(applies, patchset->root->version) ) {
             ++patch->refcount;
             node->shortest_path = (patch_path *)safe_malloc(
                                     sizeof *node->shortest_path);
