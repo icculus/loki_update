@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2000-11-19 16:33-0800\n"
+"POT-Creation-Date: 2001-02-14 17:25-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,7 +49,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: gtk_ui.c:1197 gtk_ui.c:1744 gtk_ui.c:1879 loki_update.glade:157
+#: gtk_ui.c:1203 gtk_ui.c:1751 gtk_ui.c:1889 loki_update.glade:157
 #: loki_update.glade:567 loki_update.glade:746
 msgid "Continue"
 msgstr ""
@@ -178,7 +178,7 @@ msgstr ""
 msgid "[verify status]"
 msgstr ""
 
-#: loki_update.c:42
+#: loki_update.c:43
 #, c-format
 msgid ""
 "Loki Update Tool %s\n"
@@ -186,183 +186,191 @@ msgid ""
 "The options can be any of:\n"
 "    --verbose               Print verbose messages to standard output\n"
 "    --noselfcheck           Skip check for updates for the update tool\n"
-"    --tmpdir PATH           Use PATH as the temporary download path\n"
+"    --tmppath PATH          Use PATH as the temporary download path\n"
 "    --update_url URL        Use URL as the list of product updates\n"
 msgstr ""
 
-#: loki_update.c:130
+#: loki_update.c:131
 msgid "Couldn't change to install directory\n"
 msgstr ""
 
-#: loki_update.c:233
+#: loki_update.c:235
 msgid "Install path set, but no product specified\n"
 msgstr ""
 
-#: loki_update.c:266
+#: loki_update.c:259
+msgid "No user interface modules available\n"
+msgstr ""
+
+#: loki_update.c:278
 msgid "Couldn't exec ourselves!  Exiting\n"
 msgstr ""
 
-#: loki_update.c:279
+#: loki_update.c:291 tty_ui.c:415
 #, c-format
 msgid "%s not found, are you the one who installed it?\n"
 msgstr ""
 
-#: loki_update.c:305
+#: loki_update.c:317
 #, c-format
 msgid "Couldn't exec %s!  Exiting\n"
 msgstr ""
 
-#: gtk_ui.c:802
+#: gtk_ui.c:801
 msgid " (preferred)"
 msgstr ""
 
-#: gtk_ui.c:1028
+#: gtk_ui.c:1034
 #, c-format
 msgid "ETA: %ld:"
 msgstr ""
 
-#: gtk_ui.c:1031
+#: gtk_ui.c:1037
 msgid "ETA: "
 msgstr ""
 
-#: gtk_ui.c:1036
+#: gtk_ui.c:1042
 msgid "unknown"
 msgstr ""
 
-#: gtk_ui.c:1057
+#: gtk_ui.c:1063 tty_ui.c:143
 msgid "Running GPG..."
 msgstr ""
 
-#: gtk_ui.c:1064
+#: gtk_ui.c:1070 tty_ui.c:146
 msgid "Downloading public key"
 msgstr ""
 
-#: gtk_ui.c:1115
+#: gtk_ui.c:1121
 #, c-format
 msgid "(%d MB)"
 msgstr ""
 
-#: gtk_ui.c:1202 gtk_ui.c:1869
+#: gtk_ui.c:1208 gtk_ui.c:1879
 msgid "Finished"
 msgstr ""
 
-#: gtk_ui.c:1297
+#: gtk_ui.c:1303
 msgid "Update"
 msgstr ""
 
-#: gtk_ui.c:1374 gtk_ui.c:1377
+#: gtk_ui.c:1380 gtk_ui.c:1383
 msgid "Downloading README"
 msgstr ""
 
-#: gtk_ui.c:1397 gtk_ui.c:1400
+#: gtk_ui.c:1403 gtk_ui.c:1406 tty_ui.c:268
 msgid "Downloading update"
 msgstr ""
 
-#: gtk_ui.c:1432
+#: gtk_ui.c:1437 tty_ui.c:283
 msgid "Verifying GPG signature"
 msgstr ""
 
-#: gtk_ui.c:1440
+#: gtk_ui.c:1445 tty_ui.c:289
 msgid "GPG not installed"
 msgstr ""
 
-#: gtk_ui.c:1445
+#: gtk_ui.c:1450 tty_ui.c:293
 msgid "GPG was cancelled"
 msgstr ""
 
-#: gtk_ui.c:1450
+#: gtk_ui.c:1455 tty_ui.c:297
 msgid "GPG key not available"
 msgstr ""
 
-#: gtk_ui.c:1458
+#: gtk_ui.c:1464 tty_ui.c:305
 msgid "GPG verify failed"
 msgstr ""
 
-#: gtk_ui.c:1463
+#: gtk_ui.c:1469 tty_ui.c:309
 msgid "GPG verify succeeded"
 msgstr ""
 
-#: gtk_ui.c:1470
+#: gtk_ui.c:1476 tty_ui.c:315
 msgid "GPG signature not available"
 msgstr ""
 
-#: gtk_ui.c:1476
+#: gtk_ui.c:1482 tty_ui.c:321
 msgid "Verifying MD5 checksum"
 msgstr ""
 
-#: gtk_ui.c:1485
+#: gtk_ui.c:1491 tty_ui.c:328
 msgid "Calculating MD5 checksum"
 msgstr ""
 
-#: gtk_ui.c:1497
+#: gtk_ui.c:1504 tty_ui.c:338
 msgid "MD5 checksum not available"
 msgstr ""
 
-#: gtk_ui.c:1509 gtk_ui.c:1513
+#: gtk_ui.c:1516 gtk_ui.c:1520 tty_ui.c:348 tty_ui.c:351
 msgid "Verification succeeded"
 msgstr ""
 
-#: gtk_ui.c:1517
+#: gtk_ui.c:1524 tty_ui.c:354
 msgid "Verification failed"
 msgstr ""
 
-#: gtk_ui.c:1521
+#: gtk_ui.c:1528 tty_ui.c:356
 msgid "Update corrupted"
 msgstr ""
 
-#: gtk_ui.c:1526
+#: gtk_ui.c:1533 tty_ui.c:360
 msgid "Unable to retrieve update"
 msgstr ""
 
-#: gtk_ui.c:1530
+#: gtk_ui.c:1537
 msgid "Ready for update"
 msgstr ""
 
-#: gtk_ui.c:1556
+#: gtk_ui.c:1563 tty_ui.c:365
 msgid "Performing update"
 msgstr ""
 
-#: gtk_ui.c:1569
+#: gtk_ui.c:1576 tty_ui.c:370
 msgid "Update failed"
 msgstr ""
 
-#: gtk_ui.c:1577
+#: gtk_ui.c:1584 tty_ui.c:376
 msgid "Update complete"
 msgstr ""
 
-#: gtk_ui.c:1703
+#: gtk_ui.c:1710
 msgid "Listing product updates"
 msgstr ""
 
-#: gtk_ui.c:1762
+#: gtk_ui.c:1769 tty_ui.c:204
 msgid "Download cancelled"
 msgstr ""
 
-#: gtk_ui.c:1764
+#: gtk_ui.c:1771 tty_ui.c:206
 msgid "Unable to retrieve update list"
 msgstr ""
 
-#: gtk_ui.c:1784
+#: gtk_ui.c:1791 tty_ui.c:211
 msgid "Retrieved update list"
 msgstr ""
 
-#: gtk_ui.c:1862
+#: gtk_ui.c:1872 tty_ui.c:226
 msgid "No new updates available"
 msgstr ""
 
-#: gtk_ui.c:1970
+#: gtk_ui.c:1985
 msgid ""
 "No products found.\n"
 "Are you the one that installed the software?"
 msgstr ""
 
-#: gtk_ui.c:1975
+#: gtk_ui.c:1990
 msgid "No product_vbox in glade file!\n"
 msgstr ""
 
-#: gtk_ui.c:2022
+#: gtk_ui.c:2041
 #, c-format
 msgid "\"%s\" not found, are you the one who installed it?"
+msgstr ""
+
+#: tty_ui.c:420
+msgid "Interactive updates require X11\n"
 msgstr ""
 
 #: meta_url.c:66
@@ -380,11 +388,11 @@ msgstr ""
 msgid "Failed scan for product '%s'\n"
 msgstr ""
 
-#: load_products.c:170
+#: load_products.c:171
 msgid "Searching for installed products... "
 msgstr ""
 
-#: load_products.c:203
+#: load_products.c:208
 msgid "done!\n"
 msgstr ""
 
@@ -420,12 +428,12 @@ msgstr ""
 msgid "Update obsolete by installed version, dropping\n"
 msgstr ""
 
-#: patchset.c:581
+#: patchset.c:582
 #, c-format
 msgid "Version combination %s and %s isn't legal, dropping\n"
 msgstr ""
 
-#: urlset.c:246
+#: urlset.c:261
 #, c-format
 msgid "Unable to write to %s\n"
 msgstr ""
@@ -443,7 +451,7 @@ msgstr ""
 msgid "Unpacking archive"
 msgstr ""
 
-#: get_url.c:113 gpg_verify.c:201 update.c:95
+#: get_url.c:113 gpg_verify.c:202 update.c:95
 msgid "Couldn't fork process"
 msgstr ""
 
@@ -456,29 +464,29 @@ msgstr ""
 msgid "Updating files"
 msgstr ""
 
-#: gpg_verify.c:61 gpg_verify.c:193
+#: gpg_verify.c:62 gpg_verify.c:194
 msgid "Couldn't create IPC pipe\n"
 msgstr ""
 
-#: gpg_verify.c:69
+#: gpg_verify.c:70
 msgid "Couldn't fork process\n"
 msgstr ""
 
-#: gpg_verify.c:314
+#: gpg_verify.c:316
 #, c-format
 msgid "Unable to create %s"
 msgstr ""
 
-#: gpg_verify.c:333
+#: gpg_verify.c:335
 #, c-format
 msgid "Downloading public key %s from %s"
 msgstr ""
 
-#: gpg_verify.c:338
+#: gpg_verify.c:340
 msgid "Key not found"
 msgstr ""
 
-#: gpg_verify.c:341
+#: gpg_verify.c:343
 msgid "Key downloaded"
 msgstr ""
 
