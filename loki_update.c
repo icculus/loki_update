@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
         return(3);
     }
 
-    /* Stage 1: Update ourselves, if necessary */
-    {
+    /* Stage 1: Update ourselves, if possible */
+    if ( access(".", W_OK) == 0 ) {
         switch (ui->auto_update(PRODUCT)) {
             /* An error? return an error code */
             case -1:

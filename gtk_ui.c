@@ -287,6 +287,29 @@ void gtk_button_set_text(GtkButton *button, const char *text)
     gtk_label_set_text(GTK_LABEL(GTK_BIN(button)->child), text);
 }
 
+static void reset_selected_update(void)
+{
+    update_patchset = product_patchset;
+    if ( update_patchset ) {
+        update_root = update_patchset->root;
+    } else {
+        update_root = NULL;
+    }
+    update_path = NULL;
+    update_patch = NULL;
+    while ( ! update_path && update_patchset ) {
+        while ( update_root && ! update_root->selected ) {
+            update_root = update_root->sibling;
+        }
+        if ( update_root ) {
+            update_path = update_root->selected->shortest_path;
+            update_patch = update_path->patch;
+        } else {
+            update_patchset = update_patchset->next;
+        }
+    }
+}
+
 static patch *skip_to_selected_update(void)
 {
     if ( update_patch ) {
@@ -298,6 +321,7 @@ static patch *skip_to_selected_update(void)
                     update_patchset = update_patchset->next;
                     if ( ! update_patchset ) {
                         /* End of the line.. */
+                        update_patch = NULL;
                         return(NULL);
                     }
                     update_root = update_patchset->root;
@@ -401,6 +425,7 @@ printf("Download update slot\n");
     if ( ! patch ) {
         return;
     }
+    patch->installed = 1;
     download_pending = 1;
 
     /* Set the current page to the product update page */
@@ -662,6 +687,7 @@ static void update_toggle_option( GtkWidget* widget, gpointer func_data)
                                          node->toggled);
         }
     }
+    reset_selected_update();
     in_update_toggle_option = 0;
 }
 
@@ -796,7 +822,8 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         /* Build a list of available upgrades for each component */
         for ( root = patchset->root; root; root = root->sibling ) {
             for ( trunk = root; trunk; trunk = trunk->child ) {
-                for ( node = trunk; node; node = node->sibling ) {
+                for ( node = trunk; node;
+                      node = (node == root) ? NULL : node->sibling ) {
                     if ( node->invisible ) {
                         continue;
                     }
@@ -824,25 +851,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     }
 
     /* Skip to the first selected patchset and component */
-    update_patchset = product_patchset;
-    if ( update_patchset ) {
-        update_root = update_patchset->root;
-    } else {
-        update_root = NULL;
-    }
-    update_path = NULL;
-    update_patch = NULL;
-    while ( ! update_path && update_patchset ) {
-        while ( update_root && ! update_root->selected ) {
-            update_root = update_root->sibling;
-        }
-        if ( update_root ) {
-            update_path = update_root->selected->shortest_path;
-            update_patch = update_path->patch;
-        } else {
-            update_patchset = update_patchset->next;
-        }
-    }
+    reset_selected_update();
 
     /* Handle auto-update mode */
     if ( auto_update ) {
