@@ -547,7 +547,7 @@ int add_patch(const char *product,
        the minimum required version of the installed product
     */
     if ( is_new_component_root(patchset->root, node) ) {
-        if ( strcasecmp(applies, patchset->root->version) == 0 ) {
+        if ( ! newer_version(applies, patchset->root->version) ) {
             ++patch->refcount;
             node->shortest_path = (patch_path *)safe_malloc(
                                     sizeof *node->shortest_path);

@@ -40,7 +40,7 @@ int perform_update(const char *update_file, const char *install_path,
     }
     chmod(update_file, 0700);
 
-    log(LOG_NORMAL, "Performing update:\n%s\n", update_file);
+    log(LOG_VERBOSE, "Performing update:\n%s\n", update_file);
 
     child = fork();
     switch (child) {
@@ -104,7 +104,7 @@ int perform_update(const char *update_file, const char *install_path,
                 percentage = (float)atoi(spot);
             } else {
                 /* Log the update output */
-                log(LOG_NORMAL, "%s\n", line);
+                log(LOG_VERBOSE, "%s\n", line);
             }
             len = 0;
         } else {

@@ -82,7 +82,7 @@ static int wget_url(const char *url, char *file, int maxpath,
         return(-1);
     }
 
-    log(LOG_NORMAL, "Retrieving URL:\n%s\n", url);
+    log(LOG_VERBOSE, "Retrieving URL:\n%s\n", url);
 
     child = fork();
     switch (child) {
@@ -145,7 +145,7 @@ static int wget_url(const char *url, char *file, int maxpath,
                 percentage = (float)atoi(spot);
             } else {
                 /* Log the download output */
-                log(LOG_NORMAL, "%s\n", line);
+                log(LOG_VERBOSE, "%s\n", line);
             }
             len = 0;
         } else {
@@ -216,7 +216,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
     }
     mkdirhier(path);
 
-    log(LOG_NORMAL, "URL: %s\n", url);
+    log(LOG_VERBOSE, "URL: %s\n", url);
 
     rsrc = url_resource_new();
     if ( ! rsrc ) {

@@ -15,7 +15,8 @@
 static void print_usage(char *argv0)
 {
     fprintf(stderr,
-"Usage: %s [--noselfcheck] [--update_url <url>] [product]\n", argv0);
+"Usage: %s [--verbose] [--noselfcheck] [--update_url <url>] [product]\n",
+            argv0);
 }
 
 static void goto_installpath(char *argv0)
@@ -96,6 +97,7 @@ static void goto_installpath(char *argv0)
 
 int main(int argc, char *argv[])
 {
+    int show_version;
     int self_check;
     const char *product;
     const char *product_path;
@@ -108,6 +110,7 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     /* Parse the command line */
+    show_version = 0;
     self_check = 1;
     product = NULL;
     product_path = NULL;
@@ -121,6 +124,10 @@ int main(int argc, char *argv[])
              (strcmp(argv[i], "-h") == 0) ) {
             print_usage(argv[0]);
             return(0);
+        } else
+        if ( (strcmp(argv[i], "--version") == 0) ||
+             (strcmp(argv[i], "-V") == 0) ) {
+            show_version = 1;
         } else
         if ( (strcmp(argv[i], "--debug") == 0) ||
              (strcmp(argv[i], "-d") == 0) ) {
@@ -169,6 +176,15 @@ int main(int argc, char *argv[])
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
     load_product_list();
+    if ( ! is_valid_product(PRODUCT) ) {
+        fprintf(stderr, "%s is not installed properly, aborting.\n", PRODUCT);
+        return(1);
+    }
+    if ( show_version ) {
+        printf("%s %s\n", get_product_description(PRODUCT),
+                          get_product_version(PRODUCT));
+        return(0);
+    }
     if ( product && ! is_valid_product(product) ) {
         log(LOG_ERROR, "%s is not installed, aborting\n", product);
         return(1);
@@ -192,7 +208,6 @@ int main(int argc, char *argv[])
 
     /* Stage 1: Update ourselves, if possible */
     if ( self_check && (access(".", W_OK) == 0) ) {
-log(LOG_WARNING, "FIXME: Check to make sure self check properly restarts\n");
         switch (ui->auto_update(PRODUCT)) {
             /* An error? return an error code */
             case -1:
@@ -204,6 +219,7 @@ log(LOG_WARNING, "FIXME: Check to make sure self check properly restarts\n");
             /* Patched ourselves, restart */
             default:
                 ui->cleanup();
+                chdir(get_working_path());
                 execvp(argv[0], argv);
                 fprintf(stderr, "Couldn't exec ourselves!  Exiting\n");
                 return(255);
@@ -231,6 +247,7 @@ log(LOG_WARNING, "FIXME: Check to make sure self check properly restarts\n");
         for ( i=1; argv[i]; ++i ) {
             if ( strcmp(argv[i], "--") == 0 ) {
                 ++i;
+                chdir(get_working_path());
                 execvp(argv[i], &argv[i]);
                 fprintf(stderr, "Couldn't exec %s!  Exiting\n", argv[i]);
                 return(255);
