@@ -1,0 +1,45 @@
+1.0.8
+Sam Lantinga - Mon Feb 19 19:58:46 PST 2001
+ * Fixed memory corruption with certain password protected URLs
+Sam Lantinga - Thu Feb 15 18:14:17 PST 2001
+ * Added a reminder to update setup.xml to the Makefile install rule
+ * The url specified with --update_url applies to updating loki_update
+
+1.0.7:
+Sam Lantinga - Tue Feb 13 18:55:03 PST 2001
+ * Added terminal-mode auto-update capability.
+Sam Lantinga - Tue Feb 13 16:01:57 PST 2001
+ * Write the home directory of the effective uid, so sudo works correctly.
+Sam Lantinga - Tue Feb 13 15:47:20 PST 2001
+ * The updater now prefers local disk files to mirrors.
+Sam Lantinga - Tue Feb 13 14:38:51 PST 2001
+ * Show the size of each update as a tooltip message.
+Sam Lantinga - Tue Feb 13 13:34:28 PST 2001
+ * Correct the --tmppath command line usage message.
+ * Pass --honor-http-proxy to gpg when downloading GPG keys.
+
+1.0.6:
+Sam Lantinga - Thu Dec  7 18:30:19 PST 2000
+ * Added Railroad Tycoon II on PowerPC detection.
+Sam Lantinga - Mon Dec  4 17:39:55 PST 2000
+ * Added CivCTP Limited Edition detection.
+ * Don't go into fully automated update mode when there's a graphical UI.
+
+1.0e:
+Sam Lantinga - Mon Nov 20 15:25:39 PST 2000
+ * Added the Loki GPG keyserver to gpg_verify.c
+Sam Lantinga - Mon Nov 20 14:12:01 PST 2000
+ * Fixed infinite loop when update is corrupted.
+
+1.0d:
+Sam Lantinga - Sun Nov 19 16:08:40 PST 2000
+ * Added a UI message that shows up if a requested product is not installed
+Sam Lantinga - Sun Nov 19 15:38:49 PST 2000
+ * Added nice mirror control buttons for the download dialogs
+Sam Lantinga - Sat Nov 18 16:56:40 PST 2000
+ * Catch all updates for a product in an update list.
+ * Added "Mirror:" keyword support in update lists.
+Sam Lantinga - Sat Nov 18 15:58:55 PST 2000
+ * Added arrow blinking at the end of a set of updates.
+ * Added more detailed messages during update verification.
+ * Added loading keyserver support (list in ~/.loki/loki_update/keyservers.txt)
