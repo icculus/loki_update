@@ -1,0 +1,98 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/darren@hiebert.com/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://darren.hiebert.com/ctags/	/official site/
+!_TAG_PROGRAM_VERSION	3.2	/with C, C++, Eiffel, Fortran, and Java  support/
+BSD_COMP	util.c	27;"	d	file:
+HAVE_ISASCII	ansi2knr.c	161;"	d	file:
+HAVE_ISASCII	ansi2knr.c	162;"	d	file:
+HttpHeader	http.c	/^typedef struct _HttpHeader 	HttpHeader;$/;"	t	file:
+HttpHeaderEntry	http.c	/^typedef struct _HttpHeaderEntry HttpHeaderEntry;$/;"	t	file:
+LATEST_URL	snarf.c	26;"	d	file:
+MOZILLA_USER_AGENT	http.c	23;"	d	file:
+MSIE_USER_AGENT	http.c	24;"	d	file:
+PROGRESS_SETTING	snarf.c	29;"	d	file:
+PROGRESS_SETTING	snarf.c	31;"	d	file:
+REDIRECT_MAX	http.c	20;"	d	file:
+SOCKS	ftp.c	20;"	d	file:
+SOCKS	util.c	20;"	d	file:
+USER_AGENT	http.c	22;"	d	file:
+_HttpHeader	http.c	/^struct _HttpHeader {$/;"	s	file:
+_HttpHeaderEntry	http.c	/^struct _HttpHeaderEntry {$/;"	s	file:
+base64	util.c	/^base64(char *bin, int len)$/;"	f
+bufsize	ansi2knr.c	193;"	d	file:
+check_numeric	ftp.c	/^check_numeric(const char *numeric, const char *buf)$/;"	f	file:
+close_quit	ftp.c	/^close_quit(int sock)$/;"	f
+convert1	ansi2knr.c	/^convert1(buf, out, header, convert_varargs)$/;"	f
+debug_enabled	util.c	/^int debug_enabled = 0;$/;"	v
+default_opts	options.c	/^int default_opts;$/;"	v
+double_time	util.c	/^double_time(void)$/;"	f
+dump_data	util.c	/^dump_data(UrlResource *rsrc, int sock, FILE *out)$/;"	f
+free_http_header	http.c	/^free_http_header(HttpHeader *h)$/;"	f	file:
+ftp_set_defaults	ftp.c	/^ftp_set_defaults(UrlResource *rsrc, Url *u)$/;"	f	file:
+ftp_transfer	ftp.c	/^ftp_transfer(UrlResource *rsrc)$/;"	f
+get_file	url.c	/^get_file(char *string, Url *u)$/;"	f	file:
+get_file_size	util.c	/^get_file_size(const char *file)$/;"	f
+get_header_value	http.c	/^get_header_value(char *key, HttpHeader *header)$/;"	f	file:
+get_hostname	url.c	/^get_hostname(char *url, Url *u)$/;"	f	file:
+get_line	ftp.c	/^get_line(UrlResource *rsrc, int control)$/;"	f
+get_passive_sock	ftp.c	/^get_passive_sock(UrlResource *rsrc, int control)$/;"	f
+get_password	url.c	/^get_password(char *string, Url *u)$/;"	f	file:
+get_path	url.c	/^get_path(char *url, Url *u)$/;"	f	file:
+get_port	url.c	/^get_port(char *url, Url *u)$/;"	f	file:
+get_proxy	util.c	/^get_proxy(const char *firstchoice)$/;"	f
+get_raw_header	http.c	/^get_raw_header(int fd)$/;"	f	file:
+get_request	http.c	/^get_request(UrlResource *rsrc)$/;"	f	file:
+get_service_type	url.c	/^get_service_type(char *string, Url *u)$/;"	f	file:
+get_sock	ftp.c	/^get_sock(UrlResource *rsrc, int control)$/;"	f
+get_username	url.c	/^get_username(char *string, Url *u)$/;"	f	file:
+gopher_transfer	gopher.c	/^gopher_transfer(UrlResource *rsrc)$/;"	f
+guess_winsize	util.c	/^guess_winsize()$/;"	f
+h_errlist	herror.c	/^char	*h_errlist[] = {$/;"	v
+h_nerr	herror.c	/^int	h_nerr = 5;$/;"	v
+header_list	http.c	/^        List *header_list;$/;"	m	struct:_HttpHeader
+herror	herror.c	/^herror(s)$/;"	f
+hstrerror	herror.c	/^hstrerror(err)$/;"	f
+http_transfer	http.c	/^http_transfer(UrlResource *rsrc)$/;"	f
+is_alnum	ansi2knr.c	173;"	d	file:
+is_alpha	ansi2knr.c	172;"	d	file:
+is_ascii	ansi2knr.c	166;"	d	file:
+is_ascii	ansi2knr.c	168;"	d	file:
+is_probably_an_url	url.c	/^is_probably_an_url(char *string)$/;"	f
+is_space	ansi2knr.c	171;"	d	file:
+isidchar	ansi2knr.c	176;"	d	file:
+isidfirstchar	ansi2knr.c	177;"	d	file:
+key	http.c	/^        char *key;$/;"	m	struct:_HttpHeaderEntry
+list_append	llist.c	/^list_append(List *l, void *data)$/;"	f
+list_new	llist.c	/^list_new(void)$/;"	f
+main	ansi2knr.c	/^main(argc, argv)$/;"	f
+main	snarf.c	/^main(int argc, char *argv[])$/;"	f
+make_http_header	http.c	/^make_http_header(char *r)$/;"	f	file:
+output_buf	util.c	/^char output_buf[BUFSIZ];$/;"	v
+progress_destroy	util.c	/^progress_destroy(Progress *p)$/;"	f
+progress_init	util.c	/^progress_init(Progress *p, UrlResource *rsrc, long int len)$/;"	f
+progress_new	util.c	/^progress_new(void)$/;"	f
+progress_update	util.c	/^progress_update(Progress *	p, $/;"	f
+redirect_count	http.c	/^int redirect_count = 0;$/;"	v
+repchar	util.c	/^repchar(FILE *fp, char ch, int count)$/;"	f
+report	util.c	/^report(enum report_levels lev, char *format, ...)$/;"	f
+send_control	ftp.c	/^send_control(int sock, char *string, ...)$/;"	f
+set_options	options.c	/^set_options(unsigned char opts, char *optstring)$/;"	f
+skipspace	ansi2knr.c	/^skipspace(p, dir)$/;"	f
+sock_init	ftp.c	/^sock_init(struct sockaddr_in *sa, int control)$/;"	f
+strconcat	util.c	/^strconcat (const char *string1, ...)$/;"	f
+strdup	util.c	/^strdup(const char *s)$/;"	f
+strerror	util.c	/^strerror(int index)$/;"	f
+string_lowercase	util.c	/^string_lowercase(char *string)$/;"	f
+tcp_connect	util.c	/^tcp_connect(char *remote_host, int port) $/;"	f
+test1	ansi2knr.c	/^test1(buf)$/;"	f
+transfer	util.c	/^transfer(UrlResource *rsrc)$/;"	f
+url_destroy	url.c	/^url_destroy(Url *u)$/;"	f
+url_init	url.c	/^url_init(Url *u, char *string)$/;"	f
+url_new	url.c	/^url_new(void)$/;"	f
+url_resource_destroy	url.c	/^url_resource_destroy(UrlResource *rsrc)$/;"	f
+url_resource_new	url.c	/^url_resource_new(void)$/;"	f
+usage	snarf.c	/^usage(int verbose)$/;"	f	file:
+value	http.c	/^        char *value;$/;"	m	struct:_HttpHeaderEntry
+writeblanks	ansi2knr.c	/^writeblanks(start, end)$/;"	f
