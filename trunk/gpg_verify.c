@@ -20,14 +20,17 @@
 */
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <signal.h>
+#include <limits.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
+#include "mkdirhier.h"
 #include "log_output.h"
 #include "gpg_verify.h"
 
@@ -296,16 +299,42 @@ static int get_publickey_from(const char *key, const char *keyserver,
 
 int get_publickey(const char *key, update_callback update, void *udata)
 {
+    FILE *fp;
+    char keyserver[PATH_MAX];
     char text[1024];
-    int i;
-    gpg_result status;
+    gpg_result status = GPG_CANCELLED;
+
+    /* Open/create the list of keyservers */
+    sprintf(keyserver, "%s/.loki/loki_update/keyservers.txt", getenv("HOME"));
+    fp = fopen(keyserver, "r");
+    if ( ! fp ) {
+        int i;
+
+        mkdirhier(keyserver);
+        fp = fopen(keyserver, "w+");
+        if ( ! fp ) {
+            sprintf(text, _("Unable to create %s"), keyserver);
+            update_message(LOG_WARNING, text, update, udata);
+            return(status);
+        }
+        for ( i=0; keyservers[i]; ++i ) {
+            fprintf(fp, "%s\n", keyservers[i]);
+        }
+        rewind(fp);
+    }
 
     /* Search the keyservers for the key */
-    status = GPG_CANCELLED;
-    for ( i=0; keyservers[i] && (status != GPG_IMPORTED); ++i ) {
-        sprintf(text, _("Downloading public key %s from %s"), key, keyservers[i]);
+    while ( fgets(keyserver, sizeof(keyserver), fp) &&
+            (status != GPG_IMPORTED) ) {
+        /* Trim the newline */
+        keyserver[strlen(keyserver)-1] = '\0';
+        if ( ! *keyserver ) {
+            continue;
+        }
+        /* Download the public key */
+        sprintf(text, _("Downloading public key %s from %s"), key, keyserver);
         update_message(LOG_VERBOSE, text, update, udata);
-        status = get_publickey_from(key, keyservers[i], update, udata);
+        status = get_publickey_from(key, keyserver, update, udata);
         switch (status) {
             case GPG_NOPUBKEY:
                 update_message(LOG_VERBOSE, _("Key not found"), update, udata);
@@ -317,5 +346,6 @@ int get_publickey(const char *key, update_callback update, void *udata)
                 break;
         }
     }
+    fclose(fp);
     return(status);
 }

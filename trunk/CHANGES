@@ -1,0 +1,5 @@
+1.0d:
+Sam Lantinga - Sat Nov 18 15:58:55 PST 2000
+ * Added arrow blinking at the end of a set of updates.
+ * Added more detailed messages during update verification.
+ * Added loading keyserver support (list in ~/.loki/loki_update/keyservers.txt)
