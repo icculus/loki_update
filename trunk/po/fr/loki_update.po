@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: loki_update 1.0\n"
-"POT-Creation-Date: 2000-11-19 16:07-0800\n"
+"POT-Creation-Date: 2000-11-19 16:33-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Stéphane Peter <megastep@lokigames.com>\n"
 "Language-Team: French <fr@li.org>\n"
@@ -50,7 +50,7 @@ msgstr "Choix du site mirroir"
 msgid "Close"
 msgstr "Fermer"
 
-#: gtk_ui.c:1197 gtk_ui.c:1743 gtk_ui.c:1878 loki_update.glade:157
+#: gtk_ui.c:1197 gtk_ui.c:1744 gtk_ui.c:1879 loki_update.glade:157
 #: loki_update.glade:567 loki_update.glade:746
 msgid "Continue"
 msgstr "Continuer"
@@ -253,7 +253,7 @@ msgstr "Téléchargement de la clé publique"
 msgid "(%d MB)"
 msgstr "(%d Mo)"
 
-#: gtk_ui.c:1202 gtk_ui.c:1868
+#: gtk_ui.c:1202 gtk_ui.c:1869
 msgid "Finished"
 msgstr "Terminé"
 
@@ -310,59 +310,59 @@ msgstr "Vérification de la somme de contrôle MD5"
 msgid "MD5 checksum not available"
 msgstr "Somme de contrôle MD5 non disponible"
 
-#: gtk_ui.c:1508 gtk_ui.c:1512
+#: gtk_ui.c:1509 gtk_ui.c:1513
 msgid "Verification succeeded"
 msgstr "Vérification réussie"
 
-#: gtk_ui.c:1516
+#: gtk_ui.c:1517
 msgid "Verification failed"
 msgstr "Vérification échouée"
 
-#: gtk_ui.c:1520
+#: gtk_ui.c:1521
 msgid "Update corrupted"
 msgstr "Mise à jour corrompue"
 
-#: gtk_ui.c:1525
+#: gtk_ui.c:1526
 msgid "Unable to retrieve update"
 msgstr "Incapable de récupérer la mise à jour"
 
-#: gtk_ui.c:1529
+#: gtk_ui.c:1530
 msgid "Ready for update"
 msgstr "Prêt pour la mise à jour"
 
-#: gtk_ui.c:1555
+#: gtk_ui.c:1556
 msgid "Performing update"
 msgstr "Mise à jour"
 
-#: gtk_ui.c:1568
+#: gtk_ui.c:1569
 msgid "Update failed"
 msgstr "Mise à jour échouée"
 
-#: gtk_ui.c:1576
+#: gtk_ui.c:1577
 msgid "Update complete"
 msgstr "Mise à jour achevée"
 
-#: gtk_ui.c:1702
+#: gtk_ui.c:1703
 msgid "Listing product updates"
 msgstr "Liste des mises à jour pour les produits"
 
-#: gtk_ui.c:1761
+#: gtk_ui.c:1762
 msgid "Download cancelled"
 msgstr "Téléchargement annulé"
 
-#: gtk_ui.c:1763
+#: gtk_ui.c:1764
 msgid "Unable to retrieve update list"
 msgstr "Incapable de récupérer la liste des mises à jour"
 
-#: gtk_ui.c:1783
+#: gtk_ui.c:1784
 msgid "Retrieved update list"
 msgstr "Liste des mises à jour récupérée"
 
-#: gtk_ui.c:1861
+#: gtk_ui.c:1862
 msgid "No new updates available"
 msgstr "Pas de nouvelle mise à jour"
 
-#: gtk_ui.c:1969
+#: gtk_ui.c:1970
 msgid ""
 "No products found.\n"
 "Are you the one that installed the software?"
@@ -370,16 +370,14 @@ msgstr ""
 "Aucun produit trouvé.\n"
 "Etes-vous l'utilisateur qui a installé le logiciel?"
 
-#: gtk_ui.c:1974
+#: gtk_ui.c:1975
 msgid "No product_vbox in glade file!\n"
 msgstr "Pas de product_vbox dans le fichier glade!\n"
 
-#: gtk_ui.c:2021
+#: gtk_ui.c:2022
 #, fuzzy, c-format
 msgid "\"%s\" not found, are you the one who installed it?"
-msgstr ""
-"Aucun produit trouvé.\n"
-"Etes-vous l'utilisateur qui a installé le logiciel?"
+msgstr "\"%s\" non trouvé, êtes-vous l'utilisateur qui l'a installé?"
 
 #: meta_url.c:66
 #, c-format
