@@ -2,8 +2,6 @@
 #ifndef _patchset_h
 #define _patchset_h
 
-#include "setupdb.h"
-
 /* Forward declarations */
 struct patchset;
 struct patch;
@@ -55,7 +53,6 @@ typedef struct patch {
 } patch;
 
 typedef struct patchset {
-    product_t *product;
     const char *product_name;
 
     version_node *root;

@@ -133,22 +133,3 @@ done_parse:
 #endif
     return patchset;
 }
-
-char *get_product_description(product_t *product, char *description, int maxlen)
-{
-#if 0 /* Not really necessary */
-    product_component_t *component;
-#endif
-
-    strncpy(description, loki_getinfo_product(product)->description, maxlen-2);
-    description[maxlen-2] = '\0';
-#if 0 /* Not really necessary */
-    component = loki_getdefault_component(product);
-    if ( component ) {
-        strcat(description, " ");
-        maxlen -= strlen(description);
-        strncat(description, loki_getversion_component(component), maxlen-1);
-    }
-#endif
-    return(description);
-}

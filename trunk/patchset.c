@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "safe_malloc.h"
-#include "patchset.h"
-#include "arch.h"
 #include "log_output.h"
+#include "arch.h"
+#include "load_products.h"
+#include "setupdb.h"
+#include "patchset.h"
 
 
 static const char *get_version_extension(version_node *node)
@@ -311,9 +314,6 @@ void free_patchset(struct patchset *patchset)
 {
     if ( patchset ) {
         free_patchset(patchset->next);
-        if ( patchset->product ) {
-            loki_closeproduct(patchset->product);
-        }
         free_version_node(patchset->root);
         free_patch(patchset->patches);
         free(patchset);
@@ -322,62 +322,40 @@ void free_patchset(struct patchset *patchset)
 
 patchset *create_patchset(const char *product)
 {
+    product_t *loki_product;
     struct patchset *patchset;
-    product_component_t *component;
     version_node *root;
 
     patchset = (struct patchset *)safe_malloc(sizeof *patchset);
-    patchset->product = loki_openproduct(product);
-    if ( ! patchset->product ) {
-        log(LOG_ERROR, "Unable to find %s in registry\n", product);
-        free(patchset);
-        return(NULL);
-    }
-    component = loki_getdefault_component(patchset->product);
-    if ( ! component ) {
-        log(LOG_ERROR, "No default component for %s\n", product);
-        loki_closeproduct(patchset->product);
-        free(patchset);
-        return(NULL);
-    }
-    patchset->product_name = loki_getinfo_product(patchset->product)->name;
-    root = create_version_node(NULL, loki_getname_component(component),
-                                     loki_getversion_component(component),
-                                     "Root node");
+    patchset->product_name = product;
+    root = create_version_node(NULL, get_default_component(product),
+                                     get_product_version(product), "Root node");
     root->invisible = 1;
     patchset->root = root;
-    for ( component = loki_getfirst_component(patchset->product);
-          component;
-          component = loki_getnext_component(component) ) {
-        if ( ! loki_isdefault_component(component) ) {
-            root = create_version_node(NULL,
-                                       loki_getname_component(component),
-                                       loki_getversion_component(component),
-                                       "Root node");
-            root->invisible = 1;
-            root->sibling = patchset->root->sibling;
-            patchset->root->sibling = root;
+    loki_product = loki_openproduct(product);
+    if ( loki_product ) {
+        product_component_t *component;
+
+        for ( component = loki_getfirst_component(loki_product);
+              component;
+              component = loki_getnext_component(component) ) {
+            if ( ! loki_isdefault_component(component) ) {
+                root = create_version_node(NULL,
+                                           loki_getname_component(component),
+                                           loki_getversion_component(component),
+                                           "Root node");
+                root->invisible = 1;
+                root->sibling = patchset->root->sibling;
+                patchset->root->sibling = root;
+            }
         }
+        loki_closeproduct(loki_product);
     }
     patchset->patches = NULL;
     patchset->next = NULL;
 
     /* We're ready to go */
     return patchset;
-}
-
-static const char *default_component(product_t *product)
-{
-    product_component_t *product_component;
-    const char *component;
-
-    product_component = loki_getdefault_component(product);
-    if ( product_component ) {
-        component = loki_getname_component(product_component);
-    } else {
-        component = "";
-    }
-    return component;
 }
 
 static const char *copy_word(const char *string, char *word, int wordlen)
@@ -473,7 +451,7 @@ int add_patch(const char *product,
     if ( component ) {
         snprintf(description, sizeof(description), "%s %s", component, version);
     } else {
-        component = default_component(patchset->product);
+        component = get_default_component(patchset->product_name);
         snprintf(description, sizeof(description), "Patch %s", version);
     }
     log(LOG_DEBUG, "Potential patch:\n");
@@ -541,7 +519,7 @@ int add_patch(const char *product,
         for ( next=copy_word(applies, word, sizeof(word));
               next; 
               next=copy_word(next, word, sizeof(word)) ) {
-            if ( component == default_component(patchset->product) ) {
+            if ( component == get_default_component(patchset->product_name) ) {
                 snprintf(description, sizeof(description), "Patch %s", word);
             } else {
                 snprintf(description, sizeof(description), "%s %s",

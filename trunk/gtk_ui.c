@@ -11,7 +11,7 @@
 
 #include "update_ui.h"
 #include "patchset.h"
-#include "setupdb.h"
+#include "load_products.h"
 #include "load_patchset.h"
 #include "get_url.h"
 #include "md5.h"
@@ -569,7 +569,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     widget = glade_xml_get_widget(update_glade, "update_name_label");
     if ( widget ) {
         char text[1024];
-        get_product_description(patch->patchset->product, text, sizeof(text));
+        strcpy(text, get_product_description(patch->patchset->product_name));
         strncat(text, ": ",
             ((sizeof(text)/sizeof(text[0])) - strlen(text)));
         strncat(text, patch->description,
@@ -870,7 +870,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     GtkWidget *progress;
     patchset *patchset;
     const char *product_name;
-    char text[1024];
+    const char *description;
     char update_url[PATH_MAX];
     version_node *node, *root, *trunk;
     int selected;
@@ -907,12 +907,11 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         if ( ! patchset ) {
             log(LOG_WARNING, "Unable to open product '%s'\n", product_name);
         }
+        description = get_product_description(product_name);
 
         /* Reset the panel */
         widget = glade_xml_get_widget(update_glade, "product_label");
         if ( widget ) {
-            const char *description;
-            description = loki_getinfo_product(patchset->product)->description;
             gtk_label_set_text(GTK_LABEL(widget), description);
         }
         widget = glade_xml_get_widget(update_glade, "update_list_progress");
@@ -934,7 +933,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
     
         /* Download the patch list */
         update_balls(0, 1);
-        strcpy(update_url, loki_getinfo_product(patchset->product)->url);
+        strcpy(update_url, get_product_url(patchset->product_name));
         progress = glade_xml_get_widget(update_glade, "update_list_progress");
         download_cancelled = 0;
         if ( get_url(update_url, update_url, sizeof(update_url),
@@ -977,8 +976,7 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         }
     
         /* Add a frame and label for this product */
-        get_product_description(patchset->product, text, sizeof(text));
-        frame = gtk_frame_new(text);
+        frame = gtk_frame_new(description);
         gtk_container_set_border_width(GTK_CONTAINER(frame), 4);
         gtk_box_pack_start(GTK_BOX(update_vbox), frame, FALSE, TRUE, 0);
         gtk_widget_show(frame);
@@ -1078,7 +1076,6 @@ static int gtkui_init(int argc, char *argv[])
 {
     GtkWidget *widget;
     GtkWidget *button;
-    product_t *product;
     const char *product_name;
     char text[1024];
 
@@ -1096,15 +1093,11 @@ static int gtkui_init(int argc, char *argv[])
     /* Fill in the list of products */
     widget = glade_xml_get_widget(update_glade, "product_vbox");
     if ( widget ) {
-        for ( product_name=loki_getfirstproduct();
+        for ( product_name=get_first_product();
               product_name;
-              product_name=loki_getnextproduct() ) {
-            product = loki_openproduct(product_name);
-            if ( ! product ) {
-                log(LOG_WARNING, "Unable to open product '%s'\n", product_name);
-                continue;
-            }
-            get_product_description(product, text, sizeof(text));
+              product_name=get_next_product() ) {
+            sprintf(text, "%s %s", get_product_description(product_name),
+                                   get_product_version(product_name));
             button = gtk_check_button_new_with_label(text);
             gtk_object_set_data(GTK_OBJECT(button), "data",
                                 (gpointer)product_name);
@@ -1114,7 +1107,6 @@ static int gtkui_init(int argc, char *argv[])
                     GTK_SIGNAL_FUNC(product_toggle_option), (gpointer)0);
                 gtk_widget_show(button);
             }
-            loki_closeproduct(product);
         }
     } else {
         log(LOG_ERROR, _("No product_vbox in glade file!\n"));

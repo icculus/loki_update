@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "update_ui.h"
-#include "setupdb.h"
 #include "log_output.h"
+#include "load_products.h"
 
 static void print_usage(char *argv0)
 {
@@ -84,8 +85,11 @@ int main(int argc, char *argv[])
 {
     update_UI *ui;
 
-    /* Initialize the UI */
+    /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
+    load_product_list();
+
+    /* Initialize the UI */
     ui = &gtk_ui;
     if ( ui->init(argc, argv) < 0 ) {
         return(3);
