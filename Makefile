@@ -1,6 +1,6 @@
 
 TARGET := loki_update
-VERSION := 1.0e
+VERSION := 1.0f
 IMAGE   := /loki/patch-tools/setup-image
 
 os := $(shell uname -s)
