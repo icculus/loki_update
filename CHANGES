@@ -1,4 +1,6 @@
 1.0.10:
+Sam Lantinga - Wed Apr  4 09:05:02 PDT 2001
+ * Added multi-language detection for Heretic II
 Sam Lantinga - Thu Mar  8 15:06:24 PST 2001
  * Fixed setting the temporary download path
 Sam Lantinga - Thu Mar  8 14:56:22 PST 2001
