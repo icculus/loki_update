@@ -798,7 +798,8 @@ static void fill_mirrors_list(urlset *mirrors)
             gtk_widget_show(widget);
 
             /* If this is a preferred mirror, note that in the UI */
-            if ( strcasecmp(host, mirrors->preferred_site) == 0 ) {
+            if ( mirrors->preferred_site &&
+                 (strcasecmp(host, mirrors->preferred_site) == 0) ) {
                 widget = gtk_label_new(_(" (preferred)"));
                 gtk_box_pack_start(GTK_BOX(hbox), widget, FALSE, FALSE, 0);
                 gtk_misc_set_alignment(GTK_MISC(widget), 0, .5);
@@ -905,8 +906,14 @@ void switch_mirror_slot( GtkWidget* w, gpointer data )
 
 void save_mirror_slot( GtkWidget* w, gpointer data )
 {
+    patchset *patchset;
+
     if ( update_patchset ) {
-        current_url_preferred(update_patchset->mirrors);
+        for ( patchset=product_patchset; patchset; patchset=patchset->next ) {
+            set_preferred_url(patchset->mirrors,
+                              patchset->mirrors->current->url);
+        }
+        save_preferred_url(update_patchset->mirrors);
         fill_mirrors_list(update_patchset->mirrors);
     }
 }
@@ -1310,7 +1317,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
     have_readme = FALSE;
     verified = DOWNLOAD_FAILED;
     download_pending = 1;
-    reset_urlset(patch->patchset->mirrors);
+    randomize_urls(patch->patchset->mirrors);
     fill_mirrors_list(patch->patchset->mirrors);
     do {
         /* Grab the next URL to try */

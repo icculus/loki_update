@@ -213,7 +213,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
 
     /* Get the path where files are stored */
     preferences_path(tmppath, path, sizeof(path));
-    mkdir(tmppath, 0700);
+    mkdir(path, 0700);
 
     /* Get the full output name */
     base = strrchr(url, '/');
