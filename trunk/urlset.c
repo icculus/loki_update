@@ -94,7 +94,13 @@ int get_url_host(const char *url, char *dst, int maxlen)
                 ++host;
             }
             while ( *host && (*host != '/') && (i < (maxlen-1)) ) {
-                dst[i++] = *host++;
+                /* Skip past username and password */
+                if ( *host == '@' ) {
+                    i = 0;
+                    ++host;
+                } else {
+                    dst[i++] = *host++;
+                }
             }
         }
     }
