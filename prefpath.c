@@ -19,9 +19,12 @@
     info@lokigames.com
 */
 
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pwd.h>
+#include <unistd.h>
 
 #include "mkdirhier.h"
 #include "prefpath.h"
@@ -31,12 +34,35 @@
  */
 void preferences_path(const char *file, char *dst, int maxlen)
 {
-    const char *home;
+    static const char *home = NULL;
 
-    home = getenv("HOME");
+    /* First look up the user's home directory in the password file,
+       based on effective user id.
+     */
+    if ( ! home ) {
+        struct passwd *pwent;
+
+        pwent = getpwuid(geteuid());
+        if ( pwent ) {
+            /* Small memory leak, don't worry about it */
+            home = strdup(pwent->pw_dir);
+        }
+    }
+
+    /* We didn't find the user in the password file?
+       Something wierd is going on, but use the HOME environment anyway.
+     */
+    if ( ! home ) {
+        home = getenv("HOME");
+    }
+
+    /* Uh oh, this system is probably hosed, write to / if we can.
+     */
     if ( ! home ) {
         home = "";
     }
+
+    /* Assemble the path and create any necessary directories */
     snprintf(dst, maxlen, "%s/.loki/loki_update/%s", home, file);
     mkdirhier(dst);
 }
