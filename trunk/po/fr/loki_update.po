@@ -397,9 +397,9 @@ msgstr ""
 "\n"
 "\"%s\"\n"
 "\n"
-"Cela n'est pas reconnu comme un produit ou le repertoire d'installation\n"
-"d'un produit. S'il s'agit d'un produit, etes-vous l'utilisateur qui l'a\n"
-"installe?"
+"Cela n'est pas reconnu comme un produit ou le répertoire d'installation\n"
+"d'un produit. S'il s'agit d'un produit, êtes-vous l'utilisateur qui l'a\n"
+"installé?"
 
 #: tty_ui.c:420
 msgid "Interactive updates require X11\n"
@@ -469,7 +469,7 @@ msgstr "Combinaison de versions %s et %s n'est pas légale\n"
 #: urlset.c:261
 #, fuzzy, c-format
 msgid "Unable to write to %s\n"
-msgstr "Incapable d'ecrire sur %s\n"
+msgstr "Incapable d'écrire sur %s\n"
 
 #: get_url.c:101 update.c:80
 msgid "Couldn't create IPC pipe"
