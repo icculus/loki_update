@@ -600,15 +600,18 @@ void download_update_slot( GtkWidget* w, gpointer data )
     update_balls(-1, 0);
 
     /* Download the README and enable the button if we have a README */
-    if ( status ) {
-        gtk_label_set_text(GTK_LABEL(status), _("Downloading README"));
-    }
-    sprintf(readme_file, "%s.txt", patch->url);
-    download_cancelled = 0;
-    if ( get_url(readme_file, readme_file, sizeof(readme_file), download_update, NULL) == 0 ) {
-        widget = glade_xml_get_widget(update_glade, "update_readme_button");
-        if ( widget ) {
-            gtk_widget_set_sensitive(widget, TRUE);
+    if ( ! auto_update ) {
+        if ( status ) {
+            gtk_label_set_text(GTK_LABEL(status), _("Downloading README"));
+        }
+        sprintf(readme_file, "%s.txt", patch->url);
+        download_cancelled = 0;
+        if ( get_url(readme_file, readme_file, sizeof(readme_file),
+                     download_update, NULL) == 0 ) {
+            widget = glade_xml_get_widget(update_glade, "update_readme_button");
+            if ( widget ) {
+                gtk_widget_set_sensitive(widget, TRUE);
+            }
         }
     }
 
