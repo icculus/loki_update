@@ -1,0 +1,153 @@
+
+Loki Auto-Update Tool 1.0
+
+
+Introduction
+============
+This is a tool written by Loki Software, Inc., designed to be used in
+conjunction with their setup and patchkit tools to automatically update
+installed products.
+
+
+Licensing
+=========
+This update tool is available for use under the GNU General Public License.
+A copy of this license is provided in the file "COPYING" in this distribution.
+
+
+Basic Operation
+===============
+First the update tool looks for updates for itself, and if any are available,
+automatically downloads and applies them and restarts.  If an application
+name is given on the command line, the update tool looks for all updates
+that apply to the existing application, automatically applies them, and
+then quits.
+
+If the update tool is not given any command line arguments, then it enters
+an interactive mode in which the user can select available updates for any
+installed products.  It then downloads the README for the patch and makes
+it available to the user while the rest of the patch is downloaded.  If a
+GPG signature is available, it will be downloaded and used to verify the
+update.  If the GPG signature isn't available, or cannot be verified for
+some reason, then an MD5 checksum is downloaded and used for verification.
+When the user chooses to continue, the update is executed, and passed the
+"--nox11" and "--noreadme" options, telling it to run in quiet mode and
+print out percentage progress information.  When the patch completes, the
+user can continue applying updates until an error occurs or all updates
+are complete.
+
+Loki's games have a special feature built into them which allow you to
+run the game with the '--update' option to automatically update them and
+then restart for normal play.
+
+
+Update Creation
+===============
+The update tool assumes that your patches have been created using the
+Loki patchkit tools, and packed using the makeself.sh script written
+by Stephane Peter.
+
+The patchkit tools are available from:
+[FIXME: insert correct URL]
+
+The makeself.sh script is available from:
+http://www.lokigames.com/~megastep/makeself/
+
+When the product is installed with Loki's setup tool, it is provided
+with an auto-update URL, a place where a list of updates for this
+product are listed.  The listing can be text or HTML, and must contain
+a set of entries in the form:
+
+Product:
+Version:
+Architecture:
+Applies:
+URL:
+
+The product is the keyword name of the product, as specified by the
+"product" tag in the product installation description file.  The name
+of the product actually shown the user is the product description, as
+specified by the "desc" tag in the product installation description file.
+
+The version is the version of the patch, i.e. what the final version of the
+product will be after the patch is applied.  The patch is responsible for
+updating the installation database, which is done automatically by Loki's
+patchkit tools.
+
+The architecture is a comma separated list of architectures for which the
+patch is valid.
+Recognized keywords are: x86, ppc, alpha, sparc64, arm, any
+New keywords may be added by modifying arch.c in the setupdb distribution.
+
+The applies field is a comma separated list of product versions to which
+the patch may be applied.  If the installed version of the product doesn't
+match one of these strings, then the patch is discarded.
+
+The URL is an FTP or HTTP style URL that designates the location of the
+patch file used to upgrade this product.
+
+The update tool supports patches that linearly increase an application
+version, convert to a different "flavor" of the product, or add extra
+functionality to the application.
+
+
+Components
+==========
+Patches that add extra functionality to an application, in the form of
+an "add-on" or expansion pack are considered special in several ways:
+
+ * They are considered separate components and may be patched separately
+   from the main application.
+
+ * They require a separate "Component" keyword in the patch description
+   indicating the verbose name of the component.
+
+ * The applies field of the patch description contains only a single
+   version, and represents the minimum version of the product which
+   must be installed for this component to show up as an update option.
+
+ * Patches to this component must have a matching "Component" keyword.
+
+ * The component installation update must be specified in the same file
+   as the patches to this component.  Since the description syntax for a
+   new component update and patches to that component are the same, the
+   entry with the lowest version number is considered the base update.
+
+ * The component update must not modify any files in the base install,
+   it should just add new files.
+
+Examples of good candidates for "components" might be game level editors,
+mission packs, development kits, etc.
+
+
+Flavors
+=======
+An application flavor is designated by an extension to the application
+version, using any character except alphanumeric characters, the period,
+or a comma, followed by any amount of non-whitespace characters.  An
+example of an application flavor might be "1.0 Spanish", or "1.1-demo"
+
+The patch tools support patches that convert from one flavor to another
+or upgrade the version of a particular flavor, but keep in mind that 
+this is equivalent to a separate product in that only updates for your
+particular product flavor will be visible on the update selection list.
+
+The product as installed usually has no "flavor", this is the default.
+
+
+GNU Privacy Guard
+=================
+While the update tool does not ship with GPG for legal reasons, it will
+take advantage of GPG for update checksum and verification if it is
+installed on the user's system.  They do not need to know how to use
+GPG, the appropriate public keys are automatically downloaded from a
+public key server for update verification.
+
+More information about GNU Privacy Guard can be found at:
+http://www.gnupg.org/
+
+
+Author
+======
+The Loki update tool was written by Sam Lantinga at Loki Software, Inc.
+
