@@ -4,6 +4,8 @@ AUTOMAKE_OPTIONS = foreign ansi2knr
 bin_PROGRAMS = snarf
 
 snarf_SOURCES = \
+	file.c   \
+	file.h   \
 	ftp.c    \
 	ftp.h    \
 	http.c   \

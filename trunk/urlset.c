@@ -1,6 +1,5 @@
 
 #include <stdlib.h>
-#include <time.h>
 
 #include "safe_malloc.h"
 #include "urlset.h"
@@ -70,9 +69,6 @@ static void free_bucket(url_bucket_list *list)
 urlset *create_urlset(void)
 {
     urlset *urlset;
-
-    /* Seed the random number generator for choosing URLs */
-    srand(time(NULL));
 
     /* Create and return an empty set of URLs */
     urlset = (struct urlset *)safe_malloc(sizeof *urlset);

@@ -39,7 +39,8 @@ struct _UrlResource {
 
 /* Service types */
 enum url_services {
-        SERVICE_HTTP = 1,
+        SERVICE_FILE = 1,
+        SERVICE_HTTP,
         SERVICE_FTP,
         SERVICE_GOPHER,
         SERVICE_FINGER

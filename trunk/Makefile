@@ -22,13 +22,13 @@ LFLAGS += -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -ldl
 # You can find Ares at: ftp://athena-dist.mit.edu/pub/ATHENA/ares
 LFLAGS += -lares
 
-OBJS = loki_update.o gtk_ui.o load_products.o load_patchset.o \
-       patchset.o urlset.o update.o gpg_verify.o get_url.o \
+OBJS = loki_update.o gtk_ui.o url_paths.o meta_url.o load_products.o \
+       load_patchset.o patchset.o urlset.o update.o gpg_verify.o get_url.o \
        mkdirhier.o text_parse.o log_output.o safe_malloc.o \
        $(SNARF_OBJS)
 
 SNARF_OBJS = $(SNARF)/url.o $(SNARF)/util.o $(SNARF)/llist.o \
-             $(SNARF)/ftp.o $(SNARF)/gopher.o $(SNARF)/http.o
+             $(SNARF)/file.o $(SNARF)/ftp.o $(SNARF)/gopher.o $(SNARF)/http.o
 
 all: loki_update
 

@@ -1,5 +1,4 @@
 
 Check how the updater handles out-of-diskspace errors
-Add support for file:// URLs
 Add a console UI
 Add internationalization support

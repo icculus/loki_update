@@ -772,6 +772,9 @@ transfer(UrlResource *rsrc)
         int i;
 
         switch (rsrc->url->service_type) {
+        case SERVICE_FILE:
+                i = file_transfer(rsrc);
+                break;
         case SERVICE_HTTP:
                 i = http_transfer(rsrc);
                 break;
