@@ -8,7 +8,7 @@
 
 typedef int (*update_callback)(int status_level, const char *status,
                                float percentage, int size, int total,
-                               void *udata);
+                               float rate, void *udata);
 
 extern void update_message(int level, const char *message,
                            update_callback update, void *udata);

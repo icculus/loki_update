@@ -353,14 +353,6 @@ progress_update(Progress *	p,
                 	fprintf(stderr, "%7dK", (int )(p->current / 1024));
 		}
 
-		if( p->rsrc->progress ) {
-                        p->rsrc->progress_percent = percent_done*100.0;
-			cancelled = p->rsrc->progress(0, NULL,
-                                           p->rsrc->progress_percent,
-			                   p->current/1024, p->length/1024,
-			                   p->rsrc->progress_udata);
-		}
-       
                 elapsed = double_time() - p->start_time;
 
                 if (elapsed) 
@@ -372,6 +364,15 @@ progress_update(Progress *	p,
                 if (rate > 999999)
                         rate = 0;
 
+		if( p->rsrc->progress ) {
+                        p->rsrc->progress_percent = percent_done*100.0;
+			cancelled = p->rsrc->progress(0, NULL,
+                                           p->rsrc->progress_percent,
+			                   p->current/1024, p->length/1024,
+			                   rate,
+			                   p->rsrc->progress_udata);
+		}
+       
 		if( p->tty ) {
                 	fprintf(stderr, " | %7.2fK/s", rate);
 		}
@@ -406,7 +407,7 @@ progress_destroy(Progress *p, int okay)
 			}
 			p->rsrc->progress(STATUS, status,
                                           p->rsrc->progress_percent,
-			                  p->current/1024, p->length/1024,
+			                  p->current/1024, p->length/1024, 0.0f,
 			                  p->rsrc->progress_udata);
 		}
 		safe_free(p);
@@ -527,7 +528,7 @@ report(UrlResource *rsrc, enum report_levels lev, char *format, ...)
 
 	if ( rsrc && rsrc->progress ) {
 		rsrc->progress(lev, message,
-		               rsrc->progress_percent, 0, 0,
+		               rsrc->progress_percent, 0, 0, 0.0f,
 		               rsrc->progress_udata);
 	} else {
         	switch( lev ) {
@@ -592,7 +593,7 @@ static void snarf_host_callback(void *arg, int status, struct hostent *host)
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
     int (*update)(int status_level, const char *status,
-                  float percentage, int size, int total,
+                  float percentage, int size, int total, float rate,
                   void *udata), void *udata)
 {
 	ares_channel channel;
@@ -627,7 +628,7 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 		tvp = ares_timeout(channel, &maxtv, &tv);
 		if ( select(nfds, &read_fds, &write_fds, NULL, tvp) == 0 ) {
 			/* No activity, run UI update */
-			cancelled = update(0, NULL, 0.0f, 0, 0, udata);
+			cancelled = update(0, NULL, 0.0f, 0, 0, 0.0f, udata);
 		}
 		ares_process(channel, &read_fds, &write_fds);
 	}
@@ -644,7 +645,7 @@ gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
 static int
 gethostbyname_async(const char *remote_host, struct sockaddr_in *sa,
     int (*update)(int status_level, const char *status,
-                  float percentage, int size, int total,
+                  float percentage, int size, int total, float rate,
                   void *udata), void *udata)
 {
         struct hostent *host;
@@ -684,7 +685,7 @@ static int set_blocking(int sock_fd, int blocking)
 int
 tcp_connect_async(char *remote_host, int port,
     int (*update)(int status_level, const char *status,
-                  float percentage, int size, int total,
+                  float percentage, int size, int total, float rate,
                   void *udata), void *udata)
 {
 	char text[1024];
@@ -703,14 +704,14 @@ tcp_connect_async(char *remote_host, int port,
 	}
 
         /* Start off with zero percent complete (opening connection) */
-	cancelled = update(0, NULL, 0.0f, 0, 0, udata);
+	cancelled = update(0, NULL, 0.0f, 0, 0, 0.0f, udata);
         if ( cancelled ) {
                 return(0);
         }
 
 	/* Look up the remote host address */
 	sprintf(text, "Looking up %s", remote_host);
-	update(STATUS, text, 0.0f, 0, 0, udata);
+	update(STATUS, text, 0.0f, 0, 0, 0.0f, udata);
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(port);
 	sa.sin_addr.s_addr = inet_addr(remote_host);
@@ -730,7 +731,7 @@ tcp_connect_async(char *remote_host, int port,
 
 	/* connect the socket asynchronously */
 	sprintf(text, "Connecting to %s", remote_host);
-	update(STATUS, text, 0.0f, 0, 0, udata);
+	update(STATUS, text, 0.0f, 0, 0, 0.0f, udata);
 	if( set_blocking(sock_fd, 0) < 0 ) {
 		/* FIXME: Print an error message */
 		close(sock_fd);
@@ -756,7 +757,7 @@ tcp_connect_async(char *remote_host, int port,
 				break;
 			    case 0:
 				/* No activity, run UI update */
-				cancelled = update(0, NULL, 0.0f, 0, 0, udata);
+				cancelled = update(0, NULL, 0.0f, 0, 0, 0.0f, udata);
 				break;
 			    default:
 				error_size = sizeof(was_error);
@@ -781,7 +782,7 @@ tcp_connect_async(char *remote_host, int port,
 		close(sock_fd);
 		return 0;
 	}
-	update(STATUS, "Connected", 0.0f, 0, 0, udata);
+	update(STATUS, "Connected", 0.0f, 0, 0, 0.0f, udata);
 	return sock_fd;
 }
 

@@ -22,13 +22,13 @@ void update_message(int level, const char *message,
 {
     if ( update ) {
         if ( level == LOG_STATUS ) {
-            update(level, message, 0.0f, 0, 0, udata);
+            update(level, message, 0.0f, 0, 0, 0.0f, udata);
         } else {
             char *text;
 
             text = (char *)safe_malloc(strlen(message)+2);
             sprintf(text, "%s\n", message);
-            update(level, text, 0.0f, 0, 0, udata);
+            update(level, text, 0.0f, 0, 0, 0.0f, udata);
             free(text);
         }
     } else {
@@ -149,7 +149,7 @@ int perform_update(const char *update_file, const char *install_path,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(0, NULL, percentage, 0, 0, udata);
+            cancelled = update(0, NULL, percentage, 0, 0, 0.0f, udata);
         }
 
         /* Why doesn't the pipe close? */

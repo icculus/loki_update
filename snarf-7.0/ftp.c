@@ -112,7 +112,7 @@ get_line(UrlResource *rsrc, int control)
 		    case 0:
 			if ( rsrc->progress(0, NULL,
 			                    rsrc->progress_percent,
-			                    0, 0,
+			                    0, 0, 0.0f,
 			                    rsrc->progress_udata) ) {
 				return(NULL);
 			}
@@ -130,13 +130,13 @@ get_line(UrlResource *rsrc, int control)
 			if ( (buf[0] == '4') || (buf[0] == '5') ) {
 				rsrc->progress(ERROR, buf+4,
 				               rsrc->progress_percent,
-				               0, 0,
+				               0, 0, 0.0f,
 				               rsrc->progress_udata);
 				return(NULL);
 			}
 			rsrc->progress(0, buf,
 			               rsrc->progress_percent,
-			               0, 0,
+			               0, 0, 0.0f,
 			               rsrc->progress_udata);
 		} else {
                 	if( rsrc->options & OPT_VERBOSE )

@@ -42,7 +42,7 @@ char *strconcat(const char *, ...);
 char *base64(char *, int);
 void report(UrlResource *, enum report_levels, char *, ...);
 int tcp_connect(char *, int);
-int tcp_connect_async(char *remote_host, int port, int (*update)(int status_level, const char *status, float percentage, int size, int total, void *udata), void *udata);
+int tcp_connect_async(char *remote_host, int port, int (*update)(int status_level, const char *status, float percentage, int size, int total, float rate, void *udata), void *udata);
 off_t get_file_size(const char *);
 void repchar(FILE *fp, char ch, int count);
 int transfer(UrlResource *rsrc);

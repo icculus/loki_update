@@ -258,7 +258,7 @@ static int get_publickey_from(const char *key, const char *keyserver,
 
         /* Update the UI */
         if ( update ) {
-            cancelled = update(0, NULL, 0.0f, 0, 0, udata);
+            cancelled = update(0, NULL, 0.0f, 0, 0, 0.0f, udata);
         }
 
         /* Why doesn't the pipe close? */

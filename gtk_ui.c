@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <gtk/gtk.h>
@@ -61,8 +62,12 @@ struct download_update_info
 {
     GtkWidget *status;
     GtkWidget *progress;
-    GtkWidget *total_label;
+    GtkWidget *rate_label;
+    GtkWidget *eta_label;
+    float last_rate;
+    time_t last_update;
 };
+#define MAX_RATE_CHANGE 50.0f
 
 /* Forward declarations for the meat of the operation */
 void download_update_slot( GtkWidget* w, gpointer data );
@@ -609,11 +614,16 @@ void update_proceed_slot( GtkWidget* w, gpointer data )
 
 static void set_download_info(struct download_update_info *info,
                               GtkWidget *status,
-                              GtkWidget *progress, GtkWidget *total_label)
+                              GtkWidget *progress,
+                              GtkWidget *rate_label,
+                              GtkWidget *eta_label)
 {
     info->status = status;
     info->progress = progress;
-    info->total_label = total_label;
+    info->rate_label = rate_label;
+    info->eta_label = eta_label;
+    info->last_rate = 0.0f;
+    info->last_update = 0;
 }
 
 static void set_status_message(GtkWidget *status_label, const char *text)
@@ -631,7 +641,7 @@ static void set_status_message(GtkWidget *status_label, const char *text)
 
 static int download_update(int status_level, const char *status,
                            float percentage,
-                           int size, int total, void *udata)
+                           int size, int total, float rate, void *udata)
 {
     struct download_update_info *info = (struct download_update_info *)udata;
 
@@ -651,17 +661,44 @@ static int download_update(int status_level, const char *status,
     }
 
     /* If we have actual download progress, show that too */
-    if ( total && info->total_label ) {
-        char text[64], *metric;
-
-        metric = "K";
-        if ( total >= 4192 ) {
-            metric = "MB";
-            total /= 1024;
-            size /= 1024;
+    if ( rate > 0.01f ) {
+        float last_rate = info->last_rate;
+        info->last_rate = rate;
+        if ( rate < last_rate ) {
+            if ( (rate - last_rate) > MAX_RATE_CHANGE ) {
+                rate = 0.0f;
+            }
+        } else {
+            if ( (last_rate - rate) > MAX_RATE_CHANGE ) {
+                rate = 0.0f;
+            }
         }
-        sprintf(text, "%d / %d %s", size, total, metric);
-        gtk_label_set_text(GTK_LABEL(info->total_label), text);
+    }
+    if ( (rate > 0.01f) && (time(NULL) != info->last_update) ) {
+        char text[128];
+
+        if ( info->rate_label ) {
+            sprintf(text, "%7.2f K/s ", rate);
+            gtk_label_set_text(GTK_LABEL(info->rate_label), text);
+        }
+        if ( total && info->eta_label ) {
+            long eta = (long)((float)(total-size)/rate);
+
+            if ( eta < (60*60*24) ) {
+                if ( eta > (60*60) ) {
+                    sprintf(text, _("ETA: %ld:"), eta/(60*60));
+                    eta %= (60*60);
+                } else {
+                    sprintf(text, _("ETA: "));
+                }
+                sprintf(&text[strlen(text)], _("%2.2ld:%2.2ld"),
+                        eta/60, eta%60);
+            } else {
+                strcpy(text, _("unknown"));
+            }
+            gtk_label_set_text(GTK_LABEL(info->eta_label), text);
+        }
+        info->last_update = time(NULL);
     }
 
     while( gtk_events_pending() ) {
@@ -682,7 +719,7 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
         set_status_message(status, _("Downloading public key"));
         status = glade_xml_get_widget(update_glade, "update_status_label");
         download_cancelled = 0;
-        set_download_info(&info, status, NULL, NULL);
+        set_download_info(&info, status, NULL, NULL, NULL);
         get_publickey(sig, download_update, &info);
         gpg_code = gpg_verify(file, sig, maxsig);
     }
@@ -981,7 +1018,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             }
             sprintf(readme_file, "%s.txt", url);
             download_cancelled = 0;
-            set_download_info(&info, status, NULL, NULL);
+            set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(readme_file, readme_file, sizeof(readme_file),
                          download_update, &info) == 0 ) {
                 widget = glade_xml_get_widget(update_glade, "update_readme_button");
@@ -1003,7 +1040,8 @@ void download_update_slot( GtkWidget* w, gpointer data )
         set_progress_url(GTK_PROGRESS(progress), update_url);
         download_cancelled = 0;
         set_download_info(&info, status, progress,
-            glade_xml_get_widget(update_glade, "update_total_label"));
+            glade_xml_get_widget(update_glade, "update_rate_label"),
+            glade_xml_get_widget(update_glade, "update_eta_label"));
         if ( get_url(update_url, update_url, sizeof(update_url),
                       download_update, &info) != 0 ) {
             update_balls(1, 4);
@@ -1020,7 +1058,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             set_status_message(verify, _("Verifying GPG signature"));
             sprintf(sum_file, "%s.sig", url);
             download_cancelled = 0;
-            set_download_info(&info, status, NULL, NULL);
+            set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
                          download_update, &info) == 0 ) {
                 switch (do_gpg_verify(sum_file, sig, sizeof(sig))) {
@@ -1065,7 +1103,7 @@ void download_update_slot( GtkWidget* w, gpointer data )
             set_status_message(verify, _("Verifying MD5 checksum"));
             sprintf(sum_file, "%s.md5", url);
             download_cancelled = 0;
-            set_download_info(&info, status, NULL, NULL);
+            set_download_info(&info, status, NULL, NULL, NULL);
             if ( get_url(sum_file, sum_file, sizeof(sum_file),
                          download_update, &info) == 0 ) {
                 fp = fopen(sum_file, "r");
@@ -1137,7 +1175,7 @@ void perform_update_slot( GtkWidget* w, gpointer data )
         gtk_widget_set_sensitive(cancel, FALSE);
     }
     progress = glade_xml_get_widget(update_glade, "update_patch_progress");
-    set_download_info(&info, status, progress, NULL);
+    set_download_info(&info, status, progress, NULL, NULL);
     if ( perform_update(update_url,
                         get_product_root(update_patchset->product_name),
                         download_update, &info) != 0 ) {
@@ -1327,7 +1365,8 @@ void choose_update_slot( GtkWidget* w, gpointer data )
         set_progress_url(GTK_PROGRESS(progress), update_url);
         download_cancelled = 0;
         set_download_info(&info, status, progress,
-            glade_xml_get_widget(update_glade, "list_total_label"));
+            glade_xml_get_widget(update_glade, "list_rate_label"),
+            glade_xml_get_widget(update_glade, "list_eta_label"));
         if ( get_url(update_url, update_url, sizeof(update_url),
                       download_update, &info) != 0 ) {
             remove_update();
