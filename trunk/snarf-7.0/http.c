@@ -269,8 +269,8 @@ http_transfer(UrlResource *rsrc)
         /* make sure we haven't recursed too much */
 
         if( redirect_count > REDIRECT_MAX ) {
-                report(ERR, "redirection max count exceeded " 
-                      "(looping redirect?)");
+                report(rsrc, ERR, "redirection max count exceeded " 
+                                  "(looping redirect?)");
                 redirect_count = 0;
                 return 0;
         }
@@ -280,7 +280,7 @@ http_transfer(UrlResource *rsrc)
         u = rsrc->url;
      
         if( ! *(u->host) ) {
-                report(ERR, "no host specified");
+                report(rsrc, ERR, "no host specified");
                 return 0;
         }
 
@@ -316,7 +316,7 @@ http_transfer(UrlResource *rsrc)
                         proxy_url->port = 80;
 
                 if( !proxy_url->host ) {
-                        report(ERR, "bad proxy `%s'", rsrc->proxy);
+                        report(rsrc, ERR, "bad proxy `%s'", rsrc->proxy);
                         return 0;
                 }
 
@@ -358,7 +358,8 @@ http_transfer(UrlResource *rsrc)
         
         out = open_outfile(rsrc);
         if( !out ) {
-                report(ERR, "opening %s: %s", rsrc->outfile, strerror(errno));
+                report(rsrc, ERR, "opening %s: %s",
+		       rsrc->outfile, strerror(errno));
                 return 0;
         }
 
@@ -376,10 +377,8 @@ http_transfer(UrlResource *rsrc)
                && buf[2] == 'T' && buf[3] == 'P') ) {
                 if ((rsrc->options & OPT_RESUME) && 
                     rsrc->outfile_offset) {
-                        report(WARN,
-                               "server does not support resume, "
-                               "try again"
-                               " with -n (no resume)");
+                        report(rsrc, WARN, "server does not support resume, "
+                                           "try again with -n (no resume)");
                         retval = 0;
                         goto cleanup;
                 }
@@ -416,7 +415,8 @@ http_transfer(UrlResource *rsrc)
                 if (raw_header[9] == '4' || raw_header[9] == '5') {
                         for(i = 0; raw_header[i] && raw_header[i] != '\n'; i++);
                         raw_header[i] = '\0';
-                        report(ERR, "HTTP error from server: %s", raw_header);
+                        report(rsrc, ERR, "HTTP error from server: %s",
+			       raw_header);
                         retval = 0;
                         goto cleanup;
                 }
@@ -433,9 +433,9 @@ http_transfer(UrlResource *rsrc)
                     (rsrc->options & OPT_RESUME) && 
                     !(rsrc->options & OPT_NORESUME)
                     && rsrc->outfile_offset ) {
-                        report(WARN,
-                             "unable to determine remote file size, try again"
-                             " with -n (no resume)");
+                        report(rsrc, WARN,
+                             "unable to determine remote file size, "
+			     "try again with -n (no resume)");
                         retval = 0;
                         goto cleanup;
                 }

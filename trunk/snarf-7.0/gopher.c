@@ -64,7 +64,8 @@ gopher_transfer(UrlResource *rsrc)
         out = open_outfile(rsrc);
 
         if( !out ) {
-                report(ERR, "opening %s: %s", rsrc->outfile, strerror(errno));
+                report(rsrc, ERR, "opening %s: %s",
+		       rsrc->outfile, strerror(errno));
                 close(sock);
                 return 0;
         }

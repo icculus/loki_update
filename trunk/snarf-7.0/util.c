@@ -161,8 +161,9 @@ dump_data(UrlResource *rsrc, int sock, FILE *out)
         if( !(rsrc->options & OPT_NORESUME) ) {
                 if( rsrc->outfile_size && 
                     (rsrc->outfile_offset >= rsrc->outfile_size) ) {
-                        report(WARN, "you already have all of `%s', skipping", 
-                             rsrc->outfile);
+                        report(rsrc, WARN,
+			       "you already have all of `%s', skipping", 
+                               rsrc->outfile);
                         close(sock);
                         return 1;
                 }
@@ -507,29 +508,36 @@ base64(char *bin, int len)
 
 
 void
-report(enum report_levels lev, char *format, ...)
+report(UrlResource *rsrc, enum report_levels lev, char *format, ...)
 {
-        switch( lev ) {
-        case DEBUG:
-                fprintf(stderr, "debug: ");
-                break;
-        case WARN:
-                fprintf(stderr, "warning: ");
-                break;
-        case ERR:
-                fprintf(stderr, "error: ");
-                break;
-        default:
-                break;
-        }
+       	va_list args;
+	char message[4096];
 
-        if( format ) {
-                va_list args;
-                va_start(args, format);
-                vfprintf(stderr, format, args);
-                va_end(args);
-                fprintf(stderr, "\n");
-        }
+	/* Put together the message (use vsnprintf() to avoid overflow) */
+       	va_start(args, format);
+	vsnprintf(message, (sizeof message), format, args);
+       	va_end(args);
+
+	if ( rsrc && rsrc->progress ) {
+		rsrc->progress(lev, message,
+		               rsrc->progress_percent, 0, 0,
+		               rsrc->progress_udata);
+	} else {
+        	switch( lev ) {
+        	case DEBUG:
+                	fprintf(stderr, "debug: %s\n", message);
+                	break;
+        	case WARN:
+                	fprintf(stderr, "warning: %s\n", message);
+                	break;
+        	case ERR:
+                	fprintf(stderr, "error: %s\n", message);
+                	break;
+        	default:
+                	fprintf(stderr, "%s\n", message);
+                	break;
+        	}
+	}
 }
 
 
@@ -809,7 +817,7 @@ transfer(UrlResource *rsrc)
                 i = gopher_transfer(rsrc);
                 break;
         default:
-                report(ERR, "bad url: %s", rsrc->url->full_url);
+                report(rsrc, ERR, "bad url: %s", rsrc->url->full_url);
         }
 
         return i;
