@@ -16,7 +16,13 @@
 static void print_usage(char *argv0)
 {
     fprintf(stderr,
-"Usage: %s [--verbose] [--noselfcheck] [--update_url <url>] [product]\n",
+"Loki Update Tool " VERSION "\n"
+"Usage: %s [options] [product]\n"
+"The options can be any of:\n"
+"    --verbose               Print verbose messages to standard output\n"
+"    --noselfcheck           Skip check for updates for the update tool\n"
+"    --tmpdir PATH           Use PATH as the temporary download path\n"
+"    --update_url URL        Use URL as the list of product updates\n",
             argv0);
 }
 
@@ -98,7 +104,6 @@ static void goto_installpath(char *argv0)
 
 int main(int argc, char *argv[])
 {
-    int show_version;
     int self_check;
     int auto_update;
     const char *product;
@@ -113,7 +118,6 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     /* Parse the command line */
-    show_version = 0;
     self_check = 1;
     auto_update = 0;
     product = NULL;
@@ -132,7 +136,8 @@ int main(int argc, char *argv[])
         } else
         if ( (strcmp(argv[i], "--version") == 0) ||
              (strcmp(argv[i], "-V") == 0) ) {
-            show_version = 1;
+            printf("Loki Update Tool " VERSION "\n");
+            return(0);
         } else
         if ( (strcmp(argv[i], "--debug") == 0) ||
              (strcmp(argv[i], "-d") == 0) ) {
@@ -190,17 +195,8 @@ int main(int argc, char *argv[])
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
     load_product_list(product);
-    if ( show_version ) {
-        if ( is_valid_product(PRODUCT) ) {
-            printf("%s %s\n", get_product_description(PRODUCT),
-                              get_product_version(PRODUCT));
-        } else {
-            printf("%s was not installed by this user.\n", PRODUCT);
-        }
-        return(0);
-    }
     if ( product && ! is_valid_product(product) ) {
-        log(LOG_ERROR, "%s is not installed, aborting\n", product);
+        log(LOG_ERROR, "%s has not been installed by you.\n", product);
         return(1);
     }
     if ( product_path ) {
