@@ -517,6 +517,7 @@ int add_patch(const char *product,
     patch->description = safe_strdup(description);
     patch->url = safe_strdup(url);
     patch->node = node;
+    patch->refcount = 0;
     patch->installed = 0;
     patch->num_apply = 0;
     patch->apply = NULL;
@@ -527,6 +528,7 @@ int add_patch(const char *product,
     */
     if ( is_new_component_root(patchset->root, node) ) {
         if ( strcasecmp(applies, patchset->root->version) == 0 ) {
+            ++patch->refcount;
             node->shortest_path = (patch_path *)safe_malloc(
                                     sizeof *node->shortest_path);
             node->shortest_path->src = patchset->root;
@@ -585,6 +587,10 @@ static patch *find_linking_patch(patchset *patchset,
                 break;
             }
         }
+    }
+    if ( patch ) {
+        /* Woohoo, this patch is being used */
+        ++patch->refcount;
     }
     return(patch);
 }
@@ -735,6 +741,33 @@ static void trim_unconnected_roots(version_node *root)
     }
 }
 
+static void trim_unused_patches(patchset *patchset)
+{
+    patch *patch, *prev, *freeable;
+
+    prev = NULL;
+    for ( patch = patchset->patches; patch; ) {
+        /* If this patch isn't used in an upgrade path, we can discard it */
+        if ( ! patch->refcount ) {
+            log(LOG_DEBUG, 
+                "Patch %s not used in upgrade path, trimming\n",
+                patch->description);
+            freeable = patch;
+            patch = patch->next;
+            if ( prev ) {
+                prev->next = patch;
+            } else {
+                patchset->patches = patch;
+            }
+            freeable->next = NULL;
+            free_patch(freeable);
+        } else {
+            prev = patch;
+            patch = patch->next;
+        }
+    }
+}
+
 /* Generate valid patch paths, trimming out versions that don't apply */
 void calculate_paths(patchset *patchset)
 {
@@ -777,6 +810,7 @@ void calculate_paths(patchset *patchset)
 
         root = root->sibling;
     }
+    trim_unused_patches(patchset);
 
     /* Free shortest path memory */
     free(patchset->seen);

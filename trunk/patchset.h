@@ -47,6 +47,7 @@ typedef struct patch {
     char *description;
     char *url;
     struct version_node *node;
+    int refcount;
     int installed;
     int num_apply;
     struct version_node **apply;
