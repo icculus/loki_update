@@ -140,7 +140,11 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
             }
             /* If there's a new product tag, check it above */
             if ( strcasecmp(key, "product") == 0 ) {
-                strcpy(parsed_name, key);
+                if ( check_and_add_patch(patchset) < 0 ) {
+                    /* Error, messages already output */
+                    goto done_parse;
+                }
+                strcpy(parsed_name, val);
                 continue;
             }
             /* Look for known tags */

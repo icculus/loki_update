@@ -16,7 +16,7 @@ do if [ ! -d "$path" ]; then
    for product_bin in EricsSolitaire EricsSolitaire.dynamic
    do binary=`ls -d "$path/$product_bin" 2>/dev/null | head -n 1`
       if [ ! -f "$binary" ]; then
-          binary=`ls -d "$path/*/$product_bin" 2>/dev/null | head -n 1`
+          binary=`ls -d "$path"/*/"$product_bin" 2>/dev/null | head -n 1`
       fi 
       if [ -f "$binary" ]; then
           product_path=`dirname $binary`
