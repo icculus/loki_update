@@ -2007,6 +2007,11 @@ _("No products found.\nAre you the one that installed the software?"));
     */
     putenv("PATCH_LOGGING=1");
 
+    /* Tell the patches that we've already verified them, so don't
+       perform the checksum self-check.
+     */
+    putenv("SETUP_NOCHECK=1");
+
     return 0;
 }
 

@@ -1,4 +1,6 @@
 1.0.13:
+Sam Lantinga - Sat Apr 28 16:19:07 PDT 2001
+ * Tell new update archives not to perform checksum verification
 Sam Lantinga - Sat Apr 28 16:15:13 PDT 2001
  * Added the size of the current update to the download screen
 Sam Lantinga - Sat Apr 28 15:48:27 PDT 2001
