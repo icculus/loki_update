@@ -10,6 +10,7 @@
 #include "log_output.h"
 #include "url_paths.h"
 #include "meta_url.h"
+#include "get_url.h"
 #include "load_products.h"
 
 static void print_usage(char *argv0)
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
     int auto_update;
     const char *product;
     const char *product_path;
+    const char *tmppath;
     const char *meta_url;
     const char *update_url;
     int i;
@@ -116,6 +118,7 @@ int main(int argc, char *argv[])
     auto_update = 0;
     product = NULL;
     product_path = NULL;
+    tmppath = NULL;
     meta_url = NULL;
     update_url = NULL;
     for ( i=1; argv[i] && (argv[i][0] == '-'); ++i ) {
@@ -141,6 +144,13 @@ int main(int argc, char *argv[])
         } else
         if ( strcmp(argv[i], "--noselfcheck") == 0 ) {
             self_check = 0;
+        } else
+        if ( strcmp(argv[i], "--tmppath") == 0 ) {
+            if ( ! argv[i+1] ) {
+                print_usage(argv[0]);
+                return(1);
+            }
+            tmppath = argv[++i];
         } else
         if ( strcmp(argv[i], "--meta_url") == 0 ) {
             if ( ! argv[i+1] ) {
@@ -199,6 +209,9 @@ int main(int argc, char *argv[])
             return(1);
         }
         set_product_root(product, product_path);
+    }
+    if ( tmppath ) {
+        set_tmppath(tmppath);
     }
     if ( meta_url ) {
         load_meta_url(meta_url);

@@ -30,8 +30,9 @@
 #include "update.h"
 
 #define WGET            "wget"
-#define UPDATE_PATH     "%s/.loki/update"
+#define UPDATE_PATH     "%s/.loki/loki_update"
 
+static const char *tmppath = UPDATE_PATH "/tmp";
 
 #ifdef USE_WGET
 /* This was the default URL transport mechanism, but it's a little
@@ -62,7 +63,7 @@ static int wget_url(const char *url, char *file, int maxpath,
     if ( ! home ) {
         home = "";
     }
-    sprintf(path, UPDATE_PATH, home);
+    sprintf(path, tmppath, home);
     mkdirhier(path);
 
     /* Get the full output name */
@@ -199,7 +200,7 @@ static int snarf_url(const char *url, char *file, int maxpath,
     if ( ! home ) {
         home = "";
     }
-    sprintf(path, UPDATE_PATH, home);
+    sprintf(path, tmppath, home);
 
     /* Get the full output name */
     base = strrchr(url, '/');
@@ -272,4 +273,9 @@ int get_url(const char *url, char *file, int maxpath,
 #else
 #error No URL transport mechanism
 #endif
+}
+
+void set_tmppath(const char *path)
+{
+	tmppath = path;
 }
