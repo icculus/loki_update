@@ -18,6 +18,7 @@ typedef struct version_node {
     int toggled;                    /* True if on the version path selected */
     int invisible;                  /* Never selectable, true for root nodes */
     int depth;                      /* Depth in the node tree */
+    int top_root;                   /* True if this is the toplevel root */
     struct version_node *root;      /* A pointer to the root for this node */
     struct version_node *child;     /* Used by the follow-edge nodes */
     struct version_node *sibling;   /* Other flavors of this version */

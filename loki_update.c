@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 {
     int show_version;
     int self_check;
+    int auto_update;
     const char *product;
     const char *product_path;
     const char *meta_url;
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
     /* Parse the command line */
     show_version = 0;
     self_check = 1;
+    auto_update = 0;
     product = NULL;
     product_path = NULL;
     meta_url = NULL;
@@ -159,6 +161,8 @@ int main(int argc, char *argv[])
                 print_usage(argv[0]);
                 return(1);
             }
+            /* This is being called as an auto-update from loki_utils */
+            auto_update = 1;
             product = argv[++i];
         } else
         if ( strcmp(argv[i], "--product_path") == 0 ) {
@@ -175,14 +179,14 @@ int main(int argc, char *argv[])
 
     /* Set correct run directory and scan for installed products */
     goto_installpath(argv[0]);
-    load_product_list();
-    if ( ! is_valid_product(PRODUCT) ) {
-        fprintf(stderr, "%s is not installed properly, aborting.\n", PRODUCT);
-        return(1);
-    }
+    load_product_list(product);
     if ( show_version ) {
-        printf("%s %s\n", get_product_description(PRODUCT),
-                          get_product_version(PRODUCT));
+        if ( is_valid_product(PRODUCT) ) {
+            printf("%s %s\n", get_product_description(PRODUCT),
+                              get_product_version(PRODUCT));
+        } else {
+            printf("%s was not installed by this user.\n", PRODUCT);
+        }
         return(0);
     }
     if ( product && ! is_valid_product(product) ) {
@@ -231,7 +235,12 @@ int main(int argc, char *argv[])
     if ( product ) {
         int status;
 
-        switch (ui->auto_update(product)) {
+        if ( auto_update ) {
+            status = ui->auto_update(product);
+        } else {
+            status = ui->perform_updates(product);
+        }
+        switch (status) {
             /* An error? return an error code */
             case -1:
                 status = 3;
@@ -257,7 +266,7 @@ int main(int argc, char *argv[])
     }
 
     /* Stage 3: Generate a list of products and update them */
-    ui->perform_updates();
+    ui->perform_updates(NULL);
     ui->cleanup();
 
     return(0);

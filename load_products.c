@@ -123,7 +123,7 @@ static void load_scanned_products(void)
     }
 }
 
-void load_product_list(void)
+void load_product_list(const char *wanted)
 {
     const char *product_name;
     product_t *product;
