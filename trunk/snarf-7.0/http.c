@@ -412,7 +412,40 @@ http_transfer(UrlResource *rsrc)
                         goto cleanup;
                 }
 
-                if (raw_header[9] == '4' || raw_header[9] == '5') {
+                /* if the response code is 416, check to see if the filesize 
+                   is the same as the Content-Range header.  if not, error */
+                if (raw_header[9]  == '4' &&
+                    raw_header[10] == '1' &&
+                    raw_header[11] == '6')
+                {
+                        int errorOk = 0;
+                        char* contentrange = get_header_value("content-range", header);
+                        if (contentrange != NULL)
+                        {
+                                char* slashpos = strrchr(contentrange, '/');
+                                if (slashpos != NULL)
+                                {
+                                        int maxrange = -1;
+                                        slashpos++;
+                                        maxrange = atoi(slashpos);
+                                        if (maxrange == 
+                                            get_file_size(rsrc->outfile))
+                                                errorOk = 1;
+                                        
+                                }
+                        }
+
+                        if (!errorOk)
+                        {
+                                for(i = 0; raw_header[i] && raw_header[i] != '\n'; i++);
+                                raw_header[i] = '\0';
+                                report(rsrc, ERR, "HTTP error from server: %s",
+                                       raw_header);
+                                retval = 0;
+                                goto cleanup;
+                        }
+                }
+                else if (raw_header[9] == '4' || raw_header[9] == '5') {
                         for(i = 0; raw_header[i] && raw_header[i] != '\n'; i++);
                         raw_header[i] = '\0';
                         report(rsrc, ERR, "HTTP error from server: %s",

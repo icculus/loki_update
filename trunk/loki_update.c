@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
         int status;
 
         if ( auto_update ) {
-            if ( product && ! is_valid_product(PRODUCT) ) {
+            if ( product && ! is_valid_product(product) ) {
                 log(LOG_ERROR,
                     _("%s not found, are you the one who installed it?\n"),
                     product);

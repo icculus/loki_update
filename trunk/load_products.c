@@ -434,8 +434,8 @@ const char *link_product_path(const char *path)
             product = loki_openproduct(manifest);
             if ( product ) {
                 info = loki_getinfo_product(product);
-                sprintf(home_manifest, "%s/.loki/installed/%s",
-                                detect_home(), entry->d_name);
+                sprintf(home_manifest, "%s/%s/installed/%s",
+                                detect_home(), LOKI_DIRNAME, entry->d_name);
                 if ( realpath(manifest, full_manifest) != NULL ) {
                     mkdirhier(home_manifest);
                     unlink(home_manifest);

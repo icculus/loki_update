@@ -29,6 +29,7 @@
 #include "arch.h"
 #include "mkdirhier.h"
 #include "prefpath.h"
+#include "setupdb.h"
 
 /* Return a path in the preferences directory.
    Directories are created as needed to generate the path.
@@ -40,7 +41,7 @@ void preferences_path(const char *file, char *dst, int maxlen)
         strncpy(dst, file, maxlen);
         dst[maxlen-1] = '\0';
     } else {
-        snprintf(dst, maxlen, "%s/.loki/loki_update/%s", detect_home(), file);
+        snprintf(dst, maxlen, "%s/%s/loki_update/%s", detect_home(), LOKI_DIRNAME, file);
     }
     mkdirhier(dst);
 }
