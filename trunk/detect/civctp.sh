@@ -38,8 +38,12 @@ do  if [ ! -d "$path" ]; then
                 if [ "$sum" = "$1" ]; then
                     # Woohoo!  We found it!
                     product_version="$2"
-                    product_extension=`tail +4 "$product_path/civpaths.txt" | head -n 1 | tr -d '\r'`
-                    echo "$product_version-$product_extension"
+                    if echo $product_version | grep "-" >/dev/null 2>&1; then
+                        echo "$product_version"
+                    else
+                        product_extension=`tail +4 "$product_path/civpaths.txt" | head -n 1 | tr -d '\r'`
+                        echo "$product_version-$product_extension"
+                    fi
                     echo "$product_desc"
                     echo "$product_path"
                     echo "$product_url"
