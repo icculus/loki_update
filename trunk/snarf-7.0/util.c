@@ -515,8 +515,9 @@ report(UrlResource *rsrc, enum report_levels lev, char *format, ...)
 
 	/* Put together the message (use vsnprintf() to avoid overflow) */
        	va_start(args, format);
-	vsnprintf(message, (sizeof message), format, args);
+	vsnprintf(message, (sizeof message)-2, format, args);
        	va_end(args);
+	strcat(message, "\n");
 
 	if ( rsrc && rsrc->progress ) {
 		rsrc->progress(lev, message,
@@ -525,16 +526,16 @@ report(UrlResource *rsrc, enum report_levels lev, char *format, ...)
 	} else {
         	switch( lev ) {
         	case DEBUG:
-                	fprintf(stderr, "debug: %s\n", message);
+                	fprintf(stderr, "debug: %s", message);
                 	break;
         	case WARN:
-                	fprintf(stderr, "warning: %s\n", message);
+                	fprintf(stderr, "warning: %s", message);
                 	break;
         	case ERR:
-                	fprintf(stderr, "error: %s\n", message);
+                	fprintf(stderr, "error: %s", message);
                 	break;
         	default:
-                	fprintf(stderr, "%s\n", message);
+                	fprintf(stderr, "%s", message);
                 	break;
         	}
 	}
