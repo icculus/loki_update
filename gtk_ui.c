@@ -569,7 +569,7 @@ static void enable_gpg_details(const char *url, char *sig)
     char text[1024];
 
     /* Fill in the information for this signature */
-    widget = glade_xml_get_widget(gpg_glade, "update_details_text");
+    widget = glade_xml_get_widget(gpg_glade, "gpg_details_text");
     if ( ! widget ) {
         /* Hum, not much we can do.. */
         return;
@@ -684,6 +684,7 @@ static gpg_result do_gpg_verify(const char *file, char *sig, int maxsig)
         status = glade_xml_get_widget(update_glade, "verify_status_label");
         set_status_message(status, _("Downloading public key"));
         status = glade_xml_get_widget(update_glade, "update_status_label");
+        download_cancelled = 0;
         set_download_info(&info, status, NULL, NULL);
         get_publickey(sig, download_update, &info);
         gpg_code = gpg_verify(file, sig, maxsig);
@@ -1040,6 +1041,9 @@ void download_update_slot( GtkWidget* w, gpointer data )
                         set_status_message(gpg_status,
                                            _("GPG key not available"));
                         verified = VERIFY_UNKNOWN;
+                        break;
+                    case GPG_IMPORTED:
+                        /* Used internally, never happens */
                         break;
                     case GPG_VERIFYFAIL:
                         set_status_message(gpg_status,
