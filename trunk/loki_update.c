@@ -45,7 +45,7 @@ _("Loki Update Tool %s\n"
   "The options can be any of:\n"
   "    --verbose               Print verbose messages to standard output\n"
   "    --noselfcheck           Skip check for updates for the update tool\n"
-  "    --tmpdir PATH           Use PATH as the temporary download path\n"
+  "    --tmppath PATH          Use PATH as the temporary download path\n"
   "    --update_url URL        Use URL as the list of product updates\n"),
             VERSION, argv0);
 }
