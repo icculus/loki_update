@@ -13,15 +13,6 @@
 #define GPG         "gpg"
 #define KEYSERVER   "certserver.pgp.com"
 
-typedef enum {
-    GPG_NOTINSTALLED,
-    GPG_CANCELLED,
-    GPG_NOPUBKEY,
-    GPG_VERIFYFAIL,
-    GPG_VERIFYOK
-} gpg_result;
-
-
 static gpg_result check_signature(const char *file, char *sig, int maxsig)
 {
     int argc;
@@ -188,9 +179,8 @@ static int get_publickey(const char *key)
 }
 
 /* Verify the given signature */
-verify_result gpg_verify(const char *file, char *sig, int maxsig)
+gpg_result gpg_verify(const char *file, char *sig, int maxsig)
 {
-    verify_result status;
     gpg_result gpg_code;
 
     gpg_code = check_signature(file, sig, maxsig);
@@ -198,19 +188,5 @@ verify_result gpg_verify(const char *file, char *sig, int maxsig)
         get_publickey(sig);
         gpg_code = check_signature(file, sig, maxsig);
     }
-    status = VERIFY_UNKNOWN;
-    switch (gpg_code) {
-        case GPG_NOTINSTALLED:
-        case GPG_CANCELLED:
-        case GPG_NOPUBKEY:
-            status = VERIFY_UNKNOWN;
-            break;
-        case GPG_VERIFYFAIL:
-            status = VERIFY_FAILED;
-            break;
-        case GPG_VERIFYOK:
-            status = VERIFY_OK;
-            break;
-    }
-    return status;
+    return gpg_code;
 }

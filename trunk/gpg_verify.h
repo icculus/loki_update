@@ -4,10 +4,18 @@
 #define CHECKSUM_SIZE   32
 
 typedef enum {
+    GPG_NOTINSTALLED,
+    GPG_CANCELLED,
+    GPG_NOPUBKEY,
+    GPG_VERIFYFAIL,
+    GPG_VERIFYOK
+} gpg_result;
+
+typedef enum {
     VERIFY_OK,                  /* Completely verified */
     VERIFY_UNKNOWN,             /* No GPG available */
     VERIFY_FAILED               /* Failed checksum */
 } verify_result;
 
 /* Verify the given signature */
-extern verify_result gpg_verify(const char *file, char *sig, int maxsig);
+extern gpg_result gpg_verify(const char *file, char *sig, int maxsig);

@@ -6,67 +6,267 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "safe_malloc.h"
 #include "patchset.h"
 #include "arch.h"
 #include "log_output.h"
+
+
+static const char *get_version_extension(version_node *node)
+{
+    const char *ext;
+
+    ext = node->version;
+    while ( isalnum(*ext) || (*ext == '.') ) {
+        ++ext;
+    }
+    return(ext);
+}
+
+static void get_word(const char **string, char *word, int maxlen)
+{
+    while ( (maxlen > 0) && **string && isalpha(**string) ) {
+        *word = **string;
+        ++word;
+        ++*string;
+        --maxlen;
+    }
+    *word = '\0';
+}
+
+static int get_num(const char **string)
+{
+    int num;
+
+    num = atoi(*string);
+    while ( isdigit(**string) ) {
+        ++*string;
+    }
+    return(num);
+}
+
+static int newer_version(const char *version1, const char *version2)
+{
+    int newer;
+    int num1, num2;
+    char base1[128], ext1[128];
+    char base2[128], ext2[128];
+    char word1[32], word2[32];
+
+    /* Compare sequences of numbers and letters in the base versions */
+    newer = 0;
+    loki_split_version(version1, base1, sizeof(base1), ext1, sizeof(ext1));
+    version1 = base1;
+    loki_split_version(version2, base2, sizeof(base2), ext2, sizeof(ext2));
+    version2 = base2;
+    while ( !newer && (*version1 && *version2) &&
+            ((isdigit(*version1) && isdigit(*version2)) ||
+             (isalpha(*version1) && isalpha(*version2))) ) {
+        if ( isdigit(*version1) ) {
+            num1 = get_num(&version1);
+            num2 = get_num(&version2);
+            if ( num1 > num2 ) {
+                newer = 1;
+            }
+        } else {
+            get_word(&version1, word1, sizeof(word1));
+            get_word(&version2, word2, sizeof(word2));
+            if ( strcasecmp(word1, word2) > 0 ) {
+                newer = 1;
+            }
+        }
+        if ( *version1 == '.' ) {
+            ++version1;
+        }
+        if ( *version2 == '.' ) {
+            ++version2;
+        }
+    }
+    if ( isalpha(*version1) && !isalpha(*version2) ) {
+        newer = 1;
+    }
+    return(newer);
+}
+
+static void free_patch_path(patch_path *path)
+{
+    if ( path ) {
+        free_patch_path(path->next);
+        free(path);
+    }
+}
+
+static void free_version_node(version_node *node)
+{
+    if ( node ) {
+        free(node->component);
+        free(node->version);
+        free(node->description);
+        free_version_node(node->child);
+        free_version_node(node->sibling);
+        free_patch_path(node->shortest_path);
+        safe_free(node->adjacent);
+        if ( node->prev ) {
+            node->prev->next = node->next;
+        }
+        if ( node->next ) {
+            node->next->prev = node->prev;
+        } else {
+            node->root->last = node->prev;
+        }
+        free(node);
+    }
+}
+
+static version_node *create_version_node(version_node *root,
+                                         const char *component,
+                                         const char *version,
+                                         const char *description)
+{
+    version_node *node;
+
+    /* Create and initialize the node */
+    node = (version_node *)safe_malloc(sizeof *node);
+    node->component = safe_strdup(component);
+    node->version = safe_strdup(version);
+    node->description = safe_strdup(description);
+    node->selected = 0;
+    node->toggled = 0;
+    node->invisible = 0;
+    node->depth = 0;
+    if ( root ) {
+        node->root = root;
+    } else {
+        node->root = node;
+    }
+    node->child = NULL;
+    node->sibling = NULL;
+    node->num_adjacent = 0;
+    node->adjacent = NULL;
+    node->shortest_path = NULL;
+    node->udata = NULL;
+    node->index = 0;
+
+    /* Add the node to the list of patches for shortest-path traversal */
+    if ( root ) {
+        node->prev = root->last;
+        root->last->next = node;
+        root->last = node;
+    } else {
+        node->prev = NULL;
+        node->last = node;
+    }
+    node->next = NULL;
+
+    /* We're ready to go! */
+    return(node);
+}
+
+static version_node *get_version_node(version_node *root,
+                                      const char *component,
+                                      const char *version,
+                                      const char *description)
+{
+    version_node *node, *parent;
+
+    /* Find the correct component root to use for this version */
+    while ( root ) {
+        if ( strcasecmp(root->component, component) == 0 ) {
+            break;
+        }
+        root = root->sibling;
+    }
+    if ( ! root ) {
+        /* This is a new component add-on */
+        // TODO
+        return(NULL);
+    }
+
+    /* If this is older than the root version, don't use it */
+    if ( newer_version(root->version, version) ) {
+        return(NULL);
+    }
+
+    /* Now see if this version node is already available */
+    parent = root;
+    for ( node = root; node; node = node->child ) {
+        /* If this is the exact node we're looking for.. */
+        if ( strcasecmp(node->version, version) == 0 ) {
+            break;
+        }
+
+        /* If the current node is newer than us, add us as parent */
+        if ( newer_version(node->version, version) ) {
+            node = NULL;
+            break;
+        }
+
+        /* If we are not newer than the current node, we are a sibling */
+        if ( !newer_version(version, node->version) && (node != root) ) {
+            parent = node;
+            for ( node=node->sibling; node; node=node->sibling ) {
+                /* If this is the exact node we're looking for.. */
+                if ( strcasecmp(node->version, version) == 0 ) {
+                    break;
+                }
+                parent = node;
+            }
+            /* We need to add ourselves as a new sibling */
+            if ( ! node ) {
+                node = create_version_node(root,
+                                           component, version, description);
+                node->sibling = parent->sibling;
+                parent->sibling = node;
+            }
+            break;
+        }
+
+        /* Newer than current node, keep traversing the tree */
+        parent = node;
+    }
+
+    /* If we need to insert ourselves here, do so */
+    if ( ! node ) {
+        node = create_version_node(root, component, version, description);
+        node->child = parent->child;
+        parent->child = node;
+    }
+    return(node);
+}
+
+static void add_adjacent_node(version_node *node, patch *patch)
+{
+    node->adjacent = (version_node **)safe_realloc(node->adjacent,
+        (node->num_adjacent+1)*(sizeof *node->adjacent));
+    node->adjacent[node->num_adjacent++] = patch->node;
+
+    patch->apply = (version_node **)safe_realloc(patch->apply,
+        (patch->num_apply+1)*(sizeof *patch->apply));
+    patch->apply[patch->num_apply++] = node;
+}
 
 /* Construct a tree of available versions */
 
 static void free_patch(patch *patch)
 {
-    if ( patch->description ) {
+    if ( patch ) {
         free(patch->description);
-    }
-    if ( patch->component ) {
-        free(patch->component);
-    }
-    if ( patch->version ) {
-        free(patch->version);
-    }
-    if ( patch->applies ) {
-        free(patch->applies);
-    }
-    if ( patch->url ) {
         free(patch->url);
-    }
-    free(patch);
-}
-
-static void free_pathlist(patch_path *pathlist)
-{
-    patch *patch;
-    patch_path *path;
-
-    while ( pathlist ) {
-        path = pathlist;
-        pathlist = path->next;
-        while ( path->patches ) {
-            patch = path->patches;
-            path->patches = patch->next; 
-            free_patch(patch);
-        }
-        free(path);
+        safe_free(patch->apply);
+        free_patch(patch->next);
+        free(patch);
     }
 }
 
 void free_patchset(struct patchset *patchset)
 {
     if ( patchset ) {
+        free_patchset(patchset->next);
         if ( patchset->product ) {
             loki_closeproduct(patchset->product);
         }
-        if ( patchset->paths ) {
-            free_pathlist(patchset->paths);
-        }
-        if ( patchset->patchlist ) {
-            patch *patch;
-            int i;
-            for ( i=0; i<patchset->num_patches; ++i ) {
-                patch = patchset->patchlist[i];
-                free_patch(patch);
-            }
-            free(patchset->patchlist);
-        }
+        free_version_node(patchset->root);
+        free_patch(patchset->patches);
         free(patchset);
     }
 }
@@ -74,23 +274,47 @@ void free_patchset(struct patchset *patchset)
 patchset *create_patchset(const char *product)
 {
     struct patchset *patchset;
+    product_component_t *component;
 
-    patchset = (struct patchset *)malloc(sizeof *patchset);
-    if ( patchset ) {
-        patchset->product = loki_openproduct(product);
-        patchset->product_name = loki_getinfo_product(patchset->product)->name;
-        patchset->paths = NULL;
-        patchset->num_patches = 0;
-        patchset->patchlist = NULL;
-        if ( ! patchset->product ) {
-            log(LOG_ERROR, "Unable to find %s in registry\n", product);
-            free_patchset(patchset);
-            patchset = (struct patchset *)0;
-        }
-    } else {
-        log(LOG_ERROR, "Out of memory\n");
+    patchset = (struct patchset *)safe_malloc(sizeof *patchset);
+    patchset->product = loki_openproduct(product);
+    if ( ! patchset->product ) {
+        log(LOG_ERROR, "Unable to find %s in registry\n", product);
+        free(patchset);
+        return(NULL);
     }
+    component = loki_getdefault_component(patchset->product);
+    if ( ! component ) {
+        log(LOG_ERROR, "No default component for %s\n", product);
+        loki_closeproduct(patchset->product);
+        free(patchset);
+        return(NULL);
+    }
+    patchset->product_name = loki_getinfo_product(patchset->product)->name;
+    patchset->root = create_version_node(NULL,
+                                         loki_getname_component(component),
+                                         loki_getversion_component(component),
+                                         "Root node");
+    patchset->root->invisible = 1;
+    patchset->patches = NULL;
+    patchset->next = NULL;
+
+    /* We're ready to go */
     return patchset;
+}
+
+static const char *default_component(product_t *product)
+{
+    product_component_t *product_component;
+    const char *component;
+
+    product_component = loki_getdefault_component(product);
+    if ( product_component ) {
+        component = loki_getname_component(product_component);
+    } else {
+        component = "";
+    }
+    return component;
 }
 
 static const char *copy_word(const char *string, char *word, int wordlen)
@@ -121,6 +345,30 @@ static const char *copy_word(const char *string, char *word, int wordlen)
     return string;
 }
 
+static int legal_version_combination(const char *version1,
+                                     const char *version2)
+{
+    int legal;
+    char base1[1024], ext1[1024];
+    char base2[1024], ext2[1024];
+
+    /* To keep things relatively simple, interface and implementation
+       wise, we'll only allow linear or lateral version changes:
+        Same base version, different flavor, okay
+        Different base version, same flavor, okay
+        Otherwise we're doing a diagonal upgrade, not allowed.
+    */
+    loki_split_version(version1, base1, sizeof(base1), ext1, sizeof(ext1));
+    loki_split_version(version2, base2, sizeof(base2), ext2, sizeof(ext2));
+    if ( ((strcmp(base1, base2) == 0) && (strcmp(ext1, ext2) != 0)) ||
+         ((strcmp(base1, base2) != 0) && (strcmp(ext1, ext2) == 0)) ) {
+        legal = 1;
+    } else {
+        legal = 0;
+    }
+    return(legal);
+}
+
 /*
     Version:
     Architecture:
@@ -136,25 +384,21 @@ int add_patch(const char *product,
               const char *url,
               struct patchset *patchset)
 {
+    const char *saved_component;
     int matched_arch;
     const char *next;
     char word[128];
-    char description[256];
-    patch *the_patch;
+    char description[1024];
+    patch *patch;
+    version_node *node;
 
     /* It's legal to have no component, which means the default component */
+    saved_component = component;
     if ( component ) {
         snprintf(description, sizeof(description), "%s %s", component, version);
     } else {
-        product_component_t *product_component;
-
-        product_component = loki_getdefault_component(patchset->product);
-        if ( product_component ) {
-            component = loki_getname_component(product_component);
-        } else {
-            component = "";
-        }
-        snprintf(description, sizeof(description), "%s %s", product, version);
+        component = default_component(patchset->product);
+        snprintf(description, sizeof(description), "Patch %s", version);
     }
     log(LOG_DEBUG, "Potential patch:\n");
     log(LOG_DEBUG, "\tProduct: %s\n", product);
@@ -163,8 +407,8 @@ int add_patch(const char *product,
     log(LOG_DEBUG, "\tArchitecture: %s\n", arch);
     log(LOG_DEBUG, "\tURL: %s\n", url);
 
-    if (strcasecmp(product,loki_getinfo_product(patchset->product)->name) != 0){
-        log(LOG_DEBUG, "Patch for different product\n");
+    if ( strcasecmp(product, patchset->product_name) != 0 ) {
+        log(LOG_DEBUG, "Patch for different product, dropping\n");
         return(0);
     }
 
@@ -179,274 +423,318 @@ int add_patch(const char *product,
         }
     }
     if ( ! matched_arch ) {
-        log(LOG_DEBUG, "Patch for different architecture\n");
+        log(LOG_DEBUG, "Patch for different architecture, dropping\n");
+        return(0);
+    }
+
+    /* Create the version_node */
+    node = get_version_node(patchset->root, component, version, description);
+    if ( ! node ) {
+        log(LOG_DEBUG, "Patch obsolete by installed version, dropping\n");
         return(0);
     }
 
     /* Create the patch */
-    the_patch = (patch *)malloc(sizeof *the_patch);
-    if ( ! the_patch ) {
-        log(LOG_ERROR, "Out of memory\n");
-        return(-1);
-    }
-    the_patch->next = NULL;
-    if ( loki_find_component(patchset->product, component) ) {
-        the_patch->type = TYPE_PATCH;
-    } else {
-        the_patch->type = TYPE_ADDON;
-    }
-    the_patch->description = strdup(description);
-    the_patch->component = strdup(component);
-    the_patch->version = strdup(version);
-    the_patch->applies = strdup(applies);
-    the_patch->url = strdup(url);
-    the_patch->selected = 0;
-    if ( ! the_patch->description ||
-         ! the_patch->component || ! the_patch->version ||
-         ! the_patch->applies || ! the_patch->url ) {
-        free_patch(the_patch);
-        log(LOG_ERROR, "Out of memory\n");
-        return(-1);
+    patch = (struct patch *)safe_malloc(sizeof *patch);
+    patch->patchset = patchset;
+    patch->description = safe_strdup(description);
+    patch->url = safe_strdup(url);
+    patch->node = node;
+    patch->installed = 0;
+    patch->num_apply = 0;
+    patch->apply = NULL;
+    patch->next = NULL;
+
+    /* Link it as adjacent to the versions it applies to */
+    for ( next=copy_word(applies, word, sizeof(word));
+          next; 
+          next=copy_word(next, word, sizeof(word)) ) {
+        if ( component == default_component(patchset->product) ) {
+            snprintf(description, sizeof(description), "Patch %s", word);
+        } else {
+            snprintf(description, sizeof(description), "%s %s", component,word);
+        }
+        node = get_version_node(patchset->root, component, word, description);
+        if ( ! node ) {
+            /* This is an obsolete version, ignore it */
+            continue;
+        }
+        if ( legal_version_combination(node->version, patch->node->version) ) {
+            add_adjacent_node(node, patch);
+        } else {
+            log(LOG_DEBUG,
+                "Version combination %s and %s isn't legal, dropping\n",
+                node->description, patch->node->description);
+        }
     }
 
-    /* Add it to our list */
-    patchset->patchlist = (patch **)realloc(patchset->patchlist,
-                                (patchset->num_patches+1)*sizeof(patch*));
-    patchset->patchlist[patchset->num_patches++] = the_patch;
+    /* Add it to our list of patches */
+    patch->next = patchset->patches;
+    patchset->patches = patch;
+
+    /* We're done */
     return(0);
 }
 
-static int patch_applies_product(struct patch *patch, product_t *product)
+static patch *find_linking_patch(patchset *patchset,
+                                 version_node *src, version_node *dst)
 {
-    product_component_t *component;
-    const char *next;
-    const char *version;
-    char applies[128];
+    patch *patch;
+    int i;
 
-    /* Parse into individual version tokens and check them */
-    for ( component=loki_getfirst_component(product);
-          component;
-          component=loki_getnext_component(component) ) {
-        if ( strcmp(loki_getname_component(component),patch->component) == 0 ) {
-            version = loki_getversion_component(component);
-            for ( next=copy_word(patch->applies, applies, sizeof(applies));
-                  next; 
-                  next=copy_word(next, applies, sizeof(applies)) ) {
-                if ( strcmp(applies, version) == 0 ) {
-                    return(1);
+    for ( patch = patchset->patches; patch; patch = patch->next ) {
+        if ( patch->node == dst ) {
+            for ( i = patch->num_apply-1; i >= 0; --i ) {
+                if ( src == patch->apply[i] ) {
+                    break;
                 }
             }
-        }
-    }
-    return(0);
-}
-
-static int patch_applies_patch(struct patch *patch, struct patch *leaf)
-{
-    const char *next;
-    char applies[128];
-
-    /* If the components don't match, then it definitely doesn't apply */
-    if ( strcmp(patch->component, leaf->component) == 0 ) {
-        /* Parse into individual version tokens and check them */
-        for ( next=copy_word(patch->applies, applies, sizeof(applies));
-              next; 
-              next=copy_word(next, applies, sizeof(applies)) ) {
-            if ( strcmp(applies, leaf->version) == 0 ) {
-                return(1);
+            if ( i >= 0 ) {
+                break;
             }
         }
     }
-    return(0);
+    return(patch);
 }
 
-/* Add a patch to a given patch path, or create one if necessary */
-static int add_patch_path(patch *patch, patch_path *path, patchset *patchset)
+/* Find the shortest path from root to leaf, using Dijkstra's algorithm */
+static patch_path *find_shortest_path(version_node *root,
+                                       version_node *leaf,
+                                       patchset *patchset)
 {
-    if ( ! path ) {
-        path = (patch_path *)malloc(sizeof *path);
-        if ( ! path ) {
-            return(-1);
-        }
-        path->next = patchset->paths;
-        path->leaf = NULL;
-        path->patches = NULL;
-        patchset->paths = path;
-    }
+    patch_path *path, *newpath;
+    version_node *node, **parent, **fringe;
+    int i, a;
+    int *seen;
+    int *dist;
+    int stuck;
+    int num_fringes;
 
-    if ( ! path->leaf ) {
-        path->patches = patch;
-        path->leaf = patch;
-    } else {
-        path->leaf->next = patch;
-        path->leaf = patch;
-    }
-    return(0);
-}
-
-int path_length(patch_path *path, const char *version)
-{
-    int length;
-    patch *patch;
-
-    length = 0;
-    for ( patch=path->patches; patch; patch=patch->next ) {
-        ++length;
-        if ( version && (strcmp(patch->version, version) == 0) ) {
-            break;
+    /* All nodes except root are unseen */
+    seen = patchset->seen;
+    dist = patchset->dist;
+    parent = patchset->parent;
+    fringe = patchset->fringe;
+    for ( node=root; node; node=node->next ) {
+        a = node->index;
+        if ( node == root ) {
+            seen[a] = 2;
+            dist[a] = 0;
+            parent[a] = NULL;
+        } else {
+            seen[a] = 0;
         }
     }
-    if ( version && !patch ) {
-        /* Version not found in path */
-        length = 0;
+    num_fringes = 0;
+
+    stuck = 0;
+    node = root;
+    while ( (node != leaf) && !stuck ) {
+        for ( i=0; i<node->num_adjacent; ++i ) {
+            a = node->adjacent[i]->index;
+            if ( (seen[a] == 1) && ((dist[node->index]+1) < dist[a]) ) {
+                parent[a] = node;
+            }
+            if ( seen[a] == 0 ) {
+                seen[a] = 1;
+                fringe[num_fringes++] = node->adjacent[i];
+                parent[a] = node;
+                dist[a] = dist[node->index]+1;
+            }
+        }
+        if ( num_fringes > 0 ) {
+            int mindist;
+            int shortest;
+
+            mindist = INT_MAX;
+            for ( i=0; i<num_fringes; ++i ) {
+                if ( dist[fringe[i]->index] < mindist ) {
+                    mindist = dist[fringe[i]->index];
+                    shortest = i;
+                }
+            }
+            node = fringe[shortest];
+            memcpy(&fringe[shortest], &fringe[shortest+1],
+                   (num_fringes-shortest)*(sizeof *fringe));
+            --num_fringes;
+        } else {
+            stuck = 1;
+        }
     }
-    return length;
+
+    path = NULL;
+    if ( node == leaf ) {
+        while ( node != root ) {
+            newpath = (patch_path *)safe_malloc(sizeof *newpath);
+            newpath->next = path;
+            newpath->src = parent[node->index];
+            newpath->dst = node;
+            newpath->patch = find_linking_patch(patchset,
+                                                newpath->src, newpath->dst);
+            newpath->next = path;
+            path = newpath;
+            node = newpath->src;
+        }
+    }
+    return(path);
 }
 
-/* Generate trees of patch versions, trimming out those that don't apply */
-void make_tree(patchset *patchset)
+static void trim_unconnected_nodes(version_node *trunk_prev,
+                                   version_node *trunk)
 {
-    int i, applied;
-    int patch_used;
-    patch *patch;
-    patch_path *path;
+    version_node *node, *next, *prev;
 
+    while ( trunk ) {
+        /* Trim the branch */
+        for ( prev=trunk, next=trunk->sibling; next; ) {
+            node = next;
+            next = next->sibling;
+            if ( node->shortest_path ) {
+                prev = node;
+            } else {
+                prev->sibling = next;
+                node->sibling = NULL;
+                log(LOG_DEBUG, "%s has no patch path, trimming\n", 
+                    node->description);
+                free_version_node(node);
+            }
+        }
+        /* Trim this node, if necessary */
+        node = trunk;
+        trunk = trunk->child;
+        if ( node->shortest_path ) {
+            trunk_prev = node;
+        } else {
+            if ( node->sibling ) {
+                node->sibling->child = node->child;
+                trunk_prev->child = node->sibling;
+                trunk_prev = trunk_prev->child;
+                node->sibling = NULL;
+            } else {
+                trunk_prev->child = node->child;
+            }
+            node->child = NULL;
+            log(LOG_DEBUG, "%s has no patch path, trimming\n", 
+                node->description);
+            free_version_node(node);
+        }
+    }
+}
 
-    /* If we have no patches, nothing to do */
-    if ( ! patchset->patchlist ) {
+/* Generate valid patch paths, trimming out versions that don't apply */
+void calculate_paths(patchset *patchset)
+{
+    version_node *node, *trunk, *root;
+    int depth;
+    int num_nodes;
+
+    log(LOG_DEBUG, "Calculating patch paths for %s\n", patchset->product_name);
+
+    /* Allocate memory for the shortest path algorithm */
+    num_nodes = 0;
+    for ( node = patchset->root; node; node = node->next ) {
+        node->index = num_nodes++;
+    }
+    if ( num_nodes == 0 ) {
+        /* Nothing to do, return */
+        return;
+    }
+    patchset->seen = (int *)safe_malloc(num_nodes*(sizeof *patchset->seen));
+    patchset->dist = (int *)safe_malloc(num_nodes*(sizeof *patchset->dist));
+    patchset->parent = (version_node **)safe_malloc(num_nodes*(sizeof *patchset->parent));
+    patchset->fringe = (version_node **)safe_malloc(num_nodes*(sizeof *patchset->fringe));
+
+    root = patchset->root;
+    while ( root ) {
+        /* For all the nodes in the tree, generate a path from the root to it */
+        depth = 0;
+        for ( trunk=root->child; trunk; trunk=trunk->child ) {
+            for ( node=trunk; node; node=node->sibling ) {
+                node->depth = depth;
+                node->shortest_path = find_shortest_path(root, node, patchset);
+            }
+            ++depth;
+        }
+        /* Trim all the nodes that don't have a path to the root */
+        trim_unconnected_nodes(root, root->child);
+
+        root = root->sibling;
+    }
+
+    /* Free shortest path memory */
+    free(patchset->seen);
+    free(patchset->dist);
+    free(patchset->parent);
+    free(patchset->fringe);
+}
+
+/* Select a particular version node and set toggled state */
+void select_node(version_node *selected_node, int selected)
+{
+    version_node *node;
+
+    /* Protect against bad parameters */
+    if ( ! selected_node ) {
         return;
     }
 
-    /* Add all patches that apply to leaf nodes */
-    do {
-        applied = 0;
-        for ( i=patchset->num_patches-1; i >= 0; --i ) {
-            patch_used = 0;
-            patch = patchset->patchlist[i];
-            if ( patch_applies_product(patch, patchset->product) ) {
-                ++patch_used;
-                add_patch_path(patch, 0, patchset);
-            } else {
-                for ( path=patchset->paths; path; path=path->next ) {
-                    if ( patch_applies_patch(patch, path->leaf) ) {
-                        ++patch_used;
-                        add_patch_path(patch, path, patchset);
-                    }
+    /* Select this node */
+    if ( selected ) {
+        selected_node->root->selected = selected_node;
+    } else {
+        selected_node->root->selected = NULL;
+    }
+
+    /* First clear the toggle state for all the nodes */
+    for ( node=selected_node->root; node; node=node->next ) {
+        node->toggled = 0;
+    }
+
+    /* Toggle on each node in the patch path, if selected */
+    if ( selected ) {
+        /* Now enable toggle state for earlier nodes with our extension */
+        for ( node=selected_node->root; node; node=node->next ) {
+            if ( node->depth < selected_node->depth ) {
+                if ( strcasecmp(get_version_extension(selected_node),
+                                get_version_extension(node)) == 0 ) {
+                    node->toggled = 1;
                 }
             }
-            if ( patch_used ) {
-                memcpy(&patchset->patchlist[i], &patchset->patchlist[i+1],
-                       (patchset->num_patches-i)*sizeof(*patchset->patchlist));
-                --patchset->num_patches;
-                ++applied;
+        }
+        selected_node->toggled = 1;
+    } else {
+        version_node *trunk;
+        version_node *next;
+        /* Nothing is selected, select the previous patch in our tree that
+           matches our version extension.
+         */
+        next = NULL;
+        for ( trunk=selected_node->root->child; trunk; trunk=trunk->child ) {
+            if ( trunk->depth == selected_node->depth ) {
+                break;
+            }
+            for ( node = trunk; node; node = node->sibling ) {
+                if ( strcasecmp(get_version_extension(selected_node),
+                                get_version_extension(node)) == 0 ) {
+                    next = node;
+                }
             }
         }
-    } while ( applied );
-
-    /* Free all unused patches */
-    for ( i=0; i<patchset->num_patches; ++i ) {
-        patch = patchset->patchlist[i];
-        log(LOG_DEBUG, "Freeing unused patch: %s\n", patch->version);
-        free_patch(patch);
+        select_node(next, 1);
     }
-    free(patchset->patchlist);
-    patchset->patchlist = NULL;
 }
 
-
-/* See if a patch is a non-leaf portion of a patchset paths */
-static int is_nonleaf(patch *the_patch, patchset *patchset)
-{
-    patch *branch;
-    patch_path *path;
-
-    for ( path=patchset->paths; path; path=path->next ) {
-        for ( branch=path->patches; branch != path->leaf; branch=branch->next ){
-            if ( strcmp(the_patch->version, branch->version) == 0 ) {
-                return(1);
-            }
-        }
-    }
-    return(0);
-}
-
-static int is_longpath(patch_path *path, patchset *patchset)
-{
-    patch_path *branch;
-    int length;
-
-    length = path_length(path, NULL);
-    for ( branch=patchset->paths; branch; branch=branch->next ) {
-        /* Only compare lengths if this path has same leaf as other path */
-        if ( (branch == path) ||
-             (strcmp(path->leaf->version, branch->leaf->version) != 0) ) {
-            continue;
-        }
-        if ( path_length(branch, NULL) <= length ) {
-            return(1);
-        }
-    }
-    return(0);
-}
-
-void collapse_tree(patchset *patchset)
-{
-    patch_path *path;
-    patch_path *last;
-    patch_path *good_paths, *bad_paths;
-
-    /* Remove all paths that are subsets of other paths */
-    good_paths = NULL;
-    bad_paths = NULL;
-    path = patchset->paths;
-    while ( path ) {
-        last = path;
-        path = path->next;
-        if ( is_nonleaf(last->leaf, patchset) ) {
-            last->next = bad_paths;
-            bad_paths = last;
-        } else {
-            last->next = good_paths;
-            good_paths = last;
-        }
-    }
-    patchset->paths = good_paths;
-
-    /* Remove all paths that are longer duplicates of other paths */
-    good_paths = NULL;
-    path = patchset->paths;
-    while ( path ) {
-        last = path;
-        path = path->next;
-        if ( is_longpath(last, patchset) ) {
-            last->next = bad_paths;
-            bad_paths = last;
-        } else {
-            last->next = good_paths;
-            good_paths = last;
-        }
-    }
-    patchset->paths = good_paths;
-
-    /* What we have left is a list of valid short paths */
-    free_pathlist(bad_paths);
-}
-
-/* Autoselect the paths which do not involve installing new components */
+/* Select the main branch of patches for the installed components */
 void autoselect_patches(patchset *patchset)
 {
-    patch *patch;
-    patch_path *path;
+    version_node *node, *root;
 
-    path = patchset->paths;
-    while ( path ) {
-        patch = path->patches;
-        while ( patch ) {
-            if ( patch->type == TYPE_PATCH ) {
-                patch->selected = 1;
+    for ( root = patchset->root; root; root = root->sibling ) {
+        for ( node=root->child; node; node=node->child ) {
+            if ( ! node->child ) {
+                /* This is the final leaf node on the trunk, select it */
+                select_node(node, 1);
             }
-            patch = patch->next;
         }
-        path = path->next;
     }
 }

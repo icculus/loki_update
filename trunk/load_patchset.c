@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "text_parse.h"
@@ -7,12 +8,31 @@
 #include "log_output.h"
 #include "load_patchset.h"
 
+void print_patchset(patchset *patchset)
+{
+    version_node *node, *root, *trunk;
+    int i;
+
+    for ( root = patchset->root; root; root = root->sibling ) {
+        for ( trunk = root; trunk; trunk = trunk->child ) {
+            for ( node = trunk; node; node = node->sibling ) {
+                if ( node->toggled ) {
+                    printf("[X] ");
+                } else {
+                    printf("[ ] ");
+                }
+                for ( i=0; i<node->depth; ++i ) {
+                    printf(" ");
+                }
+                printf("%s\n", node->description);
+            }
+        }
+    }
+}
+
 patchset *load_patchset(patchset *patchset, const char *patchlist)
 {
     struct text_fp *file;
-    int index;
-    patch *patch;
-    patch_path *path;
 
     file = text_open(patchlist);
     if ( file ) {
@@ -59,14 +79,39 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
             /* Look for known tags */
             for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                 if ( strcasecmp(parse_table[i].prefix, key) == 0 ) {
-                    *parse_table[i].variable = strdup(val);
+                    if ( *parse_table[i].variable ) {
+                        log(LOG_ERROR,
+"Parse error in update list, %s appears twice in one update:\n",
+                            parse_table[i].prefix);
+                        log(LOG_ERROR, "First occurrence: %s\n",
+                            *parse_table[i].variable);
+                        log(LOG_ERROR, "Second occurrence: %s\n", val);
+                        log(LOG_ERROR, "Parsed so far in this update:\n");
+                        for ( i=0;
+                              i<sizeof(parse_table)/sizeof(parse_table[0]);
+                              ++i ) {
+                            if ( *parse_table[i].variable ) {
+                                log(LOG_ERROR, "%s: %s\n",
+                                    parse_table[i].prefix,
+                                    *parse_table[i].variable);
+                            }
+                        }
+                        for ( i=0;
+                              i<sizeof(parse_table)/sizeof(parse_table[0]);
+                              ++i ) {
+                            if ( ! *parse_table[i].variable ) {
+                                log(LOG_ERROR, "Missing in parse: %s\n",
+                                    parse_table[i].prefix);
+                            }
+                        }
+                        goto done_parse;
+                    } else {
+                        *parse_table[i].variable = strdup(val);
+                    }
                     break;
                 }
             }
             if ( version && arch && applies && url ) {
-                log(LOG_DEBUG,
-                    "Found patch: %s %s for %s applies to %s, at %s\n",
-                     patchset->product_name, version, arch, applies, url);
                 add_patch(patchset->product_name, component, version, arch, applies, url, patchset);
                 for ( i=0; i<sizeof(parse_table)/sizeof(parse_table[0]); ++i ) {
                     if ( *parse_table[i].variable ) {
@@ -76,28 +121,34 @@ patchset *load_patchset(patchset *patchset, const char *patchlist)
                 }
             }
         }
+done_parse:
         text_close(file);
     }
 
     /* Build a tree of patches and reduce it to the most efficient set */
-    make_tree(patchset);
-    log(LOG_DEBUG, "Patch set for %s\n",
-        loki_getinfo_product(patchset->product)->name);
-    index = 0;
-    for ( path=patchset->paths; path; path=path->next ) {
-        log(LOG_DEBUG, "Patch path %d:\n", ++index);
-        for ( patch=path->patches; patch; patch=patch->next ) {
-            log(LOG_DEBUG, "\tPatch: %s at %s\n", patch->version, patch->url);
-        }
-    }
-    collapse_tree(patchset);
-    log(LOG_DEBUG, "Collapsed patch set:\n");
-    index = 0;
-    for ( path=patchset->paths; path; path=path->next ) {
-        log(LOG_DEBUG, "Patch path %d:\n", ++index);
-        for ( patch=path->patches; patch; patch=patch->next ) {
-            log(LOG_DEBUG, "\tPatch: %s at %s\n", patch->version, patch->url);
-        }
-    }
+    calculate_paths(patchset);
+    autoselect_patches(patchset);
+#ifdef DEBUG
+    print_patchset(patchset);
+#endif
     return patchset;
+}
+
+char *get_product_description(product_t *product, char *description, int maxlen)
+{
+#if 0 /* Not really necessary */
+    product_component_t *component;
+#endif
+
+    strncpy(description, loki_getinfo_product(product)->description, maxlen-2);
+    description[maxlen-2] = '\0';
+#if 0 /* Not really necessary */
+    component = loki_getdefault_component(product);
+    if ( component ) {
+        strcat(description, " ");
+        maxlen -= strlen(description);
+        strncat(description, loki_getversion_component(component), maxlen-1);
+    }
+#endif
+    return(description);
 }

@@ -4,7 +4,7 @@
 
 #include "log_output.h"
 
-static int log_level = LOG_NORMAL;
+static int log_level = 0;//LOG_NORMAL;
 
 void set_logging(int level)
 {
